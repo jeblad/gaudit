@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
 cmake_minimum_required(VERSION 3.25)
-project(gaudit VERSION 0.1.0 LANGUAGES C CXX)
+
+# The version lives in VERSION, which commit-and-tag-version bumps on release.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" GAUDIT_VERSION LIMIT_COUNT 1)
+project(gaudit VERSION ${GAUDIT_VERSION} LANGUAGES C CXX)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS VERSION)
 
 include(GNUInstallDirs)
 include(CheckPIESupported)

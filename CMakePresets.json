@@ -19,5 +19,16 @@
         "GAUDIT_DEVELOPER_BUILD": "OFF"
       }
     }
+  ],
+  "buildPresets": [
+    { "name": "dev", "configurePreset": "dev" },
+    { "name": "release", "configurePreset": "release" }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": { "outputOnFailure": true }
+    }
   ]
 }

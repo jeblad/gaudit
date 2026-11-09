@@ -232,6 +232,13 @@ tests/             hand-written tests
 - Helper, orchestrator and engine are installed in `libexec/gaudit/`. `Exec` in the desktop file and `exec.path` in the polkit policy are absolute paths.
 - Dependencies to install when first used: `guile-3.0-dev`, `libsodium-dev`, `libcap-dev`. `libseccomp-dev`, GTK4 and libadwaita are already present.
 
+## Versioning and releases
+
+- The version lives in `VERSION` (one line, e.g. `0.1.0`). `CMakeLists.txt` reads it into `project()`, so it reaches `config.h`, the About dialog and the `.pot` header.
+- Releases use **commit-and-tag-version** (configured in `.versionrc.json`). It bumps `VERSION`, updates `CHANGELOG.md`, commits and tags `vX.Y.Z`. The maintainer runs it, because it writes git history.
+- Commit messages follow **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:` …; `!` or `BREAKING CHANGE:` for breaking changes), since the changelog and the version bump are derived from them. Below 1.0.0, breaking changes bump the minor version.
+- Run the tool with a pinned version (`npx commit-and-tag-version@<exact version>`), never an unpinned `npx` download.
+
 ## Build and test
 
 - CMake with presets:

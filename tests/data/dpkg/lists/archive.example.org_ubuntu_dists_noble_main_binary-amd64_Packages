@@ -1,0 +1,36 @@
+Package: a
+Architecture: amd64
+Version: 1.0-1
+
+Package: b
+Architecture: amd64
+Version: 1.1-1
+
+Package: e
+Architecture: amd64
+Version: 1.0
+
+Package: f
+Architecture: amd64
+Version: 1.0
+
+Package: f
+Architecture: amd64
+Version: 1.1
+Phased-Update-Percentage: 10
+
+Package: g
+Architecture: amd64
+Version: 1.0
+
+Package: h
+Architecture: amd64
+Version: 2.0
+
+Package: firefox
+Architecture: amd64
+Version: 1:1snap1-0ubuntu11
+
+Package: thunderbird
+Architecture: amd64
+Version: 1:1snap1-0ubuntu11

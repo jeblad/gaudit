@@ -1,0 +1,56 @@
+Package: a
+Status: install ok installed
+Architecture: amd64
+Version: 1.0-1
+Description: same version offered
+ continuation line with Version: 9.9 inside
+
+Package: b
+Status: install ok installed
+Architecture: amd64
+Version: 1.0-1
+
+Package: c
+Status: install ok installed
+Architecture: all
+Version: 2.0
+
+Package: d
+Status: deinstall ok config-files
+Architecture: amd64
+Version: 1.0
+
+Package: linux-image-6.8.0-40-generic
+Status: install ok installed
+Architecture: amd64
+Version: 6.8.0-40.40
+
+Package: e
+Status: install ok installed
+Architecture: amd64
+Version: 1.0
+
+Package: f
+Status: install ok installed
+Architecture: amd64
+Version: 1.0
+
+Package: g
+Status: hold ok installed
+Architecture: amd64
+Version: 1.0
+
+Package: h
+Status: install ok installed
+Architecture: amd64
+Version: 1:0.5
+
+Package: firefox
+Status: install ok installed
+Architecture: amd64
+Version: 159.0.1~build1
+
+Package: thunderbird
+Status: install ok installed
+Architecture: amd64
+Version: 137.0~build1

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+# Translators: Application name. Do not translate.
+Name=gAudit
+GenericName=Security Audit
+Comment=Check the security status of this computer
+Keywords=security;audit;antivirus;firewall;updates;
+Exec=@GAUDIT_GUI_PATH@
+Icon=@GAUDIT_APP_ID@
+Terminal=false
+Categories=GTK;GNOME;System;Security;
+StartupNotify=true

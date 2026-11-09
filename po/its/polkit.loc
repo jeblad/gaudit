@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<locatingRules>
+  <locatingRule name="polkit" pattern="*.policy.in">
+    <documentRule localName="policyconfig" target="polkit.its"/>
+  </locatingRule>
+  <locatingRule name="polkit" pattern="*.policy">
+    <documentRule localName="policyconfig" target="polkit.its"/>
+  </locatingRule>
+</locatingRules>

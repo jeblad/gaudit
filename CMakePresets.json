@@ -1,0 +1,23 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "dev",
+      "displayName": "Developer build (runs from build tree)",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "GAUDIT_DEVELOPER_BUILD": "ON"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release build (installed paths)",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "GAUDIT_DEVELOPER_BUILD": "OFF"
+      }
+    }
+  ]
+}

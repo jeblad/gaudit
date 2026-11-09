@@ -1,0 +1,5 @@
+src/gui/gaudit-app.c
+src/gui/gaudit-window.c
+src/gui/gaudit-task-page.c
+data/gaudit.desktop.in
+data/gaudit.policy.in

@@ -1,0 +1,4 @@
+# Keep the deb browsers, never the snap transitional packages.
+Package: firefox* thunderbird*
+Pin: release o=Ubuntu*
+Pin-Priority: -1

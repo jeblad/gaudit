@@ -1,0 +1,320 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the gaudit package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: gaudit 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-09 23:49+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: src/gui/gaudit-app.c:65
+msgid "General"
+msgstr ""
+
+#: src/gui/gaudit-app.c:68
+msgid "There is nothing to set yet."
+msgstr ""
+
+#: src/gui/gaudit-app.c:80
+msgid "Open Main Menu"
+msgstr ""
+
+#: src/gui/gaudit-app.c:81
+msgid "Preferences"
+msgstr ""
+
+#: src/gui/gaudit-app.c:82
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+#: src/gui/gaudit-app.c:83
+msgid "Quit"
+msgstr ""
+
+#: src/gui/gaudit-app.c:96 data/gaudit.desktop.in:6
+msgid "Check the security status of this computer"
+msgstr ""
+
+#. Translators: Replace with your names, one per line.
+#: src/gui/gaudit-app.c:103
+msgid "translator-credits"
+msgstr ""
+
+#: src/gui/gaudit-window.c:35
+msgid "No checks have been run"
+msgstr ""
+
+#: src/gui/gaudit-window.c:41
+msgid "No signs of problems found"
+msgstr ""
+
+#. Translators: Keep the meaning: a clean result is not a guarantee.
+#: src/gui/gaudit-window.c:43
+msgid ""
+"This does not prove the computer is safe, only that the checks found nothing "
+"wrong."
+msgstr ""
+
+#: src/gui/gaudit-window.c:48
+msgid "Some things need attention"
+msgstr ""
+
+#: src/gui/gaudit-window.c:53
+msgid "Serious problems found"
+msgstr ""
+
+#: src/gui/gaudit-window.c:59
+msgid "Some checks could not be completed"
+msgstr ""
+
+#: src/gui/gaudit-window.c:78
+msgid "OK"
+msgstr ""
+
+#: src/gui/gaudit-window.c:81
+msgid "Needs attention"
+msgstr ""
+
+#: src/gui/gaudit-window.c:84
+msgid "Serious"
+msgstr ""
+
+#: src/gui/gaudit-window.c:88
+msgid "Unknown"
+msgstr ""
+
+#: src/gui/gaudit-window.c:106
+msgid "An antivirus program is installed"
+msgstr ""
+
+#: src/gui/gaudit-window.c:107
+msgid "No antivirus program found"
+msgstr ""
+
+#: src/gui/gaudit-window.c:108
+msgid "Antivirus"
+msgstr ""
+
+#: src/gui/gaudit-window.c:112
+msgid "A firewall is installed"
+msgstr ""
+
+#: src/gui/gaudit-window.c:113
+msgid "No firewall found"
+msgstr ""
+
+#: src/gui/gaudit-window.c:114
+msgid "Firewall"
+msgstr ""
+
+#: src/gui/gaudit-window.c:120
+msgid "Could not find out when updates were last checked for"
+msgstr ""
+
+#: src/gui/gaudit-window.c:124
+msgid "Last checked today"
+msgstr ""
+
+#: src/gui/gaudit-window.c:126
+#, c-format
+msgid "Last checked %d day ago"
+msgid_plural "Last checked %d days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:131
+msgid "Checking for updates"
+msgstr ""
+
+#: src/gui/gaudit-window.c:135
+msgid "Could not find out whether updates are waiting"
+msgstr ""
+
+#: src/gui/gaudit-window.c:137
+msgid "No updates are waiting"
+msgstr ""
+
+#: src/gui/gaudit-window.c:139
+#, c-format
+msgid "%u update is waiting to be installed"
+msgid_plural "%u updates are waiting to be installed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:143
+msgid "Pending updates"
+msgstr ""
+
+#: src/gui/gaudit-window.c:147
+msgid "Could not find out where the installed packages come from"
+msgstr ""
+
+#: src/gui/gaudit-window.c:149
+msgid "All packages come from a software source"
+msgstr ""
+
+#: src/gui/gaudit-window.c:151
+#, c-format
+msgid "%u package is no longer offered by any software source"
+msgid_plural "%u packages are no longer offered by any software source"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:155
+msgid "Packages without a source"
+msgstr ""
+
+#: src/gui/gaudit-window.c:159
+msgid "Updates are installed automatically"
+msgstr ""
+
+#: src/gui/gaudit-window.c:161
+msgid "Automatic updates are switched off"
+msgstr ""
+
+#: src/gui/gaudit-window.c:162
+msgid "Could not find out whether automatic updates are switched on"
+msgstr ""
+
+#: src/gui/gaudit-window.c:163
+msgid "Automatic updates"
+msgstr ""
+
+#: src/gui/gaudit-window.c:188
+msgid "Status"
+msgstr ""
+
+#: src/gui/gaudit-window.c:190
+msgid "A quick look that does not need your password."
+msgstr ""
+
+#: src/gui/gaudit-window.c:207
+msgid "Checks"
+msgstr ""
+
+#: src/gui/gaudit-window.c:211 src/gui/gaudit-task-page.c:190
+msgid "Not available on this system"
+msgstr ""
+
+#: src/gui/gaudit-window.c:212 src/gui/gaudit-task-page.c:124
+msgid "Software is missing"
+msgstr ""
+
+#: src/gui/gaudit-window.c:213
+msgid "Not run yet"
+msgstr ""
+
+#: src/gui/gaudit-window.c:232 src/gui/gaudit-window.c:341
+msgid "Home"
+msgstr ""
+
+#: src/gui/gaudit-window.c:301
+msgid "_Preferences"
+msgstr ""
+
+#: src/gui/gaudit-window.c:302
+msgid "_Keyboard Shortcuts"
+msgstr ""
+
+#. Translators: %s is the application name, which is not translated.
+#: src/gui/gaudit-window.c:304
+#, c-format
+msgid "_About %s"
+msgstr ""
+
+#: src/gui/gaudit-window.c:315
+msgid "Main Menu"
+msgstr ""
+
+#: src/gui/gaudit-window.c:341
+msgid "Overall status"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:46
+msgid "Check started"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:47
+msgid "Running checks is not implemented yet."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:62
+msgid "More about this"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:73
+msgid "What to check"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:86
+msgid "Start"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:104
+msgid "Command copied"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:112
+msgid "Installing is not implemented yet."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:127
+#, c-format
+msgid "This check needs software that is not installed: %s."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:133
+msgid ""
+"You can install it with the button below, or copy this command and run it in "
+"a terminal yourself:"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:156 src/gui/gaudit-task-page.c:158
+msgid "Copy command"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:164
+msgid "Install"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:172
+msgid ""
+"Installing uses the system's software service and asks for your password."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:192
+msgid "This check is not supported on this operating system yet."
+msgstr ""
+
+#. Translators: Application name. Do not translate.
+#: data/gaudit.desktop.in:4
+msgid "gAudit"
+msgstr ""
+
+#: data/gaudit.desktop.in:5
+msgid "Security Audit"
+msgstr ""
+
+#: data/gaudit.desktop.in:7
+msgid "security;audit;antivirus;firewall;updates;"
+msgstr ""
+
+#: data/gaudit.policy.in:8
+msgid "Run privileged security checks"
+msgstr ""
+
+#: data/gaudit.policy.in:9
+msgid ""
+"Authentication is required to check the security status of this computer"
+msgstr ""

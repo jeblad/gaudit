@@ -34,7 +34,7 @@ The Home page gives a quick status that never asks for a password:
 Deeper checks, such as whether the firewall is actually active or whether virus scans run regularly, will come as plugins with their own options and reports.
 
 > [!NOTE]
-> Supported so far: the Debian family (Ubuntu, Debian and derivatives) and Fedora. gAudit detects the package system and says which checks it does not support there yet. Arch and SUSE are planned next.
+> Supported so far: the Debian family (Ubuntu, Debian and derivatives), Fedora, and Arch with its derivatives. gAudit detects the package system and says which checks it does not support there yet. SUSE is planned next.
 
 ## Getting started
 

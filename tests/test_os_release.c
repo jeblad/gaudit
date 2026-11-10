@@ -47,7 +47,10 @@ int main(void)
     CHECK(b == NULL);
 
     CHECK(strcmp(describe(DATA "/arch", &b), "Arch Linux") == 0);  /* no VERSION_ID */
-    CHECK(b == NULL);
+    CHECK(b == gaudit_pkg_backend_arch());
+
+    CHECK(strcmp(describe(DATA "/manjaro", &b), "Manjaro Linux") == 0);  /* ID_LIKE arch */
+    CHECK(b == gaudit_pkg_backend_arch());
 
     CHECK(strcmp(describe(DATA "/tumbleweed", &b), "openSUSE Tumbleweed 20261101") == 0);
     CHECK(b == NULL);

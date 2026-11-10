@@ -16,6 +16,9 @@ add_library(gaudit_backend STATIC
   fedora/pkg-fedora.c
   fedora/dnf-files.c
   fedora/dnf-runner.c
+  arch/pkg-arch.c
+  arch/pacman-files.c
+  arch/pacman-runner.c
   generic/pkg-generic.c
 )
 target_compile_definitions(gaudit_backend PRIVATE _GNU_SOURCE)

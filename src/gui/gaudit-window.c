@@ -344,6 +344,7 @@ static AdwNavigationPage *build_home(GauditWindow *self)
          * does the checks. Not read from the distribution. */
         const char *family = g_strcmp0(self->pkg->name, "debian") == 0 ? _("Debian")
                            : g_strcmp0(self->pkg->name, "fedora") == 0 ? _("Fedora")
+                           : g_strcmp0(self->pkg->name, "arch") == 0 ? _("Arch")
                            : _("generic");
         /* Translators: "<distribution> – <how gAudit treats it>", e.g. "Ubuntu – Debian". */
         g_autofree char *system = distro[0] != '\0'

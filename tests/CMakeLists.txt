@@ -72,6 +72,14 @@ target_compile_definitions(test_apt_sources PRIVATE
 target_link_libraries(test_apt_sources PRIVATE gaudit_backend)
 add_test(NAME apt-sources COMMAND test_apt_sources)
 
+add_executable(test_pacman test_pacman.c)
+target_include_directories(test_pacman PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/arch)
+target_compile_definitions(test_pacman PRIVATE _GNU_SOURCE
+  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
+  GAUDIT_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/tmp")
+target_link_libraries(test_pacman PRIVATE gaudit_backend)
+add_test(NAME pacman COMMAND test_pacman)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

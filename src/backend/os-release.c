@@ -98,6 +98,10 @@ const gaudit_pkg_backend *gaudit_pkg_backend_expected_for(const gaudit_os_releas
          * dnf5, and must not get a "package system missing" warning. */
         if (strcmp(os->id, "fedora") == 0)
             return gaudit_pkg_backend_fedora();
+        /* Derivatives such as Manjaro and EndeavourOS name arch in ID_LIKE
+         * and do use pacman. */
+        if (strcmp(os->id, "arch") == 0 || has_word(os->id_like, "arch"))
+            return gaudit_pkg_backend_arch();
     }
     return NULL;
 }
@@ -147,7 +151,7 @@ const gaudit_pkg_backend *gaudit_pkg_backend_default(void)
     if (chosen == NULL) {
         /* In order of preference; more backends go here. */
         const gaudit_pkg_backend *candidates[] = {
-            gaudit_pkg_backend_debian(), gaudit_pkg_backend_fedora(), NULL
+            gaudit_pkg_backend_debian(), gaudit_pkg_backend_fedora(), gaudit_pkg_backend_arch(), NULL
         };
         chosen = gaudit_pkg_backend_generic();
         for (const gaudit_pkg_backend **b = candidates; *b != NULL; b++)

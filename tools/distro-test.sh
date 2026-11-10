@@ -59,6 +59,15 @@ case "$distro" in
         image=docker.io/library/archlinux:latest
         install='pacman -Syu --noconfirm base-devel cmake gettext desktop-file-utils
                  gtk4 libadwaita flatpak json-glib zlib lz4 xz zstd'
+        # Foreign packages: disable [extra] after everything is installed, so
+        # packages from there are offered by no configured repository.
+        prepare='sed -i "/^\\[extra\\]/,/^Include/ s/^/#/" /etc/pacman.conf
+                 && echo "== prepared: [extra] disabled; repositories now:"
+                 && grep "^\\[" /etc/pacman.conf'
+        # pacman's own view, for comparison (test only).
+        compare='echo "== pacman: upgradable / foreign"
+                 pacman -Qu 2>/dev/null | grep -vc "\\[ignored\\]" || true
+                 pacman -Qm 2>/dev/null | grep -c . || true'
         ;;
     opensuse)
         image=registry.opensuse.org/opensuse/tumbleweed:latest

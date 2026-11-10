@@ -28,7 +28,22 @@ case "$distro" in
     fedora)
         image=registry.fedoraproject.org/fedora:latest
         install='dnf -y install gcc gcc-c++ cmake pkgconf-pkg-config gettext desktop-file-utils
-                 gtk4-devel libadwaita-devel flatpak-devel json-glib-devel libdnf5-devel'
+                 gtk4-devel libadwaita-devel flatpak-devel json-glib-devel libdnf5-devel util-linux'
+        # Packages without a source: disable the updates repositories after
+        # everything is installed, so versions that came from there are
+        # offered by no enabled repository. The exact number does not matter;
+        # it must match what dnf reports.
+        # Repositories live in /usr/share/dnf5/repos.d (owned by the package);
+        # dnf5 takes local changes from /etc/dnf/repos.override.d.
+        prepare='mkdir -p /etc/dnf/repos.override.d
+                 && printf "[updates]\\nenabled=0\\n" > /etc/dnf/repos.override.d/99-gaudit-test.repo
+                 && echo "== prepared: updates disabled; enabled repositories now:"
+                 && dnf -q repo list | sed 1d'
+        # dnf's own view, for comparison with the collector (test only; the
+        # product never parses tool output).
+        compare='echo "== dnf: upgradable / extras (as root, cache only)"
+                 dnf -q --cacheonly check-upgrade | grep -c "\." || true
+                 dnf -q --cacheonly list --extras | grep -c "\." || true'
         ;;
     arch)
         image=docker.io/library/archlinux:latest
@@ -38,7 +53,7 @@ case "$distro" in
     opensuse)
         image=registry.opensuse.org/opensuse/tumbleweed:latest
         install='zypper --non-interactive install gcc gcc-c++ cmake pkgconf gettext-tools
-                 desktop-file-utils gtk4-devel libadwaita-devel flatpak-devel json-glib-devel'
+                 desktop-file-utils gtk4-devel libadwaita-devel flatpak-devel json-glib-devel util-linux'
         ;;
     debian)
         image=docker.io/library/debian:stable
@@ -50,9 +65,13 @@ case "$distro" in
         ;;
 esac
 
+compare=${compare:-true}
+prepare=${prepare:-true}
+
 # The package lists above are wrapped for reading; a newline would end the
 # command in the container's shell, so make each one a single line.
 install=$(printf '%s' "$install" | tr '\n' ' ')
+prepare=$(printf '%s' "$prepare" | tr '\n' ' ')
 
 command -v podman >/dev/null || { echo "podman is not installed" >&2; exit 1; }
 
@@ -68,8 +87,18 @@ podman run --rm --pull=newer \
         cmake -S /src -B /build -DCMAKE_BUILD_TYPE=Debug -DGAUDIT_DEVELOPER_BUILD=ON
         cmake --build /build -j 4
         ctest --test-dir /build --output-on-failure -j 2
-        echo '== gaudit-probe-dump'
+        $prepare
+        echo '== gaudit-probe-dump (root)'
         /build/tools/gaudit-probe-dump || true
+        # Status probes are meant to run without privileges.
+        echo '== gaudit-probe-dump (nobody)'
+        runuser -u nobody -- /build/tools/gaudit-probe-dump || true
+        for c in /build/src/collectors/*/gaudit-*-probe; do
+            [ -x \"\$c\" ] || continue
+            echo \"== \$c (nobody)\"
+            runuser -u nobody -- \"\$c\" || echo \"exit \$?\"
+        done
+        $compare
     " || status=$?
 
 if [ "$keep_image" = no ]; then

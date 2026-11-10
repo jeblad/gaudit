@@ -33,7 +33,7 @@ The Home page gives a quick status that never asks for a password:
 Deeper checks, such as whether the firewall is actually active or whether virus scans run regularly, will come as plugins with their own options and reports.
 
 > [!NOTE]
-> The first platform is the Debian family (Ubuntu, Debian and derivatives). gAudit detects the distribution and says which checks it does not support there yet. Fedora, Arch and SUSE are planned next.
+> Supported so far: the Debian family (Ubuntu, Debian and derivatives) and Fedora. gAudit detects the package system and says which checks it does not support there yet. Arch and SUSE are planned next.
 
 ## Getting started
 
@@ -48,7 +48,7 @@ Deeper checks, such as whether the firewall is actually active or whether virus 
 sudo apt install build-essential cmake pkg-config libgtk-4-dev libadwaita-1-dev gettext desktop-file-utils
 ```
 
-The Flatpak check is optional. Install `libflatpak-dev` to build it.
+The Flatpak check is optional. Install `libflatpak-dev` to build it. On Fedora, the package checks need `libdnf5-devel`.
 
 ### Build and run
 

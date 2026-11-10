@@ -57,6 +57,13 @@ target_compile_definitions(test_fedora PRIVATE _GNU_SOURCE
 target_link_libraries(test_fedora PRIVATE gaudit_backend)
 add_test(NAME fedora COMMAND test_fedora)
 
+add_executable(test_dnf test_dnf.c)
+target_include_directories(test_dnf PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/fedora)
+target_compile_definitions(test_dnf PRIVATE
+  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_link_libraries(test_dnf PRIVATE gaudit_backend)
+add_test(NAME dnf COMMAND test_dnf)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

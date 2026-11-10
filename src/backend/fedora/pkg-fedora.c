@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Fedora backend: rpm + dnf5. Package metadata age and automatic updates
  * are read from files; pending updates and packages without a source come
- * from the libdnf5 collector (not implemented yet). */
+ * from the libdnf5 collector. */
 #include "config.h"
 #include "gaudit/backend.h"
 
 #include "dnf-files.h"
+#include "dnf-runner.h"
 #include "flatpak-runner.h"
 #include "snap-runner.h"
 
@@ -14,6 +15,7 @@
 
 #define COUNT_OF(a) (sizeof(a) / sizeof((a)[0]))
 #define COLLECTOR_TIMEOUT_MS 5000
+#define DNF_TIMEOUT_MS       20000  /* loading repository metadata takes a while */
 
 static const char *const clamav_paths[]    = { "/usr/bin/clamscan", NULL };
 static const char *const clamav_pkgs[]     = { "clamav", NULL };
@@ -26,6 +28,7 @@ static const char *const firewalld_pkgs[]  = { "firewalld", NULL };
 static const char *const no_paths[]        = { NULL };
 static const char *const libflatpak_pkgs[] = { "flatpak-libs", NULL };
 static const char *const json_glib_pkgs[]  = { "json-glib", NULL };
+static const char *const libdnf5_pkgs[]    = { "libdnf5", NULL };
 
 static const gaudit_capability capabilities[] = {
     { "clamav",       clamav_paths,    clamav_pkgs },
@@ -34,6 +37,7 @@ static const gaudit_capability capabilities[] = {
     { "firewalld",    firewalld_paths, firewalld_pkgs },
     { "libflatpak",   no_paths,        libflatpak_pkgs },
     { "libjson-glib", no_paths,        json_glib_pkgs },
+    { "libdnf5",      no_paths,        libdnf5_pkgs },
 };
 
 static const char *const fallback_argv[] = {
@@ -67,9 +71,16 @@ static gaudit_backend_status automatic_updates(int *out_enabled)
 
 static gaudit_backend_status package_state(unsigned *out_obsolete, unsigned *out_upgradable)
 {
-    (void)out_obsolete;
-    (void)out_upgradable;
-    return GAUDIT_BACKEND_NOT_IMPLEMENTED;  /* comes with the libdnf5 collector */
+    if (out_obsolete == NULL || out_upgradable == NULL)
+        return GAUDIT_BACKEND_ERROR;
+    gaudit_dnf_state st;
+    gaudit_backend_status status =
+        gaudit_dnf_run_probe("/usr/bin/dnf5", GAUDIT_DNF_PROBE_PATH, DNF_TIMEOUT_MS, &st);
+    if (status == GAUDIT_BACKEND_OK) {
+        *out_obsolete = st.extras;
+        *out_upgradable = st.upgradable;
+    }
+    return status;
 }
 
 static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)

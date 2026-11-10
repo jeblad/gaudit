@@ -18,9 +18,10 @@ add_test(NAME apt-conf COMMAND test_apt_conf)
 
 add_executable(test_dpkg test_dpkg.c)
 target_include_directories(test_dpkg PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/debian)
-target_compile_definitions(test_dpkg PRIVATE
-  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
-target_link_libraries(test_dpkg PRIVATE gaudit_backend)
+target_compile_definitions(test_dpkg PRIVATE _GNU_SOURCE
+  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data"
+  GAUDIT_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/tmp")
+target_link_libraries(test_dpkg PRIVATE gaudit_backend PkgConfig::COMPRESSION)
 add_test(NAME dpkg COMMAND test_dpkg)
 
 add_executable(test_flatpak test_flatpak.c)

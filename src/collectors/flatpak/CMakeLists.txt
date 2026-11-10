@@ -4,6 +4,7 @@
 pkg_check_modules(FLATPAK IMPORTED_TARGET flatpak)
 if(FLATPAK_FOUND)
   add_executable(gaudit-flatpak-probe gaudit-flatpak-probe.c)
+  target_compile_definitions(gaudit-flatpak-probe PRIVATE _GNU_SOURCE)
   target_link_libraries(gaudit-flatpak-probe PRIVATE PkgConfig::FLATPAK)
   install(TARGETS gaudit-flatpak-probe RUNTIME DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/gaudit)
   message(STATUS "Flatpak collector: enabled")

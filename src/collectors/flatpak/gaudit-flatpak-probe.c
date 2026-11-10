@@ -20,6 +20,7 @@
  * prints nothing. */
 #include <flatpak.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static gboolean ref_is_eol(FlatpakInstalledRef *ref)
@@ -65,6 +66,24 @@ static gboolean is_extension(const char *name, GHashTable *names)
     return FALSE;
 }
 
+#define DEFAULT_SYSTEM_DIR "/var/lib/flatpak"
+
+/* One of installations is at path (compared after resolving symlinks). */
+static gboolean has_installation_at(GPtrArray *installations, const char *path)
+{
+    g_autofree char *wanted = realpath(path, NULL);
+    if (wanted == NULL)
+        return FALSE;
+    for (guint i = 0; i < installations->len; i++) {
+        g_autoptr(GFile) file = flatpak_installation_get_path(installations->pdata[i]);
+        g_autofree char *where = file != NULL ? g_file_get_path(file) : NULL;
+        g_autofree char *resolved = where != NULL ? realpath(where, NULL) : NULL;
+        if (resolved != NULL && strcmp(resolved, wanted) == 0)
+            return TRUE;
+    }
+    return FALSE;
+}
+
 /* NULL on failure. An installation whose directory does not exist yet (a
  * user installation never used) is empty, not a failure. */
 static GPtrArray *installed_refs(FlatpakInstallation *inst)
@@ -89,6 +108,13 @@ int main(void)
         return 1;
     for (guint i = 0; i < system->len; i++)
         g_ptr_array_add(installations, g_object_ref(system->pdata[i]));
+
+    /* libflatpak only warns and skips a system installation it cannot open.
+     * If the default one exists on disk but is missing here, its apps would
+     * silently not be counted: fail instead, so the row says unknown. */
+    if (g_file_test(DEFAULT_SYSTEM_DIR, G_FILE_TEST_IS_DIR)
+        && !has_installation_at(system, DEFAULT_SYSTEM_DIR))
+        return 1;
 
     g_clear_error(&error);
     FlatpakInstallation *user = flatpak_installation_new_user(NULL, &error);

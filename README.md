@@ -45,7 +45,8 @@ Deeper checks, such as whether the firewall is actually active or whether virus 
 - gettext
 
 ```sh
-sudo apt install build-essential cmake pkg-config libgtk-4-dev libadwaita-1-dev gettext desktop-file-utils
+sudo apt install build-essential cmake pkg-config libgtk-4-dev libadwaita-1-dev gettext desktop-file-utils \
+  zlib1g-dev liblz4-dev liblzma-dev libzstd-dev
 ```
 
 The Flatpak check is optional. Install `libflatpak-dev` to build it. On Fedora, the package checks need `libdnf5-devel`.

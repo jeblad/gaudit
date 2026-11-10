@@ -28,16 +28,26 @@ case "$distro" in
     fedora)
         image=registry.fedoraproject.org/fedora:latest
         install='dnf -y install gcc gcc-c++ cmake pkgconf-pkg-config gettext desktop-file-utils
-                 gtk4-devel libadwaita-devel flatpak-devel json-glib-devel libdnf5-devel util-linux'
-        # Packages without a source: disable the updates repositories after
-        # everything is installed, so versions that came from there are
-        # offered by no enabled repository. The exact number does not matter;
-        # it must match what dnf reports.
+                 gtk4-devel libadwaita-devel flatpak-devel json-glib-devel libdnf5-devel util-linux
+                 zlib-devel lz4-devel xz-devel libzstd-devel'
+        # Both package rows get something to count:
+        #  - upgradable: downgrade one harmless package that came from
+        #    "updates" to its version in "fedora", so an upgrade exists;
+        #  - without a source: disable the Cisco openh264 repository, so the
+        #    installed openh264 is offered by no enabled repository.
         # Repositories live in /usr/share/dnf5/repos.d (owned by the package);
-        # dnf5 takes local changes from /etc/dnf/repos.override.d.
-        prepare='mkdir -p /etc/dnf/repos.override.d
-                 && printf "[updates]\\nenabled=0\\n" > /etc/dnf/repos.override.d/99-gaudit-test.repo
-                 && echo "== prepared: updates disabled; enabled repositories now:"
+        # dnf5 takes local changes from /etc/dnf/repos.override.d. The exact
+        # numbers do not matter; they must match what dnf reports.
+        prepare='from_updates=$(dnf -q repoquery --installed --queryformat "%{from_repo}:%{name} " 2>/dev/null
+                   | tr " " "\\n" | sed -n "s/^updates://p"
+                   | grep -v -E "^(glibc|systemd|rpm|dnf|libdnf|python3|bash|coreutils|filesystem|setup)" || true);
+                 echo "== installed from updates (candidates): $(echo "$from_updates" | grep -c .)";
+                 for p in $from_updates; do
+                   if dnf -y -q downgrade $p >/dev/null 2>&1; then
+                     echo "== prepared: downgraded $p"; break; fi; done;
+                 mkdir -p /etc/dnf/repos.override.d
+                 && printf "[fedora-cisco-openh264]\\nenabled=0\\n" > /etc/dnf/repos.override.d/99-gaudit-test.repo
+                 && echo "== prepared: openh264 repository disabled; enabled repositories now:"
                  && dnf -q repo list | sed 1d'
         # dnf's own view, for comparison with the collector (test only; the
         # product never parses tool output).
@@ -48,17 +58,19 @@ case "$distro" in
     arch)
         image=docker.io/library/archlinux:latest
         install='pacman -Syu --noconfirm base-devel cmake gettext desktop-file-utils
-                 gtk4 libadwaita flatpak json-glib'
+                 gtk4 libadwaita flatpak json-glib zlib lz4 xz zstd'
         ;;
     opensuse)
         image=registry.opensuse.org/opensuse/tumbleweed:latest
         install='zypper --non-interactive install gcc gcc-c++ cmake pkgconf gettext-tools
-                 desktop-file-utils gtk4-devel libadwaita-devel flatpak-devel json-glib-devel util-linux'
+                 desktop-file-utils gtk4-devel libadwaita-devel flatpak-devel json-glib-devel util-linux
+                 zlib-devel liblz4-devel xz-devel libzstd-devel'
         ;;
     debian)
         image=docker.io/library/debian:stable
         install='apt-get update && apt-get -y install build-essential cmake pkg-config gettext
-                 desktop-file-utils libgtk-4-dev libadwaita-1-dev libflatpak-dev libjson-glib-dev'
+                 desktop-file-utils libgtk-4-dev libadwaita-1-dev libflatpak-dev libjson-glib-dev
+                 zlib1g-dev liblz4-dev liblzma-dev libzstd-dev'
         ;;
     *)
         usage

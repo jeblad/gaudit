@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 #include "dpkg.h"
 
+#include "compressed.h"
+
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>
@@ -142,7 +144,7 @@ static void stanza_reset(stanza *s)
 
 static int read_stanzas(const char *path, stanza_fn fn, void *ctx)
 {
-    FILE *f = fopen(path, "re");
+    gaudit_reader *f = gaudit_reader_open(path);
     if (f == NULL)
         return -1;
 
@@ -152,7 +154,7 @@ static int read_stanzas(const char *path, stanza_fn fn, void *ctx)
     int have = 0, rc = 0;
     stanza_reset(&s);
 
-    while (getline(&line, &cap, f) >= 0) {
+    while (gaudit_reader_getline(f, &line, &cap) >= 0) {
         if (line[0] == '\n' || line[0] == '\r' || line[0] == '\0') {
             if (have && fn(&s, ctx) != 0) {
                 rc = -1;
@@ -177,10 +179,10 @@ static int read_stanzas(const char *path, stanza_fn fn, void *ctx)
     }
     if (rc == 0 && have && fn(&s, ctx) != 0)
         rc = -1;
-    if (ferror(f))
+    if (gaudit_reader_failed(f))
         rc = -1;
     free(line);
-    fclose(f);
+    gaudit_reader_close(f);
     return rc;
 }
 
@@ -739,11 +741,13 @@ gaudit_backend_status gaudit_deb_scan_ex(const char *status_file, const char *li
     unsigned indexes = 0, compressed = 0;
     struct dirent *de;
     while ((de = readdir(dir)) != NULL) {
-        if (strstr(de->d_name, "_Packages.") != NULL) {
-            compressed++;  /* _Packages.lz4 etc. are not read */
+        if (strstr(de->d_name, "_Packages") == NULL)
+            continue;
+        if (!gaudit_reader_supports(de->d_name)) {
+            compressed++;  /* a compression we cannot read, e.g. .bz2 */
             continue;
         }
-        if (!ends_with(de->d_name, "_Packages"))
+        if (!ends_with(de->d_name, "_Packages") && strstr(de->d_name, "_Packages.") == NULL)
             continue;
         char path[PATH_MAX];
         int n = snprintf(path, sizeof path, "%s/%s", lists_dir, de->d_name);

@@ -42,7 +42,8 @@ This file collects decisions that have been made. Do not reopen them without a c
 
 - **One window with a sidebar** (`AdwNavigationSplitView`). The sidebar is on the left in LTR locales and on the right in RTL. GTK handles this automatically, so never hard-code left/right in icons or margins. Narrow windows show sidebar and content one at a time (breakpoint).
 - **Sidebar look:** modelled on Secrets, but calmer. Each icon sits on a filled circle that is grey for pages that exist but are not shown, and accent-coloured only for the open page. Secrets gives every icon its own colour, which is too loud. Hover highlights the row only, so the accent colour always means "you are here".
-- **Sidebar header:** no title, and a primary (hamburger) menu with *Preferences*, *Keyboard Shortcuts* and *About gAudit*. *Preferences* holds gAudit's own settings only. A plugin's parameters live on its page 1, never in the Preferences dialog.
+- **Sidebar header:** the title "Audit Center" (nb: "Auditsenter"), also used as the window title; the app itself is still named gAudit (desktop file, About). A primary (hamburger) menu with *Preferences*, *Keyboard Shortcuts* and *About gAudit*.
+- **Elevated rights are always visible:** a red disc in front of "Audit Center" while the app holds elevated rights, with a tooltip and accessible label ("Running with administrator rights"), so the meaning never depends on colour alone. Proposed meaning (to settle with the helper): while the helper runs, and while polkit still remembers the authorization. *Preferences* holds gAudit's own settings only. A plugin's parameters live on its page 1, never in the Preferences dialog.
 - **The sidebar** holds the Home button and the list of plugins, **one entry per plugin** (e.g. "ClamAV", "Firewall"). Each plugin is the entry point to one part of the audit. Clicking an area on Home goes to that plugin.
 - **Plugins (tasks) are registered modules** with id, title, icon, short and long explanation, dependencies and parameters. Dependencies are expressed as abstract *capabilities* that the distro backend maps to paths and packages.
 - **Page 1 is the main page**, to the right of the sidebar.
@@ -151,12 +152,14 @@ GUI (user)  ──>  orchestrator (user)
 ```
 
 - The GUI always runs as the ordinary user and contains no security logic. It only shows finished verdicts.
-- Privileged operations are done by a small, separate helper started via **polkit/pkexec**, never setuid.
+- Privileged operations are done by a small, separate helper started via **polkit/pkexec**, never setuid. The polkit action uses `auth_admin_keep`: the password is remembered for a few minutes, like sudo in a terminal.
+- The helper (`src/helper/`) runs only as root (pkexec, or root directly in containers), accepts only known commands, reads `PKEXEC_UID` for reporting only, then clears its environment, sets umask 077, changes to `/` and closes every inherited descriptor above 2. Each check runs in a forked child that is sandboxed before any check code runs (`sandbox.c`), writes to a pipe with a 4 KiB limit and a 10 s timeout. `gaudit-helper selftest` reports the privileges the children actually end up with, so the sandbox can be verified.
 - Each check process does this at startup:
   - `setresuid`/`setresgid` to the least privileged user possible
   - drops capabilities it does not need (libcap)
   - sets `PR_SET_NO_NEW_PRIVS`
-  - installs a seccomp filter
+  - installs a seccomp filter: a deny list (ptrace, process_vm_*, mount and friends, chroot, kexec, module loading, bpf, perf_event_open, userfaultfd, keyrings, setns/unshare, swap, handle-based open, iopl/ioperm, clock and host name changes) plus no IPv4/IPv6/packet sockets; denied calls fail with EPERM. A deny list rather than an allow list, because checks only read files and /proc, and an allow list would break with new glibc and kernel versions
+  - either becomes `nobody` (65534, fixed, no NSS) after emptying the capability bounding set, or stays root with exactly the capabilities it needs (bounding set limited to them, nothing inheritable or ambient)
   - closes inherited file descriptors
   - clears the environment completely
 - Programs are started with `execve` and absolute paths, never `system()`/`popen()`, and an inherited `PATH` is never trusted.
@@ -196,7 +199,7 @@ GUI (user)  ──>  orchestrator (user)
 ## Linking and dependencies
 
 - **Everything links dynamically against Ubuntu packages.** Static linking was rejected as the general rule, because it would require us to track security updates in third-party code ourselves. We do not have capacity for that.
-- The helper is kept minimal and depends only on glibc and libsodium.
+- The helper is kept minimal: glibc, libcap and libseccomp, plus libsodium once it verifies the manifest. It is not linked against the backend library.
 - Trust levels:
   1. **Our own code:** verified with the signed manifest.
   2. **Ubuntu packages:** verified with `dpkg --verify`. This catches user-level changes and clumsy root changes, but dpkg's md5sums are not signed after installation. A deeper check following apt's signed chain (`InRelease` → `Packages` → `.deb`) is optional and comes later.
@@ -263,7 +266,8 @@ tests/             hand-written tests
   - build: `cmake --build --preset default`
   - test: `ctest --preset default`
 - Parallelism is capped at 6 build jobs and 4 test jobs, because the machine has only 16 GB RAM. Never use unbounded `-j` or `--parallel`.
-- `GAUDIT_DEVELOPER_BUILD=ON` (in `dev`) reads translations from the build tree. Never use it for packaging.
+- `GAUDIT_DEVELOPER_BUILD=ON` (in `dev`) reads translations, collectors, the orchestrator and the GSettings schema from the build tree, through compiled-in paths (never `GSETTINGS_SCHEMA_DIR` or other environment variables). Never use it for packaging.
+- GSettings schema `io.github.jeblad.gaudit` (`data/gaudit.gschema.xml.in`) holds the window size and state. The window opens the schema through `g_settings_schema_source_lookup` first, so a missing schema means "remember nothing", never the abort `g_settings_new` would cause. The relocatable schema for plugin parameters will go in the same file.
 - Hardening is on for all targets: stack protector, stack clash protection, CET, `_FORTIFY_SOURCE=3` (not in Debug), PIE and full RELRO with `BIND_NOW`.
 - Targeted, hand-written tests over clear execution paths, not a heavyweight test framework.
 - **Other distributions are tested in two layers:**

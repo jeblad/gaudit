@@ -10,6 +10,9 @@
 struct _GauditWindow {
     AdwApplicationWindow parent_instance;
 
+    GSettings *settings;  /* NULL when the schema is not installed */
+    GtkWidget *elevated_marker;  /* red disc before the title */
+
     AdwNavigationSplitView *split;
     GtkListBox *sidebar;
     AdwNavigationView *content;
@@ -519,11 +522,70 @@ static GtkWidget *primary_menu_button(void)
     return button;
 }
 
+/* --- Window size ---------------------------------------------------------- */
+
+/* The app's settings, or NULL if the schema is missing: g_settings_new()
+ * would abort the program then. Developer builds read the schema from the
+ * build tree through a compiled-in path. */
+static GSettings *open_settings(void)
+{
+    GSettingsSchemaSource *source = NULL;
+    g_autoptr(GSettingsSchemaSource) own = NULL;
+    if (GAUDIT_SCHEMA_DIR[0] != '\0') {
+        own = g_settings_schema_source_new_from_directory(GAUDIT_SCHEMA_DIR,
+                                                          g_settings_schema_source_get_default(),
+                                                          FALSE, NULL);
+        source = own;
+    } else {
+        source = g_settings_schema_source_get_default();
+    }
+    if (source == NULL)
+        return NULL;
+    g_autoptr(GSettingsSchema) schema = g_settings_schema_source_lookup(source, GAUDIT_APP_ID, TRUE);
+    return schema != NULL ? g_settings_new_full(schema, NULL, NULL) : NULL;
+}
+
+static gboolean on_close_request(GtkWindow *window, gpointer user_data)
+{
+    (void)user_data;
+    GauditWindow *self = GAUDIT_WINDOW(window);
+    if (self->settings != NULL) {
+        int width = 0, height = 0;
+        gtk_window_get_default_size(window, &width, &height);
+        g_settings_set_boolean(self->settings, "window-maximized", gtk_window_is_maximized(window));
+        if (!gtk_window_is_maximized(window) && width > 0 && height > 0) {
+            g_settings_set_int(self->settings, "window-width", width);
+            g_settings_set_int(self->settings, "window-height", height);
+        }
+    }
+    return FALSE;  /* go on closing */
+}
+
+static void restore_size(GauditWindow *self)
+{
+    int width = 900, height = 600;
+    gboolean maximized = FALSE;
+    if (self->settings != NULL) {
+        width = g_settings_get_int(self->settings, "window-width");
+        height = g_settings_get_int(self->settings, "window-height");
+        maximized = g_settings_get_boolean(self->settings, "window-maximized");
+    }
+    gtk_window_set_default_size(GTK_WINDOW(self), width, height);
+    if (maximized)
+        gtk_window_maximize(GTK_WINDOW(self));
+}
+
+static void gaudit_window_dispose(GObject *object)
+{
+    g_clear_object(&GAUDIT_WINDOW(object)->settings);
+    G_OBJECT_CLASS(gaudit_window_parent_class)->dispose(object);
+}
+
 /* --- Construction --------------------------------------------------------- */
 
 static void gaudit_window_class_init(GauditWindowClass *klass)
 {
-    (void)klass;
+    G_OBJECT_CLASS(klass)->dispose = gaudit_window_dispose;
 }
 
 static void gaudit_window_init(GauditWindow *self)
@@ -532,8 +594,11 @@ static void gaudit_window_init(GauditWindow *self)
     self->have_status = FALSE;
     self->worst = GAUDIT_VERDICT_UNKNOWN;
 
-    gtk_window_set_title(GTK_WINDOW(self), GAUDIT_APP_NAME);
-    gtk_window_set_default_size(GTK_WINDOW(self), 900, 600);
+    /* Translators: Title of the main window and its sidebar. */
+    gtk_window_set_title(GTK_WINDOW(self), _("Audit Center"));
+    self->settings = open_settings();
+    restore_size(self);
+    g_signal_connect(self, "close-request", G_CALLBACK(on_close_request), NULL);
     gtk_widget_set_size_request(GTK_WIDGET(self), 360, 294);
 
     /* Sidebar: Home first, then one row per task. */
@@ -553,8 +618,22 @@ static void gaudit_window_init(GauditWindow *self)
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), GTK_WIDGET(self->sidebar));
 
     /* Sidebar header: no title, primary menu at the end. */
+    /* Sidebar header: "Audit Center", with a red disc in front of it while
+     * the app holds elevated rights, and the primary menu at the end. */
     AdwHeaderBar *sidebar_header = ADW_HEADER_BAR(adw_header_bar_new());
-    adw_header_bar_set_show_title(sidebar_header, FALSE);
+    GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    self->elevated_marker = gtk_image_new_from_icon_name("media-record-symbolic");
+    gtk_widget_add_css_class(self->elevated_marker, "elevated-marker");
+    gtk_widget_set_tooltip_text(self->elevated_marker, _("Running with administrator rights"));
+    gtk_accessible_update_property(GTK_ACCESSIBLE(self->elevated_marker),
+                                   GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                   _("Running with administrator rights"), -1);
+    gtk_widget_set_visible(self->elevated_marker, FALSE);
+    gtk_box_append(GTK_BOX(title_box), self->elevated_marker);
+    GtkWidget *title = gtk_label_new(_("Audit Center"));
+    gtk_widget_add_css_class(title, "title");
+    gtk_box_append(GTK_BOX(title_box), title);
+    adw_header_bar_set_title_widget(sidebar_header, title_box);
     adw_header_bar_pack_end(sidebar_header, primary_menu_button());
 
     AdwToolbarView *sidebar_view = ADW_TOOLBAR_VIEW(adw_toolbar_view_new());
@@ -583,6 +662,12 @@ static void gaudit_window_init(GauditWindow *self)
     adw_application_window_add_breakpoint(ADW_APPLICATION_WINDOW(self), narrow);
 
     navigate(self, 0, FALSE);
+}
+
+void gaudit_window_set_elevated(GauditWindow *self, gboolean elevated)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    gtk_widget_set_visible(self->elevated_marker, elevated);
 }
 
 GauditWindow *gaudit_window_new(GtkApplication *app)

@@ -14,6 +14,9 @@ G_DECLARE_FINAL_TYPE(GauditWindow, gaudit_window, GAUDIT, WINDOW, AdwApplication
 
 GauditWindow *gaudit_window_new(GtkApplication *app);
 
+/* Show or hide the red disc before the title that marks elevated rights. */
+void gaudit_window_set_elevated(GauditWindow *self, gboolean elevated);
+
 /* Status for Home: probe results plus the overall verdict from the model. */
 void gaudit_window_show_status(GauditWindow *self,
                                const gaudit_probe_result results[GAUDIT_PROBE_COUNT],

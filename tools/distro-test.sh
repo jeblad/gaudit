@@ -109,6 +109,8 @@ podman run --rm --pull=newer \
         cmake --build /build -j 4
         ctest --test-dir /build --output-on-failure -j 2
         $prepare
+        echo '== gaudit-helper selftest (root)'
+        /build/src/helper/gaudit-helper selftest || echo \"exit \$?\"
         echo '== gaudit-probe-dump (root)'
         /build/tools/gaudit-probe-dump || true
         # Status probes are meant to run without privileges.

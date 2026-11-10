@@ -84,6 +84,11 @@ add_executable(test_probe_io test_probe_io.c)
 target_link_libraries(test_probe_io PRIVATE gaudit_probe)
 add_test(NAME probe-io COMMAND test_probe_io)
 
+add_executable(test_sandbox test_sandbox.c)
+target_compile_definitions(test_sandbox PRIVATE _GNU_SOURCE)
+target_link_libraries(test_sandbox PRIVATE gaudit_sandbox)
+add_test(NAME sandbox COMMAND test_sandbox)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

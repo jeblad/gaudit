@@ -43,6 +43,8 @@ static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)
 
 static const gaudit_pkg_backend generic_pkg = {
     .name = "generic",
+    .own_package_system = -1,
+    .package_systems_present = gaudit_package_systems_present_here,
     .capability = capability,
     .flatpak_state = flatpak_state,
 };

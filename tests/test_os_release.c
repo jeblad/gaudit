@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* os-release parsing, the display name, and choosing a backend. */
+/* os-release parsing, the display name, and the backend a distribution
+ * leads us to expect (expectation only; detection chooses the backend). */
 #include "os-release.h"
 
 #include <stdio.h>
@@ -23,7 +24,7 @@ static const char *describe(const char *file, const gaudit_pkg_backend **backend
     static char buf[256];
     gaudit_os_release os;
     int ok = gaudit_os_release_read(file, &os) == 0;
-    *backend = gaudit_pkg_backend_select(ok ? &os : NULL);
+    *backend = gaudit_pkg_backend_expected_for(ok ? &os : NULL);
     gaudit_os_release_describe(ok ? &os : NULL, buf, sizeof buf);
     return buf;
 }
@@ -39,26 +40,26 @@ int main(void)
     CHECK(b == gaudit_pkg_backend_debian());
 
     CHECK(strcmp(describe(DATA "/fedora", &b), "Fedora Linux 44 Workstation Edition") == 0);
-    CHECK(b == gaudit_pkg_backend_generic());
+    CHECK(b == NULL);
 
     CHECK(strcmp(describe(DATA "/arch", &b), "Arch Linux") == 0);  /* no VERSION_ID */
-    CHECK(b == gaudit_pkg_backend_generic());
+    CHECK(b == NULL);
 
     CHECK(strcmp(describe(DATA "/tumbleweed", &b), "openSUSE Tumbleweed 20261101") == 0);
-    CHECK(b == gaudit_pkg_backend_generic());
+    CHECK(b == NULL);
 
     /* Whole words only: "debianish"/"notdebian" are not Debian. Escapes. */
     CHECK(strcmp(describe(DATA "/tricky", &b), "Quote \"test\" \\ and $x") == 0);
-    CHECK(b == gaudit_pkg_backend_generic());
+    CHECK(b == NULL);
 
     /* Control characters are dropped. */
     CHECK(strcmp(describe(DATA "/control", &b), "BadName 1") == 0);
 
     /* Unknown: empty or missing file. */
     CHECK(strcmp(describe(DATA "/empty", &b), "") == 0);
-    CHECK(b == gaudit_pkg_backend_generic());
+    CHECK(b == NULL);
     CHECK(strcmp(describe(DATA "/no-such-file", &b), "") == 0);
-    CHECK(b == gaudit_pkg_backend_generic());
+    CHECK(b == NULL);
 
     /* Short names. */
     gaudit_os_release u;

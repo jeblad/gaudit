@@ -9,9 +9,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define MAX_VERSION  256
 #define MAX_PACKAGES 100000
+
+int gaudit_deb_present(const char *status_file, const char *dpkg_bin)
+{
+    struct stat st;
+    return status_file != NULL && dpkg_bin != NULL
+        && stat(status_file, &st) == 0 && S_ISREG(st.st_mode)
+        && access(status_file, R_OK) == 0 && access(dpkg_bin, X_OK) == 0;
+}
 
 /* --- Version comparison (the algorithm of dpkg's verrevcmp) --------------- */
 

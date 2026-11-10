@@ -76,6 +76,13 @@ static gaudit_backend_status fake_flatpak(gaudit_flatpak_state *out)
     return fake.flatpak_status;
 }
 
+static unsigned fake_present_mask;
+
+static unsigned fake_present(void)
+{
+    return fake_present_mask;
+}
+
 static const gaudit_pkg_backend fake_pkg = {
     .name = "fake",
     .capability = fake_capability,
@@ -118,7 +125,7 @@ int main(void)
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
         CHECK(r[k].kind == (gaudit_probe_kind)k);
         CHECK(r[k].id != NULL && strncmp(r[k].id, "status.", 7) == 0);
-        CHECK(r[k].verdict == GAUDIT_VERDICT_OK);
+        CHECK(!r[k].applicable || r[k].verdict == GAUDIT_VERDICT_OK);
     }
     CHECK(r[GAUDIT_PROBE_PACKAGE_INDEX].age_seconds == DAY / 2);
 
@@ -199,6 +206,47 @@ int main(void)
     gaudit_probe_collect(&fake_pkg, NOW, r);
     CHECK(!r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported);
     CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].verdict == GAUDIT_VERDICT_UNKNOWN);
+
+    /* Package systems this backend does not check. */
+    static const gaudit_pkg_backend deb_like = {
+        .name = "deb-like", .capability = fake_capability,
+        .own_package_system = GAUDIT_PKGSYS_DPKG, .package_systems_present = fake_present,
+    };
+    static const gaudit_pkg_backend generic_like = {
+        .name = "generic-like", .capability = fake_capability,
+        .own_package_system = -1, .package_systems_present = fake_present,
+    };
+    fake_present_mask = 1u << GAUDIT_PKGSYS_DPKG;                    /* only its own */
+    gaudit_probe_collect(&deb_like, NOW, r);
+    CHECK(!r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable);
+    fake_present_mask = (1u << GAUDIT_PKGSYS_DPKG) | (1u << GAUDIT_PKGSYS_RPM) | (1u << GAUDIT_PKGSYS_NIX);
+    gaudit_probe_collect(&deb_like, NOW, r);
+    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable);
+    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].verdict == GAUDIT_VERDICT_WARNING);
+    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].mask
+          == ((1u << GAUDIT_PKGSYS_RPM) | (1u << GAUDIT_PKGSYS_NIX)));
+    fake_present_mask = 1u << GAUDIT_PKGSYS_PORTAGE;                 /* Gentoo, no backend */
+    gaudit_probe_collect(&generic_like, NOW, r);
+    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable);
+    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].mask == 1u << GAUDIT_PKGSYS_PORTAGE);
+    fake_present_mask = 0;
+    gaudit_probe_collect(&generic_like, NOW, r);
+    CHECK(!r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable);
+
+    /* Expectation from the distribution vs what was detected. */
+    static const gaudit_pkg_backend expected_pkg = { .name = "expected", .package_system = "dpkg/apt" };
+    all_good();
+    gaudit_probe_collect_ex(&fake_pkg, &expected_pkg, NOW, r);  /* expected one not found */
+    CHECK(r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
+    CHECK(r[GAUDIT_PROBE_PACKAGE_SYSTEM].verdict == GAUDIT_VERDICT_WARNING);
+    CHECK(r[GAUDIT_PROBE_PACKAGE_SYSTEM].detail != NULL
+          && strcmp(r[GAUDIT_PROBE_PACKAGE_SYSTEM].detail, "dpkg/apt") == 0);
+    gaudit_probe_collect_ex(&fake_pkg, &fake_pkg, NOW, r);      /* as expected */
+    CHECK(!r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
+    gaudit_probe_collect_ex(&fake_pkg, NULL, NOW, r);           /* no expectation */
+    CHECK(!r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
+    gaudit_probe_collect(&fake_pkg, NOW, r);
+    CHECK(!r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
 
     /* No backend: everything unknown, ids still set. */
     gaudit_probe_collect(NULL, NOW, r);

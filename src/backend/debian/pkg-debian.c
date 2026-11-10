@@ -126,8 +126,17 @@ static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)
                                     FLATPAK_TIMEOUT_MS, out);
 }
 
+static int detect(void)
+{
+    return gaudit_deb_present("/var/lib/dpkg/status", "/usr/bin/dpkg");
+}
+
 static const gaudit_pkg_backend debian_pkg = {
     .name = "debian",
+    .package_system = "dpkg/apt",
+    .detect = detect,
+    .own_package_system = GAUDIT_PKGSYS_DPKG,
+    .package_systems_present = gaudit_package_systems_present_here,
     .manual_install_command = "sudo apt install",
     .fallback_install_argv = fallback_argv,
     .capability = capability,

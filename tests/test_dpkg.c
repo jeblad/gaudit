@@ -32,6 +32,13 @@ static void count_reported(const char *name, const char *arch, const char *versi
 
 int main(void)
 {
+    /* Feature detection. */
+    CHECK(gaudit_deb_present(DATA "/status", "/bin/sh") == 1);
+    CHECK(gaudit_deb_present(DATA "/no-such-status", "/bin/sh") == 0);
+    CHECK(gaudit_deb_present(DATA "/lists", "/bin/sh") == 0);          /* a directory */
+    CHECK(gaudit_deb_present(DATA "/status", "/nonexistent/dpkg") == 0);
+    CHECK(gaudit_deb_present(NULL, "/bin/sh") == 0);
+
     /* Version ordering, as dpkg --compare-versions. */
     EQUAL("1.0-1", "1.0-1");
     EQUAL("0:1.0", "1.0");

@@ -21,10 +21,10 @@ typedef struct {
  * 0 on success, -1 if the file is missing, not a regular file or too large. */
 int gaudit_os_release_read(const char *path, gaudit_os_release *out);
 
-/* Debian backend if ID or ID_LIKE names debian or ubuntu, otherwise the
- * generic one (also for os == NULL). Recognising a distribution does not
- * mean every check works there: each backend function reports itself. */
-const gaudit_pkg_backend *gaudit_pkg_backend_select(const gaudit_os_release *os);
+/* The backend this distribution leads us to expect: Debian if ID or ID_LIKE
+ * names debian or ubuntu, otherwise NULL (no expectation; also for
+ * os == NULL). This never chooses the backend; feature detection does. */
+const gaudit_pkg_backend *gaudit_pkg_backend_expected_for(const gaudit_os_release *os);
 
 /* "Ubuntu 26.10 Stonking Stoat": NAME VERSION_ID, plus the part of VERSION in
  * parentheses (the code name) without the parentheses. Else PRETTY_NAME,

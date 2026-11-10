@@ -28,6 +28,20 @@ typedef struct {
     unsigned eol_pinned;  /* end-of-life runtimes no app uses, kept (pinned) */
 } gaudit_flatpak_state;
 
+/* Package systems gAudit can recognise on disk (not necessarily check). */
+typedef enum {
+    GAUDIT_PKGSYS_DPKG = 0,
+    GAUDIT_PKGSYS_RPM,
+    GAUDIT_PKGSYS_PACMAN,
+    GAUDIT_PKGSYS_PKGTOOLS,  /* Slackware */
+    GAUDIT_PKGSYS_APK,       /* Alpine */
+    GAUDIT_PKGSYS_PORTAGE,   /* Gentoo */
+    GAUDIT_PKGSYS_XBPS,      /* Void */
+    GAUDIT_PKGSYS_NIX,
+    GAUDIT_PKGSYS_GUIX,
+    GAUDIT_PKGSYS_COUNT
+} gaudit_package_system;
+
 /* An abstract capability a task depends on (e.g. "clamav"), mapped by the
  * backend to concrete programs and the packages that provide them. */
 typedef struct gaudit_capability {
@@ -38,6 +52,20 @@ typedef struct gaudit_capability {
 
 typedef struct gaudit_pkg_backend {
     const char *name;
+
+    /* Shown to the user, e.g. "dpkg/apt". NULL for the generic backend. */
+    const char *package_system;
+
+    /* Feature detection: 1 if this backend's package system is present.
+     * The backend is chosen by this, never by the distribution's name. */
+    int (*detect)(void);
+
+    /* The package system this backend checks (gaudit_package_system), or -1. */
+    int own_package_system;
+
+    /* Bitmask (1 << gaudit_package_system) of package systems with
+     * installed packages on this machine. */
+    unsigned (*package_systems_present)(void);
 
     /* Shown to the user for manual installation, followed by package names. */
     const char *manual_install_command;
@@ -71,8 +99,14 @@ const gaudit_pkg_backend *gaudit_pkg_backend_debian(void);
 /* Any other distribution: common paths and Flatpak only. */
 const gaudit_pkg_backend *gaudit_pkg_backend_generic(void);
 
-/* The backend for the running system, chosen from /etc/os-release. */
+/* The backend for the running system, chosen by feature detection: the
+ * first backend whose package system is present, else the generic one. */
 const gaudit_pkg_backend *gaudit_pkg_backend_default(void);
+
+/* The backend /etc/os-release leads us to expect (e.g. Debian for Ubuntu),
+ * or NULL when the distribution gives no expectation. Only used to warn
+ * when the expected package system is missing. */
+const gaudit_pkg_backend *gaudit_pkg_backend_expected(void);
 
 /* For display only; each is "" when it cannot be determined.
  *   host    host name
@@ -80,6 +114,14 @@ const gaudit_pkg_backend *gaudit_pkg_backend_default(void);
  *   full    name, version and code name ("Ubuntu 26.10 Stonking Stoat") */
 void gaudit_system_describe(char *host, size_t host_len, char *name, size_t name_len,
                             char *full, size_t full_len);
+
+/* Display name, e.g. "rpm" or "pkgtools (Slackware)". Not translated. */
+const char *gaudit_package_system_label(gaudit_package_system s);
+
+/* Package systems with installed packages under root ("" or NULL: this
+ * machine), detected by their databases on disk. Bitmask as above. */
+unsigned gaudit_package_systems_present(const char *root);
+unsigned gaudit_package_systems_present_here(void);
 
 /* 1 if every path of the capability exists and is executable, else 0.
  * Presentation only: the helper re-checks anything that matters. */

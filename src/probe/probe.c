@@ -104,8 +104,30 @@ static void flatpak(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
     }
 }
 
+/* Package systems with installed packages that this backend does not check:
+ * their packages are invisible to every other check, so say so. */
+static void other_package_systems(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
+{
+    if (pkg->package_systems_present == NULL)
+        return;  /* stays not applicable */
+    unsigned mask = pkg->package_systems_present();
+    if (pkg->own_package_system >= 0 && pkg->own_package_system < GAUDIT_PKGSYS_COUNT)
+        mask &= ~(1u << pkg->own_package_system);
+    if (mask == 0)
+        return;
+    r->applicable = 1;
+    r->mask = mask;
+    r->verdict = GAUDIT_VERDICT_WARNING;
+}
+
 void gaudit_probe_collect(const gaudit_pkg_backend *pkg, int64_t now,
                           gaudit_probe_result out[GAUDIT_PROBE_COUNT])
+{
+    gaudit_probe_collect_ex(pkg, NULL, now, out);
+}
+
+void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_backend *expected,
+                             int64_t now, gaudit_probe_result out[GAUDIT_PROBE_COUNT])
 {
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
         out[k].kind = (gaudit_probe_kind)k;
@@ -117,6 +139,18 @@ void gaudit_probe_collect(const gaudit_pkg_backend *pkg, int64_t now,
         out[k].applicable = 1;
         out[k].missing_capability = NULL;
         out[k].unsupported = 0;
+        out[k].detail = NULL;
+        out[k].mask = 0;
+    }
+    out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].id = "status.other-package-systems";
+    out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable = 0;
+    out[GAUDIT_PROBE_PACKAGE_SYSTEM].id = "status.package-system";
+    out[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable = 0;
+    if (expected != NULL && expected != pkg) {
+        gaudit_probe_result *r = &out[GAUDIT_PROBE_PACKAGE_SYSTEM];
+        r->applicable = 1;
+        r->verdict = GAUDIT_VERDICT_WARNING;
+        r->detail = expected->package_system;
     }
     out[GAUDIT_PROBE_ANTIVIRUS].id = "status.antivirus";
     out[GAUDIT_PROBE_FIREWALL].id = "status.firewall";
@@ -136,4 +170,5 @@ void gaudit_probe_collect(const gaudit_pkg_backend *pkg, int64_t now,
     package_state(pkg, &out[GAUDIT_PROBE_PENDING_UPGRADES],
                   &out[GAUDIT_PROBE_OBSOLETE_PACKAGES]);
     flatpak(pkg, &out[GAUDIT_PROBE_FLATPAK]);
+    other_package_systems(pkg, &out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS]);
 }

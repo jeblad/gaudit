@@ -37,6 +37,12 @@ target_compile_definitions(test_os_release PRIVATE
 target_link_libraries(test_os_release PRIVATE gaudit_backend)
 add_test(NAME os-release COMMAND test_os_release)
 
+add_executable(test_package_systems test_package_systems.c)
+target_compile_definitions(test_package_systems PRIVATE
+  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_link_libraries(test_package_systems PRIVATE gaudit_backend)
+add_test(NAME package-systems COMMAND test_package_systems)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

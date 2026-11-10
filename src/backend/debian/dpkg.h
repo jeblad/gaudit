@@ -5,6 +5,9 @@
 
 #include "gaudit/backend.h"
 
+/* 1 if status_file is a regular, readable file and dpkg_bin is executable. */
+int gaudit_deb_present(const char *status_file, const char *dpkg_bin);
+
 /* dpkg's version ordering (epoch:upstream-revision, '~' sorts first).
  * Returns <0, 0 or >0. */
 int gaudit_deb_version_compare(const char *a, const char *b);

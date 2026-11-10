@@ -87,7 +87,7 @@ static int has_word(const char *list, const char *word)
     return 0;
 }
 
-const gaudit_pkg_backend *gaudit_pkg_backend_select(const gaudit_os_release *os)
+const gaudit_pkg_backend *gaudit_pkg_backend_expected_for(const gaudit_os_release *os)
 {
     if (os != NULL) {
         static const char *const debian_family[] = { "debian", "ubuntu", NULL };
@@ -95,7 +95,7 @@ const gaudit_pkg_backend *gaudit_pkg_backend_select(const gaudit_os_release *os)
             if (strcmp(os->id, *w) == 0 || has_word(os->id_like, *w))
                 return gaudit_pkg_backend_debian();
     }
-    return gaudit_pkg_backend_generic();
+    return NULL;
 }
 
 void gaudit_os_release_describe(const gaudit_os_release *os, char *buf, size_t len)
@@ -141,10 +141,22 @@ const gaudit_pkg_backend *gaudit_pkg_backend_default(void)
 {
     static const gaudit_pkg_backend *chosen;
     if (chosen == NULL) {
-        gaudit_os_release os;
-        chosen = gaudit_pkg_backend_select(read_system_os_release(&os) ? &os : NULL);
+        /* In order of preference; more backends go here. */
+        const gaudit_pkg_backend *candidates[] = { gaudit_pkg_backend_debian(), NULL };
+        chosen = gaudit_pkg_backend_generic();
+        for (const gaudit_pkg_backend **b = candidates; *b != NULL; b++)
+            if ((*b)->detect != NULL && (*b)->detect()) {
+                chosen = *b;
+                break;
+            }
     }
     return chosen;
+}
+
+const gaudit_pkg_backend *gaudit_pkg_backend_expected(void)
+{
+    gaudit_os_release os;
+    return gaudit_pkg_backend_expected_for(read_system_os_release(&os) ? &os : NULL);
 }
 
 void gaudit_system_describe(char *host, size_t host_len, char *name, size_t name_len,

@@ -15,7 +15,9 @@ extern "C" {
 
 /* Also the display order on Home. */
 typedef enum {
-    GAUDIT_PROBE_ANTIVIRUS = 0,     /* some known antivirus program is installed */
+    GAUDIT_PROBE_PACKAGE_SYSTEM = 0, /* the package system the distribution implies is present */
+    GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS, /* package systems present that are not checked */
+    GAUDIT_PROBE_ANTIVIRUS,         /* some known antivirus program is installed */
     GAUDIT_PROBE_FIREWALL,          /* some known firewall is installed */
     GAUDIT_PROBE_AUTO_UPDATES,      /* updates are installed automatically */
     GAUDIT_PROBE_PACKAGE_INDEX,     /* when updates were last checked for */
@@ -39,11 +41,20 @@ typedef struct {
     int applicable;           /* 0: does not apply here (e.g. no Flatpak), not shown */
     const char *missing_capability;  /* set when software for the check is missing */
     int unsupported;          /* 1: this check is not supported on this system (yet) */
+    const char *detail;       /* _PACKAGE_SYSTEM: the expected package system, e.g. "dpkg/apt" */
+    unsigned mask;            /* _OTHER_PACKAGE_SYSTEMS: 1 << gaudit_package_system */
 } gaudit_probe_result;
 
 /* Fills out[kind] for every kind. now: seconds since epoch. */
 void gaudit_probe_collect(const gaudit_pkg_backend *pkg, int64_t now,
                           gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
+
+/* As above. expected: the backend the distribution implies (may be NULL).
+ * If it differs from pkg, the expected package system was not found:
+ * GAUDIT_PROBE_PACKAGE_SYSTEM becomes a warning. Otherwise that row does
+ * not apply (the Home heading already says what was found). */
+void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_backend *expected,
+                             int64_t now, gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
 
 #ifdef __cplusplus
 }

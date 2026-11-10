@@ -107,6 +107,28 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
         return probe_title(r);
     }
     switch (r->kind) {
+    case GAUDIT_PROBE_PACKAGE_SYSTEM: {
+        char name[128], full[8];
+        gaudit_system_describe(NULL, 0, name, sizeof name, full, sizeof full);
+        /* Translators: "This looks like Ubuntu, but its package system (dpkg/apt) was not found". */
+        *subtitle = g_strdup_printf(_("This looks like %s, but its package system (%s) was not found"),
+                                    name[0] != '\0' ? name : _("a known distribution"),
+                                    r->detail != NULL ? r->detail : "?");
+        return _("Package system");
+    }
+
+    case GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS: {
+        g_autoptr(GPtrArray) names = g_ptr_array_new();
+        for (int s = 0; s < GAUDIT_PKGSYS_COUNT; s++)
+            if (r->mask & (1u << s))
+                g_ptr_array_add(names, (gpointer)gaudit_package_system_label((gaudit_package_system)s));
+        g_ptr_array_add(names, NULL);
+        g_autofree char *list = g_strjoinv(", ", (char **)names->pdata);
+        /* Translators: %s is a list of package systems, e.g. "rpm, Nix". */
+        *subtitle = g_strdup_printf(_("Packages managed by %s are not checked"), list);
+        return _("Other package systems");
+    }
+
     case GAUDIT_PROBE_ANTIVIRUS:
         *subtitle = g_strdup(r->verdict == GAUDIT_VERDICT_OK
                              ? _("An antivirus program is installed")

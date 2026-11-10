@@ -20,8 +20,8 @@ G_DEFINE_FINAL_TYPE(GauditApp, gaudit_app, ADW_TYPE_APPLICATION)
 static void refresh_status(GauditApp *self, GauditWindow *view)
 {
     gaudit_probe_result results[GAUDIT_PROBE_COUNT];
-    gaudit_probe_collect(gaudit_pkg_backend_default(),
-                         g_get_real_time() / G_USEC_PER_SEC, results);
+    gaudit_probe_collect_ex(gaudit_pkg_backend_default(), gaudit_pkg_backend_expected(),
+                            g_get_real_time() / G_USEC_PER_SEC, results);
 
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
         if (results[k].applicable

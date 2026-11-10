@@ -97,6 +97,7 @@ static const gaudit_pkg_backend arch_pkg = {
     .detect = detect,
     .own_package_system = GAUDIT_PKGSYS_PACMAN,
     .package_systems_present = gaudit_package_systems_present_here,
+    .private_files = gaudit_private_files_here,
     .manual_install_command = "sudo pacman -S --needed",
     .fallback_install_argv = fallback_argv,
     .capability = capability,

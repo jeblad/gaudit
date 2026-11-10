@@ -2,6 +2,7 @@
 #include "config.h"
 
 #include <glib/gi18n.h>
+#include <string.h>
 
 #include "gaudit-app.h"
 #include "gaudit-window.h"
@@ -20,46 +21,56 @@ G_DEFINE_FINAL_TYPE(GauditApp, gaudit_app, ADW_TYPE_APPLICATION)
  *
  * The probes run in gaudit-orchestrator, a separate process started for
  * each refresh, so the GUI never blocks and never runs check code itself.
+ * It writes one line per result as soon as that result is known, and each
+ * Home row is filled in as its line arrives.
+ *
  * Its output is untrusted input: at most MAX_OUTPUT bytes, a timeout, and
- * a strict parser. Any failure shows every row as unknown, never a guess. */
+ * a strict parser for every line. A line that breaks the protocol (bad
+ * format, a kind repeated, too much output) means none of it can be
+ * trusted: every row becomes unknown, also those already shown. A row
+ * whose answer never came (timeout, a task that failed) becomes unknown on
+ * its own. Never a guess. */
 
 #define ORCHESTRATOR_TIMEOUT_S 60
 #define MAX_OUTPUT (64 * 1024)
+#define MAX_LINE 1024
 #define READ_CHUNK 8192
 
 typedef struct {
     GauditApp *app;
     GauditWindow *view;
     GSubprocess *proc;
-    GByteArray *output;
+    GCancellable *cancel;  /* stops reading at the timeout */
+    GByteArray *pending;  /* bytes after the last complete line */
+    gsize total;
     guint timeout_id;
-    gboolean failed;
+    gboolean broken;      /* protocol violated: trust nothing */
+    gaudit_probe_result results[GAUDIT_PROBE_COUNT];
+    gboolean seen[GAUDIT_PROBE_COUNT];
 } RefreshJob;
 
 static void refresh_finish(RefreshJob *job)
 {
-    gaudit_probe_result results[GAUDIT_PROBE_COUNT];
-    int ok = 0;
-
-    if (!job->failed) {
-        g_byte_array_append(job->output, (const guint8 *)"", 1);  /* NUL-terminate */
-        ok = gaudit_probe_parse_all((const char *)job->output->data, results) == 0;
+    gaudit_probe_result defaults[GAUDIT_PROBE_COUNT];
+    gaudit_probe_init(defaults);
+    if (job->broken)
+        g_warning("gaudit: the status check broke the protocol; showing every row as unknown");
+    for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
+        if (job->broken || !job->seen[k]) {
+            job->results[k] = defaults[k];
+            gaudit_window_show_probe(job->view, &job->results[k]);
+        }
+        const gaudit_probe_result *r = &job->results[k];
+        if (r->applicable && gaudit_model_add_finding(job->app->model, r->id, r->verdict) != GAUDIT_OK)
+            g_warning("gaudit: could not record finding %s", r->id);
     }
-    if (!ok) {
-        g_warning("gaudit: the status check failed; showing every row as unknown");
-        gaudit_probe_collect(NULL, 0, results);
-    }
-
-    for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
-        if (results[k].applicable
-            && gaudit_model_add_finding(job->app->model, results[k].id, results[k].verdict) != GAUDIT_OK)
-            g_warning("gaudit: could not record finding %s", results[k].id);
-    gaudit_window_show_status(job->view, results, gaudit_model_worst(job->app->model));
+    gaudit_window_finish_status(job->view, gaudit_model_worst(job->app->model));
 
     if (job->timeout_id != 0)
         g_source_remove(job->timeout_id);
     g_clear_object(&job->proc);
-    g_byte_array_unref(job->output);
+    g_clear_object(&job->cancel);
+    g_byte_array_unref(job->pending);
     g_object_unref(job->view);
     g_application_release(G_APPLICATION(job->app));
     g_object_unref(job->app);
@@ -70,8 +81,8 @@ static gboolean on_refresh_timeout(gpointer user_data)
 {
     RefreshJob *job = user_data;
     job->timeout_id = 0;
-    job->failed = TRUE;
-    g_subprocess_force_exit(job->proc);  /* the read ends; refresh_finish follows */
+    g_cancellable_cancel(job->cancel);   /* the read ends; refresh_finish follows */
+    g_subprocess_force_exit(job->proc);
     return G_SOURCE_REMOVE;
 }
 
@@ -79,9 +90,38 @@ static void on_orchestrator_exited(GObject *source, GAsyncResult *res, gpointer 
 {
     RefreshJob *job = user_data;
     g_autoptr(GError) error = NULL;
+    /* A failed exit only means some answers are missing; those rows become
+     * unknown in refresh_finish. */
     if (!g_subprocess_wait_check_finish(G_SUBPROCESS(source), res, &error))
-        job->failed = TRUE;
+        g_debug("gaudit: orchestrator: %s", error->message);
+    if (job->pending->len > 0)
+        job->broken = TRUE;  /* output ended in the middle of a line */
     refresh_finish(job);
+}
+
+/* Parses and shows every complete line in pending; FALSE on a violation. */
+static gboolean take_lines(RefreshJob *job)
+{
+    for (;;) {
+        const guint8 *data = job->pending->data;
+        const guint8 *nl = memchr(data, '\n', job->pending->len);
+        if (nl == NULL)
+            return job->pending->len < MAX_LINE;
+        gsize len = (gsize)(nl - data);
+        if (len >= MAX_LINE || memchr(data, '\0', len) != NULL)
+            return FALSE;
+        char line[MAX_LINE];
+        memcpy(line, data, len);
+        line[len] = '\0';
+        g_byte_array_remove_range(job->pending, 0, (guint)len + 1);
+
+        gaudit_probe_result r;
+        if (gaudit_probe_parse_line(line, &r) != 0 || job->seen[r.kind])
+            return FALSE;
+        job->seen[r.kind] = TRUE;
+        job->results[r.kind] = r;
+        gaudit_window_show_probe(job->view, &r);
+    }
 }
 
 static void on_output_read(GObject *source, GAsyncResult *res, gpointer user_data)
@@ -91,13 +131,17 @@ static void on_output_read(GObject *source, GAsyncResult *res, gpointer user_dat
     g_autoptr(GBytes) bytes = g_input_stream_read_bytes_finish(G_INPUT_STREAM(source), res, &error);
 
     gsize n = bytes != NULL ? g_bytes_get_size(bytes) : 0;
-    if (bytes == NULL || job->output->len + n > MAX_OUTPUT) {
-        job->failed = TRUE;
-        g_subprocess_force_exit(job->proc);
-    } else if (n > 0) {
-        g_byte_array_append(job->output, g_bytes_get_data(bytes, NULL), (guint)n);
+    if (n > 0 && !job->broken) {
+        job->total += n;
+        g_byte_array_append(job->pending, g_bytes_get_data(bytes, NULL), (guint)n);
+        if (job->total > MAX_OUTPUT || !take_lines(job)) {
+            job->broken = TRUE;
+            g_subprocess_force_exit(job->proc);
+        }
+    }
+    if (n > 0 && !job->broken) {
         g_input_stream_read_bytes_async(G_INPUT_STREAM(source), READ_CHUNK, G_PRIORITY_DEFAULT,
-                                        NULL, on_output_read, job);
+                                        job->cancel, on_output_read, job);
         return;
     }
     /* End of output (or failure): wait for the process to exit. */
@@ -109,8 +153,10 @@ static void refresh_status(GauditApp *self, GauditWindow *view)
     RefreshJob *job = g_new0(RefreshJob, 1);
     job->app = g_object_ref(self);
     job->view = g_object_ref(view);
-    job->output = g_byte_array_new();
+    job->pending = g_byte_array_new();
+    job->cancel = g_cancellable_new();
     g_application_hold(G_APPLICATION(self));  /* do not quit halfway */
+    gaudit_window_begin_status(view);
 
     /* Nothing from our environment is passed on, except HOME. */
     g_autoptr(GSubprocessLauncher) launcher =
@@ -123,13 +169,12 @@ static void refresh_status(GauditApp *self, GauditWindow *view)
     job->proc = g_subprocess_launcher_spawn(launcher, &error, GAUDIT_ORCHESTRATOR_PATH, NULL);
     if (job->proc == NULL) {
         g_warning("gaudit: could not start %s: %s", GAUDIT_ORCHESTRATOR_PATH, error->message);
-        job->failed = TRUE;
         refresh_finish(job);
         return;
     }
     job->timeout_id = g_timeout_add_seconds(ORCHESTRATOR_TIMEOUT_S, on_refresh_timeout, job);
     g_input_stream_read_bytes_async(g_subprocess_get_stdout_pipe(job->proc), READ_CHUNK,
-                                    G_PRIORITY_DEFAULT, NULL, on_output_read, job);
+                                    G_PRIORITY_DEFAULT, job->cancel, on_output_read, job);
 }
 
 /* Sidebar icons sit on a filled circle. It is grey, like the row

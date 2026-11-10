@@ -114,6 +114,34 @@ int main(void)
     CHECK(gaudit_probe_parse_all("", one) != 0);
     CHECK(gaudit_probe_parse_all(NULL, one) != 0);
 
+    /* One line at a time, as the GUI reads them. */
+    gaudit_probe_result lr;
+    snprintf(line, sizeof line, BASE "\n", "2", "0", "\"\"");
+    CHECK(gaudit_probe_parse_line(line, &lr) == 0);
+    CHECK(lr.kind == 3 && lr.verdict == GAUDIT_VERDICT_WARNING && lr.id != NULL);
+    line[strlen(line) - 1] = '\0';                        /* without the newline too */
+    CHECK(gaudit_probe_parse_line(line, &lr) == 0);
+    char two[4096];
+    snprintf(two, sizeof two, "%s\n%s", line, line);     /* never two lines at once */
+    CHECK(gaudit_probe_parse_line(two, &lr) != 0);
+    CHECK(gaudit_probe_parse_line("", &lr) != 0);
+    CHECK(gaudit_probe_parse_line("\n", &lr) != 0);
+    CHECK(gaudit_probe_parse_line(NULL, &lr) != 0);
+
+    /* The tasks cover every kind exactly once, so every row gets one answer. */
+    unsigned all = 0;
+    int overlap = 0;
+    for (int t = 0; t < GAUDIT_PROBE_TASK_COUNT; t++) {
+        unsigned kinds = gaudit_probe_task_kinds(t);
+        CHECK(kinds != 0);
+        overlap |= (all & kinds) != 0;
+        all |= kinds;
+    }
+    CHECK(!overlap);
+    CHECK(all == (1u << GAUDIT_PROBE_COUNT) - 1);
+    CHECK(gaudit_probe_task_kinds(GAUDIT_PROBE_TASK_COUNT) == 0);
+    CHECK(gaudit_probe_task_kinds(-1) == 0);
+
     if (failures)
         fprintf(stderr, "%d check(s) failed\n", failures);
     return failures ? 1 : 0;

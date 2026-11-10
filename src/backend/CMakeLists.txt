@@ -5,6 +5,8 @@ add_library(gaudit_backend STATIC
   capability.c
   os-release.c
   package-systems.c
+  private-files.c
+  secret-scan.c
   collector.c
   flatpak-runner.c
   snap-runner.c

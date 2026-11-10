@@ -18,8 +18,11 @@ GauditWindow *gaudit_window_new(GtkApplication *app);
 void gaudit_window_set_elevated(GauditWindow *self, gboolean elevated);
 
 /* Status for Home: probe results plus the overall verdict from the model. */
-void gaudit_window_show_status(GauditWindow *self,
-                               const gaudit_probe_result results[GAUDIT_PROBE_COUNT],
-                               gaudit_verdict worst);
+/* Status on Home, row by row: begin shows every row as being checked,
+ * show_probe fills in one row as its answer arrives, finish sets the
+ * summary once every row has its answer. */
+void gaudit_window_begin_status(GauditWindow *self);
+void gaudit_window_show_probe(GauditWindow *self, const gaudit_probe_result *result);
+void gaudit_window_finish_status(GauditWindow *self, gaudit_verdict worst);
 
 G_END_DECLS

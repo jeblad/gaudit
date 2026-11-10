@@ -18,9 +18,15 @@ struct _GauditWindow {
     AdwNavigationView *content;
 
     const gaudit_pkg_backend *pkg;
-    gboolean have_status;
+    gboolean have_status;  /* every row has its answer */
     gaudit_probe_result probes[GAUDIT_PROBE_COUNT];
+    gboolean received[GAUDIT_PROBE_COUNT];
     gaudit_verdict worst;
+
+    /* Widgets on the Home page while it exists (weak pointers), so rows
+     * can be filled in one by one as their answers arrive. */
+    AdwStatusPage *home_status;
+    AdwActionRow *rows[GAUDIT_PROBE_COUNT];
 };
 
 G_DEFINE_FINAL_TYPE(GauditWindow, gaudit_window, ADW_TYPE_APPLICATION_WINDOW)
@@ -216,6 +222,19 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
                                         r->text[0] != '\0' ? r->text : "?");
         return _("Source of security updates");
 
+    case GAUDIT_PROBE_PRIVATE_FILES:
+        if (r->verdict == GAUDIT_VERDICT_UNKNOWN)
+            *subtitle = g_strdup(_("Could not check the private files"));
+        else if (r->count == 0)
+            *subtitle = g_strdup(_("Private files and folders are protected"));
+        else
+            /* Translators: %s is the first file or folder, e.g. ~/.ssh/id_ed25519. */
+            *subtitle = g_strdup_printf(ngettext("%u private file or folder can be reached by others: %s",
+                                                 "%u private files or folders can be reached by others, e.g. %s",
+                                                 r->count),
+                                        r->count, r->text);
+        return _("Private files");
+
     case GAUDIT_PROBE_PACKAGE_INDEX:
         /* When the package lists were refreshed, which is not the same as
          * packages having been upgraded. */
@@ -325,6 +344,8 @@ static void on_missing_row_activated(AdwActionRow *row, gpointer user_data)
 {
     GauditWindow *self = GAUDIT_WINDOW(user_data);
     const char *capability = g_object_get_data(G_OBJECT(row), "gaudit-capability");
+    if (capability == NULL)
+        return;  /* nothing missing (or still checking) */
     const gaudit_capability *cap = self->pkg->capability ? self->pkg->capability(capability) : NULL;
     if (cap == NULL)
         return;
@@ -339,14 +360,93 @@ static void on_home_row_activated(AdwActionRow *row, gpointer user_data)
     navigate(GAUDIT_WINDOW(user_data), index, TRUE);
 }
 
+/* *slot = obj as a weak pointer, letting go of what it pointed to before
+ * (a weak pointer is cleared on finalize whatever the slot holds then). */
+static void set_weak(gpointer slot, gpointer obj)
+{
+    GObject **p = slot;
+    if (*p != NULL)
+        g_object_remove_weak_pointer(*p, (gpointer *)p);
+    *p = obj;
+    if (obj != NULL)
+        g_object_add_weak_pointer(obj, (gpointer *)p);
+}
+
+static GtkWidget *row_spinner(void)
+{
+#if ADW_CHECK_VERSION(1, 6, 0)
+    return adw_spinner_new();
+#else
+    GtkWidget *spinner = gtk_spinner_new();
+    gtk_spinner_start(GTK_SPINNER(spinner));
+    return spinner;
+#endif
+}
+
+/* Shows row k as the state is now: a spinner while its answer is on its
+ * way, then the result; hidden when the check does not apply here. */
+static void fill_row(GauditWindow *self, int k)
+{
+    AdwActionRow *row = self->rows[k];
+    if (row == NULL)
+        return;
+    const gaudit_probe_result *probe = &self->probes[k];
+
+    GtkWidget *old = g_object_get_data(G_OBJECT(row), "gaudit-prefix");
+    if (old != NULL)
+        adw_action_row_remove(row, old);
+    old = g_object_get_data(G_OBJECT(row), "gaudit-suffix");
+    if (old != NULL)
+        adw_action_row_remove(row, old);
+    g_object_set_data(G_OBJECT(row), "gaudit-suffix", NULL);
+    g_object_set_data(G_OBJECT(row), "gaudit-capability", NULL);
+    gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), FALSE);
+
+    if (!self->received[k]) {
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), probe_title(probe));
+        adw_action_row_set_subtitle(row, _("Checking…"));
+        GtkWidget *spinner = row_spinner();
+        adw_action_row_add_prefix(row, spinner);
+        g_object_set_data(G_OBJECT(row), "gaudit-prefix", spinner);
+        gtk_widget_set_visible(GTK_WIDGET(row), TRUE);
+        return;
+    }
+    if (!probe->applicable) {
+        g_object_set_data(G_OBJECT(row), "gaudit-prefix", NULL);
+        gtk_widget_set_visible(GTK_WIDGET(row), FALSE);
+        return;
+    }
+
+    g_autofree char *subtitle = NULL;
+    const char *title = probe_text(probe, &subtitle);
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), title);
+    adw_action_row_set_subtitle(row, subtitle);
+    GtkWidget *icon = verdict_icon(probe->verdict);
+    adw_action_row_add_prefix(row, icon);
+    g_object_set_data(G_OBJECT(row), "gaudit-prefix", icon);
+
+    const gaudit_capability *missing = probe->missing_capability[0] == '\0' || self->pkg->capability == NULL
+        ? NULL : self->pkg->capability(probe->missing_capability);
+    /* Only lead on when the backend knows which packages to install. */
+    if (missing != NULL && missing->packages != NULL && missing->packages[0] != NULL) {
+        GtkWidget *next = gtk_image_new_from_icon_name("go-next-symbolic");
+        adw_action_row_add_suffix(row, next);
+        g_object_set_data(G_OBJECT(row), "gaudit-suffix", next);
+        gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), TRUE);
+        g_object_set_data(G_OBJECT(row), "gaudit-capability", (gpointer)probe->missing_capability);
+    }
+    gtk_widget_set_visible(GTK_WIDGET(row), TRUE);
+}
+
 static AdwNavigationPage *build_home(GauditWindow *self)
 {
     AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
     set_summary(status, self->have_status, self->worst);
 
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 24);
+    set_weak(&self->home_status, status);
 
-    if (self->have_status) {
+    {
         /* Host and distribution come from the system and are shown as
          * plain text, never as markup. */
         char host[256], distro[256], full[256];
@@ -379,27 +479,12 @@ static AdwNavigationPage *build_home(GauditWindow *self)
         adw_preferences_group_set_description(group,
             _("A quick look that does not need your password."));
         for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
-            const gaudit_probe_result *probe = &self->probes[k];
-            if (!probe->applicable)
-                continue;
-            g_autofree char *subtitle = NULL;
-            const char *title = probe_text(probe, &subtitle);
             AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
             /* Subtitles carry data from the system: never interpret markup. */
             adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
-            adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), title);
-            adw_action_row_set_subtitle(row, subtitle);
-            adw_action_row_add_prefix(row, verdict_icon(probe->verdict));
-            const gaudit_capability *missing = probe->missing_capability[0] == '\0' || self->pkg->capability == NULL
-                ? NULL : self->pkg->capability(probe->missing_capability);
-            /* Only lead on when the backend knows which packages to install. */
-            if (missing != NULL && missing->packages != NULL && missing->packages[0] != NULL) {
-                adw_action_row_add_suffix(row, gtk_image_new_from_icon_name("go-next-symbolic"));
-                gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), TRUE);
-                g_object_set_data(G_OBJECT(row), "gaudit-capability",
-                                  (gpointer)probe->missing_capability);
-                g_signal_connect(row, "activated", G_CALLBACK(on_missing_row_activated), self);
-            }
+            g_signal_connect(row, "activated", G_CALLBACK(on_missing_row_activated), self);
+            set_weak(&self->rows[k], row);
+            fill_row(self, k);
             adw_preferences_group_add(group, GTK_WIDGET(row));
         }
         gtk_box_append(GTK_BOX(box), GTK_WIDGET(group));
@@ -577,6 +662,10 @@ static void restore_size(GauditWindow *self)
 
 static void gaudit_window_dispose(GObject *object)
 {
+    GauditWindow *win = GAUDIT_WINDOW(object);
+    set_weak(&win->home_status, NULL);
+    for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
+        set_weak(&win->rows[k], NULL);
     g_clear_object(&GAUDIT_WINDOW(object)->settings);
     G_OBJECT_CLASS(gaudit_window_parent_class)->dispose(object);
 }
@@ -593,6 +682,7 @@ static void gaudit_window_init(GauditWindow *self)
     self->pkg = gaudit_pkg_backend_default();
     self->have_status = FALSE;
     self->worst = GAUDIT_VERDICT_UNKNOWN;
+    gaudit_probe_init(self->probes);
 
     /* Translators: Title of the main window and its sidebar. */
     gtk_window_set_title(GTK_WINDOW(self), _("Audit Center"));
@@ -675,18 +765,32 @@ GauditWindow *gaudit_window_new(GtkApplication *app)
     return g_object_new(GAUDIT_TYPE_WINDOW, "application", app, NULL);
 }
 
-void gaudit_window_show_status(GauditWindow *self,
-                               const gaudit_probe_result results[GAUDIT_PROBE_COUNT],
-                               gaudit_verdict worst)
+void gaudit_window_begin_status(GauditWindow *self)
 {
     g_return_if_fail(GAUDIT_IS_WINDOW(self));
-    g_return_if_fail(results != NULL);
+    gaudit_probe_init(self->probes);
+    memset(self->received, 0, sizeof self->received);
+    self->have_status = FALSE;
+    if (self->home_status != NULL)
+        set_summary(self->home_status, FALSE, GAUDIT_VERDICT_UNKNOWN);
+    for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
+        fill_row(self, k);
+}
 
-    memcpy(self->probes, results, sizeof self->probes);
+void gaudit_window_show_probe(GauditWindow *self, const gaudit_probe_result *result)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    g_return_if_fail(result != NULL && result->kind >= 0 && result->kind < GAUDIT_PROBE_COUNT);
+    self->probes[result->kind] = *result;
+    self->received[result->kind] = TRUE;
+    fill_row(self, result->kind);
+}
+
+void gaudit_window_finish_status(GauditWindow *self, gaudit_verdict worst)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
     self->have_status = TRUE;
     self->worst = worst;
-
-    AdwNavigationPage *visible = adw_navigation_view_get_visible_page(self->content);
-    if (visible != NULL && g_strcmp0(adw_navigation_page_get_tag(visible), "home") == 0)
-        navigate(self, 0, FALSE);
+    if (self->home_status != NULL)
+        set_summary(self->home_status, TRUE, worst);
 }

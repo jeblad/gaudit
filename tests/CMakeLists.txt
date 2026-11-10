@@ -89,6 +89,20 @@ target_compile_definitions(test_sandbox PRIVATE _GNU_SOURCE)
 target_link_libraries(test_sandbox PRIVATE gaudit_sandbox)
 add_test(NAME sandbox COMMAND test_sandbox)
 
+add_executable(test_private_files test_private_files.c)
+target_include_directories(test_private_files PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+target_compile_definitions(test_private_files PRIVATE _GNU_SOURCE
+  GAUDIT_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/tmp")
+target_link_libraries(test_private_files PRIVATE gaudit_backend)
+add_test(NAME private-files COMMAND test_private_files)
+
+add_executable(test_secret_scan test_secret_scan.c)
+target_include_directories(test_secret_scan PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+target_compile_definitions(test_secret_scan PRIVATE _GNU_SOURCE
+  GAUDIT_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/tmp")
+target_link_libraries(test_secret_scan PRIVATE gaudit_backend)
+add_test(NAME secret-scan COMMAND test_secret_scan)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

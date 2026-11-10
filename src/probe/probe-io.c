@@ -13,6 +13,8 @@
 #define MAX_EPOCH 32503680000LL  /* year 3000 */
 #define MAX_LINE  1024
 
+static int parse_one(const char *line, gaudit_probe_result *out);
+
 /* Text as a quoted string: \" and \\ escaped, other non-printable bytes
  * replaced, so the receiving parser always accepts it. */
 static int quote(char *out, size_t len, const char *text)
@@ -57,6 +59,21 @@ int gaudit_probe_format(const gaudit_probe_result *r, char *buf, size_t len)
                      (long long)r->age_seconds, r->count, r->extra_count, r->info_count, r->mask,
                      (long long)r->until_epoch, r->service_down ? 1 : 0, missing, detail, text);
     return n > 0 && (size_t)n < len ? 0 : -1;
+}
+
+int gaudit_probe_parse_line(const char *line, gaudit_probe_result *out)
+{
+    if (line == NULL || out == NULL)
+        return -1;
+    size_t len = strlen(line);
+    if (len > 0 && line[len - 1] == '\n')
+        len--;
+    if (len == 0 || len >= MAX_LINE || memchr(line, '\n', len) != NULL)
+        return -1;
+    char copy[MAX_LINE];
+    memcpy(copy, line, len);
+    copy[len] = '\0';
+    return parse_one(copy, out);
 }
 
 static int parse_one(const char *line, gaudit_probe_result *out)

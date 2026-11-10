@@ -112,6 +112,11 @@ typedef struct gaudit_pkg_backend {
      * distribution has no separate security source to check. */
     gaudit_backend_status (*security_sources)(unsigned *out_official, unsigned *out_mirror,
                                               char *host, size_t host_len);
+
+    /* Private files in the home directory that others could reach: count,
+     * and the first one ("~/...") copied to first. The same on every
+     * distribution: backends point it at gaudit_private_files_here. */
+    gaudit_backend_status (*private_files)(unsigned *out_count, char *first, size_t first_len);
 } gaudit_pkg_backend;
 
 /* Debian family (Debian, Ubuntu and derivatives): dpkg/apt. */
@@ -149,6 +154,9 @@ const char *gaudit_package_system_label(gaudit_package_system s);
  * machine), detected by their databases on disk. Bitmask as above. */
 unsigned gaudit_package_systems_present(const char *root);
 unsigned gaudit_package_systems_present_here(void);
+
+/* The private-files check for the user running it. */
+gaudit_backend_status gaudit_private_files_here(unsigned *out_count, char *first, size_t first_len);
 
 /* 1 if every path of the capability exists and is executable, else 0.
  * Presentation only: the helper re-checks anything that matters. */

@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 static const char *const probe_ids[GAUDIT_PROBE_COUNT] = {
     [GAUDIT_PROBE_PACKAGE_SYSTEM]       = "status.package-system",
@@ -11,6 +12,7 @@ static const char *const probe_ids[GAUDIT_PROBE_COUNT] = {
     [GAUDIT_PROBE_FIREWALL]             = "status.firewall",
     [GAUDIT_PROBE_AUTO_UPDATES]         = "status.auto-updates",
     [GAUDIT_PROBE_SECURITY_SOURCE]      = "status.security-source",
+    [GAUDIT_PROBE_PRIVATE_FILES]        = "status.private-files",
     [GAUDIT_PROBE_PACKAGE_INDEX]        = "status.package-index",
     [GAUDIT_PROBE_PENDING_UPGRADES]     = "status.pending-upgrades",
     [GAUDIT_PROBE_OBSOLETE_PACKAGES]    = "status.obsolete-packages",
@@ -75,6 +77,19 @@ static void auto_updates(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
         return;
     }
     r->verdict = enabled ? GAUDIT_VERDICT_OK : GAUDIT_VERDICT_WARNING;
+}
+
+static void private_files(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
+{
+    if (pkg->private_files == NULL) {
+        r->applicable = 0;
+        return;
+    }
+    unsigned n = 0;
+    if (pkg->private_files(&n, r->text, sizeof r->text) != GAUDIT_BACKEND_OK)
+        return;  /* unknown */
+    r->count = n;
+    r->verdict = n > 0 ? GAUDIT_VERDICT_WARNING : GAUDIT_VERDICT_OK;
 }
 
 /* A mirror may lag behind, and security updates must not wait for it. */
@@ -204,47 +219,91 @@ void gaudit_probe_collect(const gaudit_pkg_backend *pkg, int64_t now,
     gaudit_probe_collect_ex(pkg, NULL, now, out);
 }
 
-void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_backend *expected,
-                             int64_t now, gaudit_probe_result out[GAUDIT_PROBE_COUNT])
+void gaudit_probe_init(gaudit_probe_result out[GAUDIT_PROBE_COUNT])
 {
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
+        memset(&out[k], 0, sizeof out[k]);
         out[k].kind = (gaudit_probe_kind)k;
         out[k].id = gaudit_probe_id((gaudit_probe_kind)k);
         out[k].verdict = GAUDIT_VERDICT_UNKNOWN;
-        out[k].age_seconds = 0;
-        out[k].count = 0;
-        out[k].extra_count = 0;
-        out[k].info_count = 0;
         out[k].applicable = 1;
-        out[k].missing_capability[0] = '\0';
-        out[k].unsupported = 0;
-        out[k].detail[0] = '\0';
-        out[k].mask = 0;
-        out[k].until_epoch = 0;
-        out[k].service_down = 0;
-        out[k].text[0] = '\0';
     }
     out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable = 0;
     out[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable = 0;
-    if (expected != NULL && expected != pkg) {
+}
+
+#define BIT(k) (1u << (k))
+
+/* Each task fills the kinds it lists; package_state finds two at once. */
+static const unsigned task_kinds[GAUDIT_PROBE_TASK_COUNT] = {
+    BIT(GAUDIT_PROBE_PACKAGE_SYSTEM) | BIT(GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS),
+    BIT(GAUDIT_PROBE_ANTIVIRUS) | BIT(GAUDIT_PROBE_FIREWALL),
+    BIT(GAUDIT_PROBE_AUTO_UPDATES),
+    BIT(GAUDIT_PROBE_SECURITY_SOURCE),
+    BIT(GAUDIT_PROBE_PRIVATE_FILES),
+    BIT(GAUDIT_PROBE_PACKAGE_INDEX),
+    BIT(GAUDIT_PROBE_PENDING_UPGRADES) | BIT(GAUDIT_PROBE_OBSOLETE_PACKAGES),
+    BIT(GAUDIT_PROBE_FLATPAK),
+    BIT(GAUDIT_PROBE_SNAP),
+};
+
+unsigned gaudit_probe_task_kinds(int task)
+{
+    return task >= 0 && task < GAUDIT_PROBE_TASK_COUNT ? task_kinds[task] : 0;
+}
+
+void gaudit_probe_run_task(int task, const gaudit_pkg_backend *pkg,
+                           const gaudit_pkg_backend *expected, int64_t now,
+                           gaudit_probe_result out[GAUDIT_PROBE_COUNT])
+{
+    if (task == 0 && expected != NULL && expected != pkg) {
         gaudit_probe_result *r = &out[GAUDIT_PROBE_PACKAGE_SYSTEM];
         r->applicable = 1;
         r->verdict = GAUDIT_VERDICT_WARNING;
         snprintf(r->detail, sizeof r->detail, "%s",
                  expected->package_system != NULL ? expected->package_system : "");
     }
-
     if (pkg == NULL)
         return;
+    switch (task) {
+    case 0:
+        other_package_systems(pkg, &out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS]);
+        break;
+    case 1:
+        out[GAUDIT_PROBE_ANTIVIRUS].verdict = any_present(pkg, antivirus_caps);
+        out[GAUDIT_PROBE_FIREWALL].verdict = any_present(pkg, firewall_caps);
+        break;
+    case 2:
+        auto_updates(pkg, &out[GAUDIT_PROBE_AUTO_UPDATES]);
+        break;
+    case 3:
+        security_source(pkg, &out[GAUDIT_PROBE_SECURITY_SOURCE]);
+        break;
+    case 4:
+        private_files(pkg, &out[GAUDIT_PROBE_PRIVATE_FILES]);
+        break;
+    case 5:
+        index_age(pkg, now, &out[GAUDIT_PROBE_PACKAGE_INDEX]);
+        break;
+    case 6:
+        package_state(pkg, &out[GAUDIT_PROBE_PENDING_UPGRADES],
+                      &out[GAUDIT_PROBE_OBSOLETE_PACKAGES]);
+        break;
+    case 7:
+        flatpak(pkg, &out[GAUDIT_PROBE_FLATPAK]);
+        break;
+    case 8:
+        snap(pkg, now, &out[GAUDIT_PROBE_SNAP]);
+        break;
+    default:
+        break;
+    }
+}
 
-    out[GAUDIT_PROBE_ANTIVIRUS].verdict = any_present(pkg, antivirus_caps);
-    out[GAUDIT_PROBE_FIREWALL].verdict = any_present(pkg, firewall_caps);
-    index_age(pkg, now, &out[GAUDIT_PROBE_PACKAGE_INDEX]);
-    auto_updates(pkg, &out[GAUDIT_PROBE_AUTO_UPDATES]);
-    security_source(pkg, &out[GAUDIT_PROBE_SECURITY_SOURCE]);
-    package_state(pkg, &out[GAUDIT_PROBE_PENDING_UPGRADES],
-                  &out[GAUDIT_PROBE_OBSOLETE_PACKAGES]);
-    flatpak(pkg, &out[GAUDIT_PROBE_FLATPAK]);
-    snap(pkg, now, &out[GAUDIT_PROBE_SNAP]);
-    other_package_systems(pkg, &out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS]);
+void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_backend *expected,
+                             int64_t now, gaudit_probe_result out[GAUDIT_PROBE_COUNT])
+{
+    gaudit_probe_init(out);
+    for (int t = 0; t < GAUDIT_PROBE_TASK_COUNT; t++)
+        gaudit_probe_run_task(t, pkg, expected, now, out);
 }

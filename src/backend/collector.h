@@ -21,11 +21,15 @@ gaudit_backend_status gaudit_collector_run(const char *probe_path, int timeout_m
 
 typedef struct {
     const char *key;
-    long long *value;
-    long long max;  /* values are 0..max; max must be below LLONG_MAX / 10 */
+    long long *value;  /* integer field (NULL for a text field) */
+    long long max;     /* integers are min..max; |min|, max below LLONG_MAX / 10 */
+    long long min;     /* 0 unless negative values are allowed */
+    char *text;        /* text field: "..." with \" and \\ escapes, printable only */
+    size_t text_len;   /* buffer size; longer text is an error */
 } gaudit_sexpr_field;
 
-/* Strict parser for "(head (key N) ...)": every field exactly once, in any
- * order, non-negative integers only, nothing else. 0 on success, -1 otherwise. */
+/* Strict parser for "(head (key value) ...)": every field exactly once, in
+ * any order, values of the declared type and range, nothing else.
+ * 0 on success, -1 otherwise. */
 int gaudit_sexpr_parse(const char *text, const char *head,
                        const gaudit_sexpr_field *fields, size_t n_fields);

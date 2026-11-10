@@ -188,7 +188,7 @@ int main(void)
     gaudit_probe_collect(&fake_pkg, NOW, r);
     CHECK(r[GAUDIT_PROBE_FLATPAK].verdict == GAUDIT_VERDICT_WARNING);
     CHECK(r[GAUDIT_PROBE_FLATPAK].count == 2 && r[GAUDIT_PROBE_FLATPAK].extra_count == 3);
-    CHECK(r[GAUDIT_PROBE_FLATPAK].applicable && r[GAUDIT_PROBE_FLATPAK].missing_capability == NULL);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].applicable && r[GAUDIT_PROBE_FLATPAK].missing_capability[0] == '\0');
     all_good(); fake.flatpak.eol_pinned = 2;  /* kept but unused: also a warning */
     gaudit_probe_collect(&fake_pkg, NOW, r);
     CHECK(r[GAUDIT_PROBE_FLATPAK].verdict == GAUDIT_VERDICT_WARNING);
@@ -203,8 +203,7 @@ int main(void)
     gaudit_probe_collect(&fake_pkg, NOW, r);
     CHECK(r[GAUDIT_PROBE_FLATPAK].applicable);
     CHECK(r[GAUDIT_PROBE_FLATPAK].verdict == GAUDIT_VERDICT_UNKNOWN);
-    CHECK(r[GAUDIT_PROBE_FLATPAK].missing_capability != NULL
-          && strcmp(r[GAUDIT_PROBE_FLATPAK].missing_capability, "libflatpak") == 0);
+    CHECK(strcmp(r[GAUDIT_PROBE_FLATPAK].missing_capability, "libflatpak") == 0);
     all_good(); fake.flatpak_status = GAUDIT_BACKEND_ERROR;
     CHECK(run(GAUDIT_PROBE_FLATPAK) == GAUDIT_VERDICT_UNKNOWN);
 
@@ -284,7 +283,7 @@ int main(void)
         CHECK(r[GAUDIT_PROBE_SNAP].service_down);
         CHECK(!SNAP_RUN(fresh, GAUDIT_BACKEND_UNAVAILABLE).applicable);
         CHECK(!SNAP_RUN(fresh, GAUDIT_BACKEND_NOT_IMPLEMENTED).applicable);
-        CHECK(SNAP_RUN(fresh, GAUDIT_BACKEND_MISSING_DEPENDENCY).missing_capability != NULL);
+        CHECK(SNAP_RUN(fresh, GAUDIT_BACKEND_MISSING_DEPENDENCY).missing_capability[0] != '\0');
         CHECK(SNAP_RUN(fresh, GAUDIT_BACKEND_ERROR).verdict == GAUDIT_VERDICT_UNKNOWN);
     }
 #undef SNAP_RUN
@@ -321,8 +320,7 @@ int main(void)
     gaudit_probe_collect_ex(&fake_pkg, &expected_pkg, NOW, r);  /* expected one not found */
     CHECK(r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
     CHECK(r[GAUDIT_PROBE_PACKAGE_SYSTEM].verdict == GAUDIT_VERDICT_WARNING);
-    CHECK(r[GAUDIT_PROBE_PACKAGE_SYSTEM].detail != NULL
-          && strcmp(r[GAUDIT_PROBE_PACKAGE_SYSTEM].detail, "dpkg/apt") == 0);
+    CHECK(strcmp(r[GAUDIT_PROBE_PACKAGE_SYSTEM].detail, "dpkg/apt") == 0);
     gaudit_probe_collect_ex(&fake_pkg, &fake_pkg, NOW, r);      /* as expected */
     CHECK(!r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
     gaudit_probe_collect_ex(&fake_pkg, NULL, NOW, r);           /* no expectation */

@@ -31,9 +31,16 @@ static void set_summary(AdwStatusPage *status, gboolean have_status, gaudit_verd
     const char *icon, *title, *description;
 
     if (!have_status) {
-        icon = "dialog-question-symbolic";
-        title = _("No checks have been run");
-        description = NULL;
+        /* The orchestrator is still working. */
+#if ADW_CHECK_VERSION(1, 6, 0)
+        g_autoptr(AdwSpinnerPaintable) spinner = adw_spinner_paintable_new(GTK_WIDGET(status));
+        adw_status_page_set_paintable(status, GDK_PAINTABLE(spinner));
+        icon = NULL;
+#else
+        icon = "content-loading-symbolic";
+#endif
+        title = _("Checking…");
+        description = _("Looking at the status of this computer.");
     } else {
         switch (worst) {
         case GAUDIT_VERDICT_OK:
@@ -62,7 +69,8 @@ static void set_summary(AdwStatusPage *status, gboolean have_status, gaudit_verd
         }
     }
 
-    adw_status_page_set_icon_name(status, icon);
+    if (icon != NULL)
+        adw_status_page_set_icon_name(status, icon);
     adw_status_page_set_title(status, title);
     adw_status_page_set_description(status, description);
 }
@@ -113,12 +121,12 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
         /* Translators: "This looks like Ubuntu, but its package system (dpkg/apt) was not found". */
         *subtitle = g_strdup_printf(_("This looks like %s, but its package system (%s) was not found"),
                                     name[0] != '\0' ? name : _("a known distribution"),
-                                    r->detail != NULL ? r->detail : "?");
+                                    r->detail[0] != '\0' ? r->detail : "?");
         return _("Package system");
     }
 
     case GAUDIT_PROBE_SNAP:
-        if (r->missing_capability != NULL) {
+        if (r->missing_capability[0] != '\0') {
             *subtitle = g_strdup(_("Software needed to check snaps is missing"));
         } else if (r->service_down) {
             *subtitle = g_strdup(_("The snap service is not running, so snaps are not updated"));
@@ -255,7 +263,7 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
         return _("Automatic updates");
 
     case GAUDIT_PROBE_FLATPAK:
-        if (r->missing_capability != NULL) {
+        if (r->missing_capability[0] != '\0') {
             *subtitle = g_strdup(_("Software needed to check Flatpak apps is missing"));
         } else if (r->verdict == GAUDIT_VERDICT_UNKNOWN) {
             *subtitle = g_strdup(_("Could not check the Flatpak apps"));
@@ -306,7 +314,7 @@ static const char *probe_title(const gaudit_probe_result *r)
     gaudit_probe_result copy = *r;
     copy.unsupported = 0;
     copy.verdict = GAUDIT_VERDICT_UNKNOWN;
-    copy.missing_capability = NULL;
+    copy.missing_capability[0] = '\0';
     return probe_text(&copy, &ignored);
 }
 
@@ -379,7 +387,7 @@ static AdwNavigationPage *build_home(GauditWindow *self)
             adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), title);
             adw_action_row_set_subtitle(row, subtitle);
             adw_action_row_add_prefix(row, verdict_icon(probe->verdict));
-            const gaudit_capability *missing = probe->missing_capability == NULL || self->pkg->capability == NULL
+            const gaudit_capability *missing = probe->missing_capability[0] == '\0' || self->pkg->capability == NULL
                 ? NULL : self->pkg->capability(probe->missing_capability);
             /* Only lead on when the backend knows which packages to install. */
             if (missing != NULL && missing->packages != NULL && missing->packages[0] != NULL) {

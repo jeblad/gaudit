@@ -80,6 +80,10 @@ target_compile_definitions(test_pacman PRIVATE _GNU_SOURCE
 target_link_libraries(test_pacman PRIVATE gaudit_backend)
 add_test(NAME pacman COMMAND test_pacman)
 
+add_executable(test_probe_io test_probe_io.c)
+target_link_libraries(test_probe_io PRIVATE gaudit_probe)
+add_test(NAME probe-io COMMAND test_probe_io)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

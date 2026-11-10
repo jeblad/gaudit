@@ -37,16 +37,16 @@ typedef enum {
 
 typedef struct {
     gaudit_probe_kind kind;
-    const char *id;           /* stable key, e.g. "status.firewall" */
+    const char *id;           /* stable key, e.g. "status.firewall" (static; from the kind) */
     gaudit_verdict verdict;
     int64_t age_seconds;      /* GAUDIT_PROBE_PACKAGE_INDEX */
     unsigned count;           /* _PENDING_UPGRADES, _OBSOLETE_PACKAGES; _FLATPAK: eol apps */
     unsigned extra_count;     /* _FLATPAK: unused end-of-life refs */
     unsigned info_count;      /* _FLATPAK: end-of-life runtimes kept (pinned) but unused */
     int applicable;           /* 0: does not apply here (e.g. no Flatpak), not shown */
-    const char *missing_capability;  /* set when software for the check is missing */
+    char missing_capability[32];  /* set ("" otherwise) when software for the check is missing */
     int unsupported;          /* 1: this check is not supported on this system (yet) */
-    const char *detail;       /* _PACKAGE_SYSTEM: the expected package system, e.g. "dpkg/apt" */
+    char detail[32];          /* _PACKAGE_SYSTEM: the expected package system, e.g. "dpkg/apt" */
     unsigned mask;            /* _OTHER_PACKAGE_SYSTEMS: 1 << gaudit_package_system */
     int64_t until_epoch;      /* _SNAP: automatic refreshes held until then (0: not held) */
     int service_down;         /* _SNAP: snapd did not answer */
@@ -65,6 +65,18 @@ void gaudit_probe_collect(const gaudit_pkg_backend *pkg, int64_t now,
  * not apply (the Home heading already says what was found). */
 void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_backend *expected,
                              int64_t now, gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
+
+/* Stable key for a kind, e.g. "status.firewall"; NULL for an unknown kind. */
+const char *gaudit_probe_id(gaudit_probe_kind kind);
+
+/* One result as a single line S-expression, newline-terminated, for the
+ * pipe between orchestrator and GUI. 0 on success, -1 if it does not fit. */
+int gaudit_probe_format(const gaudit_probe_result *r, char *buf, size_t len);
+
+/* Strict parser for the orchestrator's output: one line per kind, every
+ * kind exactly once, nothing else. ids are filled in from the kinds.
+ * 0 on success, -1 otherwise (out is then unspecified). */
+int gaudit_probe_parse_all(const char *text, gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
 
 #ifdef __cplusplus
 }

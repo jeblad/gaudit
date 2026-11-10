@@ -14,9 +14,9 @@ int gaudit_dnf_parse(const char *text, gaudit_dnf_state *out)
         return -1;
     long long installed, upgradable, extras;
     const gaudit_sexpr_field fields[] = {
-        { "installed",  &installed,  MAX_COUNT },
-        { "upgradable", &upgradable, MAX_COUNT },
-        { "extras",     &extras,     MAX_COUNT },
+        { .key = "installed",  .value = &installed,  .max = MAX_COUNT },
+        { .key = "upgradable", .value = &upgradable, .max = MAX_COUNT },
+        { .key = "extras",     .value = &extras,     .max = MAX_COUNT },
     };
     if (gaudit_sexpr_parse(text, "dnf", fields, sizeof fields / sizeof fields[0]) != 0
         || upgradable > installed || extras > installed)

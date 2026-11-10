@@ -45,7 +45,7 @@ int main(void)
 
     /* Shared parser: a key that is a prefix of the head, and unknown heads. */
     long long v = 0;
-    const gaudit_sexpr_field one[] = { { "n", &v, 10 } };
+    const gaudit_sexpr_field one[] = { { .key = "n", .value = &v, .max = 10 } };
     CHECK(gaudit_sexpr_parse("(x (n 10))", "x", one, 1) == 0 && v == 10);
     CHECK(gaudit_sexpr_parse("(x (n 11))", "x", one, 1) != 0);   /* above max */
     CHECK(gaudit_sexpr_parse("(xy (n 1))", "x", one, 1) != 0);

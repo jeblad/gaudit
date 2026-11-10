@@ -14,10 +14,10 @@ int gaudit_flatpak_parse(const char *text, gaudit_flatpak_state *out)
         return -1;
     long long apps, eol_apps, eol_unused, eol_pinned;
     const gaudit_sexpr_field fields[] = {
-        { "apps",       &apps,       MAX_COUNT },
-        { "eol-apps",   &eol_apps,   MAX_COUNT },
-        { "eol-unused", &eol_unused, MAX_COUNT },
-        { "eol-pinned", &eol_pinned, MAX_COUNT },
+        { .key = "apps",       .value = &apps,       .max = MAX_COUNT },
+        { .key = "eol-apps",   .value = &eol_apps,   .max = MAX_COUNT },
+        { .key = "eol-unused", .value = &eol_unused, .max = MAX_COUNT },
+        { .key = "eol-pinned", .value = &eol_pinned, .max = MAX_COUNT },
     };
     if (gaudit_sexpr_parse(text, "flatpak", fields, sizeof fields / sizeof fields[0]) != 0
         || eol_apps > apps)

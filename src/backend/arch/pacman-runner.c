@@ -14,9 +14,9 @@ int gaudit_pacman_parse(const char *text, gaudit_pacman_state *out)
         return -1;
     long long installed, upgradable, foreign;
     const gaudit_sexpr_field fields[] = {
-        { "installed",  &installed,  MAX_COUNT },
-        { "upgradable", &upgradable, MAX_COUNT },
-        { "foreign",    &foreign,    MAX_COUNT },
+        { .key = "installed",  .value = &installed,  .max = MAX_COUNT },
+        { .key = "upgradable", .value = &upgradable, .max = MAX_COUNT },
+        { .key = "foreign",    .value = &foreign,    .max = MAX_COUNT },
     };
     if (gaudit_sexpr_parse(text, "pacman", fields, sizeof fields / sizeof fields[0]) != 0
         || upgradable + foreign > installed)

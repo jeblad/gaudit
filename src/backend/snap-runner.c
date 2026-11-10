@@ -15,13 +15,13 @@ int gaudit_snap_parse(const char *text, gaudit_snap_state *out)
         return -1;
     long long running, snaps, devmode, classic, held, last_refresh, refresh_hold;
     const gaudit_sexpr_field fields[] = {
-        { "running",      &running,      1 },
-        { "snaps",        &snaps,        MAX_COUNT },
-        { "devmode",      &devmode,      MAX_COUNT },
-        { "classic",      &classic,      MAX_COUNT },
-        { "held",         &held,         MAX_COUNT },
-        { "last-refresh", &last_refresh, MAX_EPOCH },
-        { "refresh-hold", &refresh_hold, MAX_EPOCH },
+        { .key = "running",      .value = &running,      .max = 1 },
+        { .key = "snaps",        .value = &snaps,        .max = MAX_COUNT },
+        { .key = "devmode",      .value = &devmode,      .max = MAX_COUNT },
+        { .key = "classic",      .value = &classic,      .max = MAX_COUNT },
+        { .key = "held",         .value = &held,         .max = MAX_COUNT },
+        { .key = "last-refresh", .value = &last_refresh, .max = MAX_EPOCH },
+        { .key = "refresh-hold", .value = &refresh_hold, .max = MAX_EPOCH },
     };
     if (gaudit_sexpr_parse(text, "snap", fields, sizeof fields / sizeof fields[0]) != 0
         || devmode + classic > snaps || held > snaps)

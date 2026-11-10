@@ -2,6 +2,26 @@
 #include "gaudit/probe.h"
 
 #include <stddef.h>
+#include <stdio.h>
+
+static const char *const probe_ids[GAUDIT_PROBE_COUNT] = {
+    [GAUDIT_PROBE_PACKAGE_SYSTEM]       = "status.package-system",
+    [GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS] = "status.other-package-systems",
+    [GAUDIT_PROBE_ANTIVIRUS]            = "status.antivirus",
+    [GAUDIT_PROBE_FIREWALL]             = "status.firewall",
+    [GAUDIT_PROBE_AUTO_UPDATES]         = "status.auto-updates",
+    [GAUDIT_PROBE_SECURITY_SOURCE]      = "status.security-source",
+    [GAUDIT_PROBE_PACKAGE_INDEX]        = "status.package-index",
+    [GAUDIT_PROBE_PENDING_UPGRADES]     = "status.pending-upgrades",
+    [GAUDIT_PROBE_OBSOLETE_PACKAGES]    = "status.obsolete-packages",
+    [GAUDIT_PROBE_FLATPAK]              = "status.flatpak",
+    [GAUDIT_PROBE_SNAP]                 = "status.snap",
+};
+
+const char *gaudit_probe_id(gaudit_probe_kind kind)
+{
+    return kind >= 0 && kind < GAUDIT_PROBE_COUNT ? probe_ids[kind] : NULL;
+}
 
 /* Capabilities per category, in distro-neutral terms. */
 static const char *const antivirus_caps[] = { "clamav", NULL };
@@ -115,7 +135,7 @@ static void flatpak(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
         r->applicable = 0;
         break;
     case GAUDIT_BACKEND_MISSING_DEPENDENCY:
-        r->missing_capability = "libflatpak";
+        snprintf(r->missing_capability, sizeof r->missing_capability, "libflatpak");
         break;
     case GAUDIT_BACKEND_ERROR:
     default:
@@ -138,7 +158,7 @@ static void snap(const gaudit_pkg_backend *pkg, int64_t now, gaudit_probe_result
         r->applicable = 0;
         return;
     case GAUDIT_BACKEND_MISSING_DEPENDENCY:
-        r->missing_capability = "libjson-glib";
+        snprintf(r->missing_capability, sizeof r->missing_capability, "libjson-glib");
         return;
     case GAUDIT_BACKEND_ERROR:
     default:
@@ -189,39 +209,30 @@ void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_bac
 {
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
         out[k].kind = (gaudit_probe_kind)k;
+        out[k].id = gaudit_probe_id((gaudit_probe_kind)k);
         out[k].verdict = GAUDIT_VERDICT_UNKNOWN;
         out[k].age_seconds = 0;
         out[k].count = 0;
         out[k].extra_count = 0;
         out[k].info_count = 0;
         out[k].applicable = 1;
-        out[k].missing_capability = NULL;
+        out[k].missing_capability[0] = '\0';
         out[k].unsupported = 0;
-        out[k].detail = NULL;
+        out[k].detail[0] = '\0';
         out[k].mask = 0;
         out[k].until_epoch = 0;
         out[k].service_down = 0;
         out[k].text[0] = '\0';
     }
-    out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].id = "status.other-package-systems";
     out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable = 0;
-    out[GAUDIT_PROBE_PACKAGE_SYSTEM].id = "status.package-system";
     out[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable = 0;
     if (expected != NULL && expected != pkg) {
         gaudit_probe_result *r = &out[GAUDIT_PROBE_PACKAGE_SYSTEM];
         r->applicable = 1;
         r->verdict = GAUDIT_VERDICT_WARNING;
-        r->detail = expected->package_system;
+        snprintf(r->detail, sizeof r->detail, "%s",
+                 expected->package_system != NULL ? expected->package_system : "");
     }
-    out[GAUDIT_PROBE_ANTIVIRUS].id = "status.antivirus";
-    out[GAUDIT_PROBE_FIREWALL].id = "status.firewall";
-    out[GAUDIT_PROBE_AUTO_UPDATES].id = "status.auto-updates";
-    out[GAUDIT_PROBE_SECURITY_SOURCE].id = "status.security-source";
-    out[GAUDIT_PROBE_PACKAGE_INDEX].id = "status.package-index";
-    out[GAUDIT_PROBE_PENDING_UPGRADES].id = "status.pending-upgrades";
-    out[GAUDIT_PROBE_OBSOLETE_PACKAGES].id = "status.obsolete-packages";
-    out[GAUDIT_PROBE_FLATPAK].id = "status.flatpak";
-    out[GAUDIT_PROBE_SNAP].id = "status.snap";
 
     if (pkg == NULL)
         return;

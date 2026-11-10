@@ -33,6 +33,7 @@ int gaudit_sexpr_parse(const char *text, const char *head,
         return -1;
 
     long long values[MAX_FIELDS];
+    char texts[MAX_FIELDS][256];
     int seen[MAX_FIELDS] = { 0 };
     const char *p = skip_ws(text);
 
@@ -74,17 +75,54 @@ int gaudit_sexpr_parse(const char *text, const char *head,
             return -1;  /* unknown or repeated key */
 
         p = skip_ws(p);
+        if (fields[i].text != NULL) {
+            if (*p != '"' || fields[i].text_len == 0 || fields[i].text_len > sizeof texts[i])
+                return -1;
+            p++;
+            size_t n_out = 0;
+            while (*p != '"') {
+                unsigned char c = (unsigned char)*p;
+                if (c == '\\') {
+                    p++;
+                    c = (unsigned char)*p;
+                    if (c != '"' && c != '\\')
+                        return -1;
+                } else if (c < 0x20 || c == 0x7f) {
+                    return -1;  /* control characters, or the end of the input */
+                }
+                if (n_out + 1 >= fields[i].text_len)
+                    return -1;  /* too long */
+                texts[i][n_out++] = (char)c;
+                p++;
+            }
+            texts[i][n_out] = '\0';
+            p++;
+            p = skip_ws(p);
+            if (*p != ')')
+                return -1;
+            p++;
+            seen[i] = 1;
+            continue;
+        }
+        int negative = 0;
+        if (*p == '-' && fields[i].min < 0) {
+            negative = 1;
+            p++;
+        }
         if (!isdigit((unsigned char)*p))
             return -1;
-        /* v never exceeds max before a step, and every max is far below
-         * LLONG_MAX / 10, so v * 10 + digit cannot overflow. */
+        /* v never exceeds its bound before a step, and every bound is far
+         * below LLONG_MAX / 10, so v * 10 + digit cannot overflow. */
+        long long bound = negative ? -fields[i].min : fields[i].max;
         long long v = 0;
         while (isdigit((unsigned char)*p)) {
             v = v * 10 + (*p - '0');
-            if (v > fields[i].max)
+            if (v > bound)
                 return -1;
             p++;
         }
+        if (negative)
+            v = -v;
         p = skip_ws(p);
         if (*p != ')')
             return -1;
@@ -98,8 +136,12 @@ int gaudit_sexpr_parse(const char *text, const char *head,
     for (size_t i = 0; i < n_fields; i++)
         if (!seen[i])
             return -1;
-    for (size_t i = 0; i < n_fields; i++)
-        *fields[i].value = values[i];
+    for (size_t i = 0; i < n_fields; i++) {
+        if (fields[i].text != NULL)
+            memcpy(fields[i].text, texts[i], strlen(texts[i]) + 1);
+        else
+            *fields[i].value = values[i];
+    }
     return 0;
 }
 

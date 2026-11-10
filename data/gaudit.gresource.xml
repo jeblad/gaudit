@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Compiled into the GUI, so every icon the app uses is always there.
+     GtkApplication adds <app path>/icons to the icon search: these are
+     found by name. The active icon theme still wins where it has the same
+     name, so the look follows the user's theme; these are the fallback. -->
+<gresources>
+  <gresource prefix="/io/github/jeblad/gaudit/icons/scalable/actions">
+    <!-- From the GNOME icon library, Jakub Steiner, CC0. -->
+    <file preprocess="xml-stripblanks" alias="fire-symbolic.svg">icons/scalable/actions/fire-symbolic.svg</file>
+    <!-- Exported with the Icon Library app; source and license to be confirmed. -->
+    <file preprocess="xml-stripblanks" alias="emblem-ok-symbolic.svg">icons/scalable/actions/emblem-ok-symbolic.svg</file>
+    <!-- From adwaita-icon-theme, the GNOME Project, used under LGPL-3.0
+         (dual-licensed LGPL-3.0 or CC-BY-SA-3.0). -->
+    <file preprocess="xml-stripblanks" alias="content-loading-symbolic.svg">icons/scalable/actions/content-loading-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="dialog-error-symbolic.svg">icons/scalable/actions/dialog-error-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="dialog-information-symbolic.svg">icons/scalable/actions/dialog-information-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="dialog-password-symbolic.svg">icons/scalable/actions/dialog-password-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="dialog-question-symbolic.svg">icons/scalable/actions/dialog-question-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="dialog-warning-symbolic.svg">icons/scalable/actions/dialog-warning-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="edit-copy-symbolic.svg">icons/scalable/actions/edit-copy-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="go-home-symbolic.svg">icons/scalable/actions/go-home-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="go-next-symbolic.svg">icons/scalable/actions/go-next-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="media-record-symbolic.svg">icons/scalable/actions/media-record-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="open-menu-symbolic.svg">icons/scalable/actions/open-menu-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="preferences-system-symbolic.svg">icons/scalable/actions/preferences-system-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="security-high-symbolic.svg">icons/scalable/actions/security-high-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="security-low-symbolic.svg">icons/scalable/actions/security-low-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="security-medium-symbolic.svg">icons/scalable/actions/security-medium-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="system-software-install-symbolic.svg">icons/scalable/actions/system-software-install-symbolic.svg</file>
+  </gresource>
+</gresources>

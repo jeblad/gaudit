@@ -505,8 +505,11 @@ static void fill_row(GauditWindow *self, int k)
     if (task_index >= 0) {
         gsize n_tasks;
         const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
-        GtkWidget *button = gtk_button_new_from_icon_name("go-next-symbolic");
+        /* The plugin's own icon, as in the sidebar: this leads to that
+         * plugin, unlike the plain arrow of rows that open a subpage. */
+        GtkWidget *button = gtk_button_new_from_icon_name(tasks[task_index].icon);
         gtk_widget_add_css_class(button, "flat");
+        gtk_widget_add_css_class(button, "circular");
         gtk_widget_set_valign(button, GTK_ALIGN_CENTER);
         const char *tip = _(tasks[task_index].home_tooltip != NULL
                             ? tasks[task_index].home_tooltip : tasks[task_index].title);
@@ -593,8 +596,9 @@ static void fill_elevated(GauditWindow *self)
             gaudit_firewall_text(&self->elevated[i].fw, &icon, &title, &description);
             adw_action_row_set_subtitle(row, title);
             adw_action_row_add_prefix(row, verdict_icon(self->elevated[i].fw.verdict));
-            GtkWidget *button = gtk_button_new_from_icon_name("go-next-symbolic");
+            GtkWidget *button = gtk_button_new_from_icon_name(tasks[i].icon);
             gtk_widget_add_css_class(button, "flat");
+            gtk_widget_add_css_class(button, "circular");
             gtk_widget_set_valign(button, GTK_ALIGN_CENTER);
             const char *tip = _(tasks[i].home_tooltip != NULL ? tasks[i].home_tooltip : tasks[i].title);
             gtk_widget_set_tooltip_text(button, tip);

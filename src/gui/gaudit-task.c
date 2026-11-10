@@ -19,7 +19,7 @@ static const GauditTaskInfo tasks[] = {
                       "Reading the rules needs the administrator password, because only the "
                       "administrator may look at them. gAudit only reads the rules; it "
                       "changes nothing."),
-        .icon = "network-workgroup-symbolic",
+        .icon = "fire-symbolic",
         .capabilities = NULL,  /* reads the kernel's rules: nothing to install */
         .params = NULL,
         .n_params = 0,

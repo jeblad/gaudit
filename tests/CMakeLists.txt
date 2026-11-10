@@ -119,6 +119,8 @@ target_compile_definitions(test_listening PRIVATE _GNU_SOURCE
 target_link_libraries(test_listening PRIVATE gaudit_backend)
 add_test(NAME listening COMMAND test_listening)
 
+add_test(NAME icons COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/check-icons.sh ${PROJECT_SOURCE_DIR})
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

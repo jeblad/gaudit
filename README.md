@@ -110,6 +110,8 @@ Then translate the new strings in `po/<language>.po`. Translations affect securi
 
 ## Acknowledgements
 
+Icons: most are from [adwaita-icon-theme](https://gitlab.gnome.org/GNOME/adwaita-icon-theme) by the GNOME Project, used under the LGPL-3.0 (dual-licensed LGPL-3.0 or CC-BY-SA-3.0); `fire-symbolic` is from the GNOME icon library by Jakub Steiner (CC0). They are bundled in `data/icons/`, listed in `data/gaudit.gresource.xml`.
+
 Created with assistance from AI tools (Claude Opus) across all parts of this work.
 
 This project was developed independently, with no external financial or institutional support other than the AI tools mentioned.

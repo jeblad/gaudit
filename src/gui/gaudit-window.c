@@ -700,33 +700,31 @@ static AdwNavigationPage *build_home(GauditWindow *self)
          * plain text, never as markup. */
         char host[256], distro[256], full[256];
         gaudit_system_describe(host, sizeof host, distro, sizeof distro, full, sizeof full);
-        /* After the dash: how gAudit treats the system, i.e. which backend
-         * does the checks. Not read from the distribution. */
-        const char *family = g_strcmp0(self->pkg->name, "debian") == 0 ? _("Debian")
-                           : g_strcmp0(self->pkg->name, "fedora") == 0 ? _("Fedora")
-                           : g_strcmp0(self->pkg->name, "arch") == 0 ? _("Arch")
-                           : _("generic");
-        /* Translators: "<distribution> – <how gAudit treats it>", e.g. "Ubuntu – Debian". */
-        g_autofree char *system = distro[0] != '\0'
-            ? g_strdup_printf(_("%s – %s"), distro, family)
-            : g_strdup(_("Unknown"));
-        /* Translators: "Status: <host name> (<system>)". */
-        g_autofree char *heading = g_strdup_printf(_("Status: %s (%s)"),
-                                                   host[0] != '\0' ? host : _("this computer"),
-                                                   system);
-        GtkWidget *heading_label = gtk_label_new(heading);
-        gtk_label_set_xalign(GTK_LABEL(heading_label), 0.0f);
-        gtk_label_set_wrap(GTK_LABEL(heading_label), TRUE);
-        gtk_widget_add_css_class(heading_label, "heading");
-        /* The version matters (releases go out of support), so it is one
-         * hover away. Tooltips are plain text here. */
-        if (full[0] != '\0')
-            gtk_widget_set_tooltip_text(heading_label, full);
-        gtk_box_append(GTK_BOX(box), heading_label);
+        /* How gAudit treats the system, i.e. which backend does the checks.
+         * Not read from the distribution, so never called its "family". */
+        const char *checked = g_strcmp0(self->pkg->name, "debian") == 0 ? _("checked as Debian")
+                            : g_strcmp0(self->pkg->name, "fedora") == 0 ? _("checked as Fedora")
+                            : g_strcmp0(self->pkg->name, "arch") == 0 ? _("checked as Arch")
+                            : _("general checks only");
+        /* The version matters (releases go out of support), so the full
+         * name is shown when os-release has one. */
+        const char *name = full[0] != '\0' ? full : distro[0] != '\0' ? distro : _("Unknown system");
+        /* Translators: "<system> · <how gAudit checks it>",
+         * e.g. "Ubuntu 26.04 LTS · checked as Debian". */
+        g_autofree char *system = g_strdup_printf(_("%s · %s"), name, checked);
+
+        AdwPreferencesGroup *machine = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+        adw_preferences_group_set_title(machine, _("This computer"));
+        AdwActionRow *id_row = ADW_ACTION_ROW(adw_action_row_new());
+        adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(id_row), FALSE);
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(id_row),
+                                      host[0] != '\0' ? host : _("Unknown host name"));
+        adw_action_row_set_subtitle(id_row, system);
+        adw_preferences_group_add(machine, GTK_WIDGET(id_row));
+        gtk_box_append(GTK_BOX(box), GTK_WIDGET(machine));
 
         AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
-        adw_preferences_group_set_description(group,
-            _("A quick look that does not need your password."));
+        adw_preferences_group_set_title(group, _("Checks without a password"));
         for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
             AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
             /* Subtitles carry data from the system: never interpret markup. */

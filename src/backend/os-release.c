@@ -94,6 +94,10 @@ const gaudit_pkg_backend *gaudit_pkg_backend_expected_for(const gaudit_os_releas
         for (const char *const *w = debian_family; *w != NULL; w++)
             if (strcmp(os->id, *w) == 0 || has_word(os->id_like, *w))
                 return gaudit_pkg_backend_debian();
+        /* ID only: RHEL-family systems list "fedora" in ID_LIKE but have no
+         * dnf5, and must not get a "package system missing" warning. */
+        if (strcmp(os->id, "fedora") == 0)
+            return gaudit_pkg_backend_fedora();
     }
     return NULL;
 }
@@ -142,7 +146,9 @@ const gaudit_pkg_backend *gaudit_pkg_backend_default(void)
     static const gaudit_pkg_backend *chosen;
     if (chosen == NULL) {
         /* In order of preference; more backends go here. */
-        const gaudit_pkg_backend *candidates[] = { gaudit_pkg_backend_debian(), NULL };
+        const gaudit_pkg_backend *candidates[] = {
+            gaudit_pkg_backend_debian(), gaudit_pkg_backend_fedora(), NULL
+        };
         chosen = gaudit_pkg_backend_generic();
         for (const gaudit_pkg_backend **b = candidates; *b != NULL; b++)
             if ((*b)->detect != NULL && (*b)->detect()) {

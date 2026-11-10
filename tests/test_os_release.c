@@ -40,6 +40,10 @@ int main(void)
     CHECK(b == gaudit_pkg_backend_debian());
 
     CHECK(strcmp(describe(DATA "/fedora", &b), "Fedora Linux 44 Workstation Edition") == 0);
+    CHECK(b == gaudit_pkg_backend_fedora());
+
+    /* RHEL family lists fedora in ID_LIKE but has no dnf5: no expectation. */
+    CHECK(strcmp(describe(DATA "/rocky", &b), "Rocky Linux 10.1") == 0);
     CHECK(b == NULL);
 
     CHECK(strcmp(describe(DATA "/arch", &b), "Arch Linux") == 0);  /* no VERSION_ID */

@@ -22,8 +22,9 @@ typedef struct {
 int gaudit_os_release_read(const char *path, gaudit_os_release *out);
 
 /* The backend this distribution leads us to expect: Debian if ID or ID_LIKE
- * names debian or ubuntu, otherwise NULL (no expectation; also for
- * os == NULL). This never chooses the backend; feature detection does. */
+ * names debian or ubuntu, Fedora if ID is fedora, otherwise NULL (no
+ * expectation; also for os == NULL). This never chooses the backend;
+ * feature detection does. */
 const gaudit_pkg_backend *gaudit_pkg_backend_expected_for(const gaudit_os_release *os);
 
 /* "Ubuntu 26.10 Stonking Stoat": NAME VERSION_ID, plus the part of VERSION in

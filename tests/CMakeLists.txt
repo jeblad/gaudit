@@ -50,6 +50,13 @@ target_compile_definitions(test_snap PRIVATE
 target_link_libraries(test_snap PRIVATE gaudit_backend)
 add_test(NAME snap COMMAND test_snap)
 
+add_executable(test_fedora test_fedora.c)
+target_include_directories(test_fedora PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/fedora)
+target_compile_definitions(test_fedora PRIVATE _GNU_SOURCE
+  GAUDIT_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/tmp")
+target_link_libraries(test_fedora PRIVATE gaudit_backend)
+add_test(NAME fedora COMMAND test_fedora)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

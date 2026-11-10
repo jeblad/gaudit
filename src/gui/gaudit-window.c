@@ -332,7 +332,8 @@ static AdwNavigationPage *build_home(GauditWindow *self)
         /* After the dash: how gAudit treats the system, i.e. which backend
          * does the checks. Not read from the distribution. */
         const char *family = g_strcmp0(self->pkg->name, "debian") == 0 ? _("Debian")
-                                                                       : _("generic");
+                           : g_strcmp0(self->pkg->name, "fedora") == 0 ? _("Fedora")
+                           : _("generic");
         /* Translators: "<distribution> – <how gAudit treats it>", e.g. "Ubuntu – Debian". */
         g_autofree char *system = distro[0] != '\0'
             ? g_strdup_printf(_("%s – %s"), distro, family)

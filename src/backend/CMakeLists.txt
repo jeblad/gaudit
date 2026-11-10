@@ -11,6 +11,8 @@ add_library(gaudit_backend STATIC
   debian/pkg-debian.c
   debian/apt-conf.c
   debian/dpkg.c
+  fedora/pkg-fedora.c
+  fedora/dnf-files.c
   generic/pkg-generic.c
 )
 target_compile_definitions(gaudit_backend PRIVATE _GNU_SOURCE)

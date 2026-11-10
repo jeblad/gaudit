@@ -111,6 +111,9 @@ typedef struct gaudit_pkg_backend {
 /* Debian family (Debian, Ubuntu and derivatives): dpkg/apt. */
 const gaudit_pkg_backend *gaudit_pkg_backend_debian(void);
 
+/* Fedora and other systems with rpm + dnf5 (libdnf5). */
+const gaudit_pkg_backend *gaudit_pkg_backend_fedora(void);
+
 /* Any other distribution: common paths and Flatpak only. */
 const gaudit_pkg_backend *gaudit_pkg_backend_generic(void);
 

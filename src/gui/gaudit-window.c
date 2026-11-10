@@ -1038,6 +1038,7 @@ void gaudit_window_elevated_result(GauditWindow *self, gsize task_index, gaudit_
         self->elevated[task_index].state = ELEVATED_DONE;
         self->elevated[task_index].have = TRUE;
         self->elevated[task_index].fw = *result;
+        self->elevated_note = NULL;  /* a fresh result: an old "not checked" no longer applies */
         g_autoptr(GDateTime) now = g_date_time_new_now_local();
         g_autofree char *when = g_date_time_format(now, "%H:%M");
         g_strlcpy(self->elevated_when, when != NULL ? when : "", sizeof self->elevated_when);
@@ -1069,9 +1070,17 @@ void gaudit_window_elevated_end(GauditWindow *self, gaudit_verdict worst)
             self->elevated[i].state = self->elevated[i].have ? ELEVATED_DONE : ELEVATED_NONE;
     self->elevated_running = FALSE;
     fill_elevated(self);
-    if (self->have_status) {
-        self->worst = worst;
-        if (self->home_status != NULL)
-            set_summary(self->home_status, TRUE, worst);
-    }
+    gaudit_window_set_worst(self, worst);
+}
+
+void gaudit_window_set_worst(GauditWindow *self, gaudit_verdict worst)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    /* Before every Home row has its answer, the summary keeps its spinner;
+     * finish_status brings in the model's worst then. */
+    if (!self->have_status)
+        return;
+    self->worst = worst;
+    if (self->home_status != NULL)
+        set_summary(self->home_status, TRUE, worst);
 }

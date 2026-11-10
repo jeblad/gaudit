@@ -31,6 +31,13 @@ gboolean gaudit_session_elevated(void);
 void gaudit_session_set_elevated_listener(void (*fn)(gboolean on, gpointer user_data),
                                           gpointer user_data);
 
+/* Called for every run that ended with a result, whoever started it,
+ * before that run's own on_done. command: as given to gaudit_session_run. */
+void gaudit_session_set_result_listener(void (*fn)(const char *command,
+                                                   const gaudit_firewall_report *result,
+                                                   gpointer user_data),
+                                        gpointer user_data);
+
 /* Ends the elevated rights now (the helper ends its lease). */
 void gaudit_session_drop(void);
 

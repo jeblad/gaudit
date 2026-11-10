@@ -111,8 +111,8 @@ static const char app_css[] =
  *
  * Run one after another through the session, so one password covers all
  * of them (the helper's lease). A cancelled or refused password stops the
- * rest: asking again at once would only annoy. Each result goes into the
- * model under the task's id, replacing an earlier one. */
+ * rest: asking again at once would only annoy. Results themselves, from
+ * here or from a task's own page 2, arrive through on_session_result. */
 
 typedef struct {
     GauditApp *app;
@@ -135,12 +135,10 @@ static void on_elevated_done(gaudit_run_status status, const gaudit_firewall_rep
                              gpointer user_data)
 {
     ElevatedJob *job = user_data;
-    gsize n_tasks;
-    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
-    if (status == GAUDIT_RUN_OK && result != NULL
-        && gaudit_model_add_finding(job->app->model, tasks[job->current].id, result->verdict) != GAUDIT_OK)
-        g_warning("gaudit: could not record finding %s", tasks[job->current].id);
-    gaudit_window_elevated_result(job->view, job->current, status, result);
+    /* A result is already in place (on_session_result); only say why
+     * nothing came. */
+    if (status != GAUDIT_RUN_OK || result == NULL)
+        gaudit_window_elevated_result(job->view, job->current, status, NULL);
     if (status == GAUDIT_RUN_CANCELLED || status == GAUDIT_RUN_DENIED) {
         elevated_finish(job);
         return;
@@ -287,6 +285,30 @@ static void set_accel(GApplication *app, const char *action, const char *accel)
     gtk_application_set_accels_for_action(GTK_APPLICATION(app), action, accels);
 }
 
+/* Every result of a run, whoever started it (Home's button or a task's
+ * page 2): into the model under the task's id, replacing an earlier one,
+ * and onto Home's row for that task in every window, so the two never
+ * disagree. */
+static void on_session_result(const char *command, const gaudit_firewall_report *result,
+                              gpointer app)
+{
+    GauditApp *self = GAUDIT_APP(app);
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    for (gsize i = 0; i < n_tasks; i++) {
+        if (!tasks[i].home_elevated || g_strcmp0(tasks[i].run_command, command) != 0)
+            continue;
+        if (gaudit_model_add_finding(self->model, tasks[i].id, result->verdict) != GAUDIT_OK)
+            g_warning("gaudit: could not record finding %s", tasks[i].id);
+        gaudit_verdict worst = gaudit_model_worst(self->model);
+        for (GList *w = gtk_application_get_windows(GTK_APPLICATION(app)); w != NULL; w = w->next)
+            if (GAUDIT_IS_WINDOW(w->data)) {
+                gaudit_window_elevated_result(GAUDIT_WINDOW(w->data), i, GAUDIT_RUN_OK, result);
+                gaudit_window_set_worst(GAUDIT_WINDOW(w->data), worst);
+            }
+    }
+}
+
 /* The red disc follows the helper in every window. */
 static void on_elevated_changed(gboolean on, gpointer app)
 {
@@ -310,6 +332,7 @@ static void gaudit_app_startup(GApplication *app)
     G_APPLICATION_CLASS(gaudit_app_parent_class)->startup(app);
 
     gaudit_session_set_elevated_listener(on_elevated_changed, app);
+    gaudit_session_set_result_listener(on_session_result, app);
     g_signal_connect(app, "window-removed", G_CALLBACK(on_window_removed), NULL);
 
     g_action_map_add_action_entries(G_ACTION_MAP(app), app_actions,

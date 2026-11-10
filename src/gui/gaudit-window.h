@@ -37,4 +37,7 @@ void gaudit_window_elevated_result(GauditWindow *self, gsize task_index, gaudit_
 void gaudit_window_elevated_busy(GauditWindow *self);
 void gaudit_window_elevated_end(GauditWindow *self, gaudit_verdict worst);
 
+/* The summary at the top of Home, after a result came in. */
+void gaudit_window_set_worst(GauditWindow *self, gaudit_verdict worst);
+
 G_END_DECLS

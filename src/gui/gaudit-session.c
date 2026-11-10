@@ -9,6 +9,7 @@
 #define RUN_WATCHDOG_S (6 * 60)
 
 typedef struct {
+    char *command;
     GauditRunProgressFn on_progress;
     GauditRunDoneFn on_done;
     gpointer user_data;
@@ -23,6 +24,9 @@ static struct {
     guint watchdog_id;
     void (*listener)(gboolean on, gpointer user_data);
     gpointer listener_data;
+    void (*result_listener)(const char *command, const gaudit_firewall_report *result,
+                            gpointer user_data);
+    gpointer result_listener_data;
 } S;
 
 static void set_elevated(gboolean on)
@@ -44,8 +48,12 @@ static void end_run(gaudit_run_status status)
         g_source_remove(S.watchdog_id);
         S.watchdog_id = 0;
     }
-    run->on_done(status, status == GAUDIT_RUN_OK && run->have_result ? &run->result : NULL,
-                 run->user_data);
+    const gaudit_firewall_report *result =
+        status == GAUDIT_RUN_OK && run->have_result ? &run->result : NULL;
+    if (result != NULL && S.result_listener != NULL)
+        S.result_listener(run->command, result, S.result_listener_data);
+    run->on_done(status, result, run->user_data);
+    g_free(run->command);
     g_free(run);
 }
 
@@ -109,6 +117,7 @@ gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress
         return FALSE;
 
     Run *run = g_new0(Run, 1);
+    run->command = g_strdup(command);
     run->on_progress = on_progress;
     run->on_done = on_done_fn;
     run->user_data = user_data;
@@ -141,6 +150,15 @@ void gaudit_session_set_elevated_listener(void (*fn)(gboolean on, gpointer user_
 {
     S.listener = fn;
     S.listener_data = user_data;
+}
+
+void gaudit_session_set_result_listener(void (*fn)(const char *command,
+                                                   const gaudit_firewall_report *result,
+                                                   gpointer user_data),
+                                        gpointer user_data)
+{
+    S.result_listener = fn;
+    S.result_listener_data = user_data;
 }
 
 void gaudit_session_drop(void)

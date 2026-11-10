@@ -29,6 +29,8 @@ typedef struct {
     const char *home_probe;   /* id of the Home row that leads here (e.g. "status.firewall"),
                                  which then stands for the task on Home; NULL for none */
     const char *home_tooltip; /* for the button on that row, N_()-marked */
+    gboolean home_elevated;   /* run_command is also one of Home's checks that need the
+                                 password (quick enough to run together) */
 } GauditTaskInfo;
 
 const GauditTaskInfo *gaudit_tasks_get(gsize *n_tasks);

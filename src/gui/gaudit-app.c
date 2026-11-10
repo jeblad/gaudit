@@ -7,6 +7,7 @@
 #include "gaudit-app.h"
 #include "gaudit-orchestrator.h"
 #include "gaudit-session.h"
+#include "gaudit-task.h"
 #include "gaudit-window.h"
 #include "gaudit/backend.h"
 #include "gaudit/model.h"
@@ -105,6 +106,78 @@ static const char app_css[] =
     "  background-color: var(--accent-bg-color);\n"
     "  color: var(--accent-fg-color);\n"
     "}\n";
+
+/* --- Home's checks that need the password ---------------------------------
+ *
+ * Run one after another through the session, so one password covers all
+ * of them (the helper's lease). A cancelled or refused password stops the
+ * rest: asking again at once would only annoy. Each result goes into the
+ * model under the task's id, replacing an earlier one. */
+
+typedef struct {
+    GauditApp *app;
+    GauditWindow *view;
+    gsize next;      /* the task index to look at next */
+    gsize current;
+} ElevatedJob;
+
+static void elevated_next(ElevatedJob *job);
+
+static void elevated_finish(ElevatedJob *job)
+{
+    gaudit_window_elevated_end(job->view, gaudit_model_worst(job->app->model));
+    g_object_unref(job->view);
+    g_object_unref(job->app);
+    g_free(job);
+}
+
+static void on_elevated_done(gaudit_run_status status, const gaudit_firewall_report *result,
+                             gpointer user_data)
+{
+    ElevatedJob *job = user_data;
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    if (status == GAUDIT_RUN_OK && result != NULL
+        && gaudit_model_add_finding(job->app->model, tasks[job->current].id, result->verdict) != GAUDIT_OK)
+        g_warning("gaudit: could not record finding %s", tasks[job->current].id);
+    gaudit_window_elevated_result(job->view, job->current, status, result);
+    if (status == GAUDIT_RUN_CANCELLED || status == GAUDIT_RUN_DENIED) {
+        elevated_finish(job);
+        return;
+    }
+    elevated_next(job);
+}
+
+static void elevated_next(ElevatedJob *job)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    while (job->next < n_tasks && !tasks[job->next].home_elevated)
+        job->next++;
+    if (job->next >= n_tasks) {
+        elevated_finish(job);
+        return;
+    }
+    job->current = job->next++;
+    if (!gaudit_session_run(tasks[job->current].run_command, NULL, on_elevated_done, job)) {
+        gaudit_window_elevated_busy(job->view);
+        elevated_finish(job);
+    }
+}
+
+static void on_run_elevated(GSimpleAction *action, GVariant *param, gpointer app)
+{
+    (void)action;
+    (void)param;
+    GtkWindow *win = gtk_application_get_active_window(GTK_APPLICATION(app));
+    if (!GAUDIT_IS_WINDOW(win))
+        return;
+    ElevatedJob *job = g_new0(ElevatedJob, 1);
+    job->app = g_object_ref(GAUDIT_APP(app));
+    job->view = g_object_ref(GAUDIT_WINDOW(win));
+    gaudit_window_elevated_begin(job->view);
+    elevated_next(job);
+}
 
 /* --- Actions (primary menu and shortcuts) --------------------------------- */
 
@@ -205,6 +278,7 @@ static const GActionEntry app_actions[] = {
     { .name = "shortcuts",   .activate = on_shortcuts },
     { .name = "about",       .activate = on_about },
     { .name = "quit",        .activate = on_quit },
+    { .name = "run-elevated", .activate = on_run_elevated },
 };
 
 static void set_accel(GApplication *app, const char *action, const char *accel)

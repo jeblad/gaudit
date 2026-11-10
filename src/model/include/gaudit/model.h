@@ -37,7 +37,9 @@ typedef struct gaudit_model gaudit_model;
 gaudit_status gaudit_model_new(gaudit_model **out) GAUDIT_NOEXCEPT;
 void          gaudit_model_free(gaudit_model *model) GAUDIT_NOEXCEPT;
 
-/* check_id is a language-neutral, stable identifier (e.g. "firewall.active"). */
+/* check_id is a language-neutral, stable identifier (e.g. "firewall.active").
+ * One finding per check: adding one for a check_id already present
+ * replaces its verdict, so a check run again never leaves its old result. */
 gaudit_status gaudit_model_add_finding(gaudit_model *model,
                                        const char *check_id,
                                        gaudit_verdict verdict) GAUDIT_NOEXCEPT;

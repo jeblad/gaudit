@@ -4,6 +4,7 @@
 #include <glib/gi18n.h>
 
 #include "gaudit-window.h"
+#include "gaudit-firewall-text.h"
 #include "gaudit-session.h"
 #include "gaudit-task.h"
 #include "gaudit-task-page.h"
@@ -28,9 +29,25 @@ struct _GauditWindow {
      * can be filled in one by one as their answers arrive. */
     AdwStatusPage *home_status;
     AdwActionRow *rows[GAUDIT_PROBE_COUNT];
+
+    /* Home's checks that need the password, by task index. Results stay
+     * after the rights have ended. They run together, so one time for the
+     * group. */
+    struct {
+        int state;  /* ELEVATED_NONE, _RUNNING, _DONE */
+        gboolean have;  /* a result, from this run or an earlier one */
+        gaudit_firewall_report fw;
+    } elevated[GAUDIT_WINDOW_MAX_TASKS];
+    char elevated_when[16];  /* when the shown results were checked; "" before any */
+    gboolean elevated_running;
+    const char *elevated_note;  /* static, translated: why the last run gave nothing */
+    AdwPreferencesGroup *elevated_group;  /* weak */
+    GPtrArray *elevated_rows;   /* the rows now in elevated_group */
 };
 
 G_DEFINE_FINAL_TYPE(GauditWindow, gaudit_window, ADW_TYPE_APPLICATION_WINDOW)
+
+enum { ELEVATED_NONE, ELEVATED_RUNNING, ELEVATED_DONE };
 
 static void navigate(GauditWindow *self, int index, gboolean show_content);
 
@@ -500,6 +517,99 @@ static void fill_row(GauditWindow *self, int k)
     gtk_widget_set_visible(GTK_WIDGET(row), TRUE);
 }
 
+/* --- Home: checks that need the password ---------------------------------- */
+
+static void on_run_elevated_clicked(GtkButton *button, gpointer user_data)
+{
+    (void)user_data;
+    gtk_widget_activate_action(GTK_WIDGET(button), "app.run-elevated", NULL);
+}
+
+static void fill_elevated(GauditWindow *self)
+{
+    AdwPreferencesGroup *group = self->elevated_group;
+    if (group == NULL)
+        return;
+    for (guint i = 0; i < self->elevated_rows->len; i++)
+        adw_preferences_group_remove(group, g_ptr_array_index(self->elevated_rows, i));
+    g_ptr_array_set_size(self->elevated_rows, 0);
+
+    gboolean any_done = FALSE;
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    for (gsize i = 0; i < n_tasks && i < GAUDIT_WINDOW_MAX_TASKS; i++) {
+        if (!tasks[i].home_elevated || self->elevated[i].state == ELEVATED_NONE)
+            continue;
+        AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
+        adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), _(tasks[i].title));
+        if (self->elevated[i].state == ELEVATED_RUNNING) {
+            adw_action_row_add_prefix(row, row_spinner());
+            adw_action_row_set_subtitle(row, _("Checking…"));
+        } else {
+            any_done = TRUE;
+            const char *icon;
+            g_autofree char *title = NULL, *description = NULL;
+            gaudit_firewall_text(&self->elevated[i].fw, &icon, &title, &description);
+            adw_action_row_set_subtitle(row, title);
+            adw_action_row_add_prefix(row, verdict_icon(self->elevated[i].fw.verdict));
+            GtkWidget *button = gtk_button_new_from_icon_name("go-next-symbolic");
+            gtk_widget_add_css_class(button, "flat");
+            gtk_widget_set_valign(button, GTK_ALIGN_CENTER);
+            const char *tip = _(tasks[i].home_tooltip != NULL ? tasks[i].home_tooltip : tasks[i].title);
+            gtk_widget_set_tooltip_text(button, tip);
+            gtk_accessible_update_property(GTK_ACCESSIBLE(button), GTK_ACCESSIBLE_PROPERTY_LABEL, tip, -1);
+            g_object_set_data(G_OBJECT(button), "gaudit-index", GINT_TO_POINTER((int)i + 1));
+            g_signal_connect(button, "clicked", G_CALLBACK(on_task_button_clicked), self);
+            adw_action_row_add_suffix(row, button);
+        }
+        adw_preferences_group_add(group, GTK_WIDGET(row));
+        g_ptr_array_add(self->elevated_rows, row);
+    }
+
+    GtkWidget *run = adw_preferences_group_get_header_suffix(group);
+    if (run != NULL) {
+        gtk_button_set_label(GTK_BUTTON(run), any_done ? _("Run Again") : _("Run These Checks"));
+        gtk_widget_set_sensitive(run, !self->elevated_running);
+    }
+    /* One time for the group, never per row. */
+    g_autofree char *description = NULL;
+    if (self->elevated_note != NULL && any_done)
+        /* Translators: "<why nothing new> The results shown are from <time>." */
+        description = g_strdup_printf(_("%s The results shown are from %s."),
+                                      self->elevated_note, self->elevated_when);
+    else if (self->elevated_note != NULL)
+        description = g_strdup(self->elevated_note);
+    else if (any_done && !self->elevated_running)
+        /* Translators: %s is a time, e.g. 14:32. */
+        description = g_strdup_printf(_("Checked at %s."), self->elevated_when);
+    else
+        description = g_strdup(_("A closer look with administrator rights. Asks for your password."));
+    adw_preferences_group_set_description(group, description);
+}
+
+static void build_elevated(GauditWindow *self, GtkWidget *box)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    gboolean any = FALSE;
+    for (gsize i = 0; i < n_tasks; i++)
+        any |= tasks[i].home_elevated;
+    if (!any)
+        return;
+    AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+    adw_preferences_group_set_title(group, _("Checks that need your password"));
+    GtkWidget *run = gtk_button_new_with_label(_("Run These Checks"));
+    gtk_widget_add_css_class(run, "flat");
+    gtk_widget_set_valign(run, GTK_ALIGN_CENTER);
+    g_signal_connect(run, "clicked", G_CALLBACK(on_run_elevated_clicked), NULL);
+    adw_preferences_group_set_header_suffix(group, run);
+    g_ptr_array_set_size(self->elevated_rows, 0);  /* rows of an earlier page are gone */
+    set_weak(&self->elevated_group, group);
+    fill_elevated(self);
+    gtk_box_append(GTK_BOX(box), GTK_WIDGET(group));
+}
+
 static AdwNavigationPage *build_home(GauditWindow *self)
 {
     AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
@@ -551,6 +661,8 @@ static AdwNavigationPage *build_home(GauditWindow *self)
         }
         gtk_box_append(GTK_BOX(box), GTK_WIDGET(group));
     }
+
+    build_elevated(self, box);
 
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
@@ -742,6 +854,8 @@ static void gaudit_window_dispose(GObject *object)
 {
     GauditWindow *win = GAUDIT_WINDOW(object);
     set_weak(&win->home_status, NULL);
+    set_weak(&win->elevated_group, NULL);
+    g_clear_pointer(&win->elevated_rows, g_ptr_array_unref);
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
         set_weak(&win->rows[k], NULL);
     g_clear_object(&GAUDIT_WINDOW(object)->settings);
@@ -761,6 +875,7 @@ static void gaudit_window_init(GauditWindow *self)
     self->have_status = FALSE;
     self->worst = GAUDIT_VERDICT_UNKNOWN;
     gaudit_probe_init(self->probes);
+    self->elevated_rows = g_ptr_array_new();
 
     /* Translators: Title of the main window and its sidebar. */
     gtk_window_set_title(GTK_WINDOW(self), _("Audit Center"));
@@ -896,4 +1011,67 @@ void gaudit_window_finish_status(GauditWindow *self, gaudit_verdict worst)
     self->worst = worst;
     if (self->home_status != NULL)
         set_summary(self->home_status, TRUE, worst);
+}
+
+/* --- Home's checks that need the password ---------------------------------- */
+
+void gaudit_window_elevated_begin(GauditWindow *self)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    for (gsize i = 0; i < n_tasks && i < GAUDIT_WINDOW_MAX_TASKS; i++)
+        if (tasks[i].home_elevated)
+            self->elevated[i].state = ELEVATED_RUNNING;
+    self->elevated_running = TRUE;
+    self->elevated_note = NULL;
+    fill_elevated(self);
+}
+
+void gaudit_window_elevated_result(GauditWindow *self, gsize task_index, gaudit_run_status status,
+                                   const gaudit_firewall_report *result)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    if (task_index >= GAUDIT_WINDOW_MAX_TASKS)
+        return;
+    if (status == GAUDIT_RUN_OK && result != NULL) {
+        self->elevated[task_index].state = ELEVATED_DONE;
+        self->elevated[task_index].have = TRUE;
+        self->elevated[task_index].fw = *result;
+        g_autoptr(GDateTime) now = g_date_time_new_now_local();
+        g_autofree char *when = g_date_time_format(now, "%H:%M");
+        g_strlcpy(self->elevated_when, when != NULL ? when : "", sizeof self->elevated_when);
+    } else {
+        /* Nothing new: an earlier result stays, otherwise the row goes;
+         * the group's description says why, and how old the rest is. */
+        self->elevated[task_index].state =
+            self->elevated[task_index].have ? ELEVATED_DONE : ELEVATED_NONE;
+        self->elevated_note = status == GAUDIT_RUN_CANCELLED ? _("Not checked: no password was given.")
+                            : status == GAUDIT_RUN_DENIED ? _("Not checked: the password was not accepted.")
+                            : _("A check could not be completed.");
+    }
+    fill_elevated(self);
+}
+
+void gaudit_window_elevated_busy(GauditWindow *self)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    self->elevated_note = _("Another check is running. Try again when it has finished.");
+}
+
+void gaudit_window_elevated_end(GauditWindow *self, gaudit_verdict worst)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    gsize n_tasks;
+    gaudit_tasks_get(&n_tasks);
+    for (gsize i = 0; i < n_tasks && i < GAUDIT_WINDOW_MAX_TASKS; i++)
+        if (self->elevated[i].state == ELEVATED_RUNNING)
+            self->elevated[i].state = self->elevated[i].have ? ELEVATED_DONE : ELEVATED_NONE;
+    self->elevated_running = FALSE;
+    fill_elevated(self);
+    if (self->have_status) {
+        self->worst = worst;
+        if (self->home_status != NULL)
+            set_summary(self->home_status, TRUE, worst);
+    }
 }

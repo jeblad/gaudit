@@ -3,6 +3,7 @@
 
 #include <glib/gi18n.h>
 
+#include "gaudit-firewall-text.h"
 #include "gaudit-run-page.h"
 #include "gaudit-session.h"
 #include "gaudit/backend.h"
@@ -81,40 +82,12 @@ static void show_enable(RunJob *job)
 
 static void show_firewall(RunJob *job)
 {
-    const gaudit_firewall_report *f = &job->firewall;
-    switch (f->verdict) {
-    case GAUDIT_VERDICT_OK: {
-        g_autofree char *how = f->input_drop > 0
-            ? g_strdup(_("Incoming connections are blocked unless a rule allows them."))
-            : g_strdup_printf(ngettext("Incoming connections pass through %u firewall rule.",
-                                       "Incoming connections pass through %u firewall rules.",
-                                       f->input_rules), f->input_rules);
-        /* Translators: Keep the meaning: active is not the same as right. */
-        g_autofree char *text = g_strdup_printf("%s %s", how,
-            _("This shows that a firewall is active, not that its rules suit you."));
-        show(job, "security-high-symbolic", _("The firewall is filtering incoming traffic"), text);
-        break;
-    }
-    case GAUDIT_VERDICT_UNKNOWN:
-        show(job, "dialog-question-symbolic", _("The firewall could not be checked fully"),
-             _("This system uses the older iptables, whose rules gAudit cannot read yet."));
-        break;
-    default: {
-        /* What the missing firewall leaves open, counted by the
-         * orchestrator when the check ran. */
-        g_autofree char *exposed = f->listening == 0
-            ? g_strdup(_("Nothing listens for connections from the network right now, so nothing "
-                         "is exposed yet. A firewall still protects against services started later."))
-            : g_strdup_printf(ngettext("%u service listens for connections from the network, and "
-                                       "other computers can reach it.",
-                                       "%u services listen for connections from the network, and "
-                                       "other computers can reach them.", f->listening),
-                              f->listening);
-        show(job, "security-low-symbolic", _("No firewall is filtering incoming traffic"), exposed);
+    const char *icon;
+    g_autofree char *title = NULL, *description = NULL;
+    gaudit_firewall_text(&job->firewall, &icon, &title, &description);
+    show(job, icon, title, description);
+    if (job->firewall.verdict == GAUDIT_VERDICT_WARNING)
         show_enable(job);
-        break;
-    }
-    }
 }
 
 static void on_progress(gpointer user_data)

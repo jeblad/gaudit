@@ -6,6 +6,7 @@
 
 #include "gaudit/model.h"
 #include "gaudit/probe.h"
+#include "gaudit/run.h"
 
 G_BEGIN_DECLS
 
@@ -24,5 +25,16 @@ void gaudit_window_set_elevated(GauditWindow *self, gboolean elevated);
 void gaudit_window_begin_status(GauditWindow *self);
 void gaudit_window_show_probe(GauditWindow *self, const gaudit_probe_result *result);
 void gaudit_window_finish_status(GauditWindow *self, gaudit_verdict worst);
+
+/* Home's checks that need the password (tasks marked home_elevated), run
+ * together by the controller: begin shows them as running, result fills
+ * in one (by task index), busy says another run is under way, end
+ * re-enables the button and updates the summary. */
+#define GAUDIT_WINDOW_MAX_TASKS 16
+void gaudit_window_elevated_begin(GauditWindow *self);
+void gaudit_window_elevated_result(GauditWindow *self, gsize task_index, gaudit_run_status status,
+                                   const gaudit_firewall_report *result);
+void gaudit_window_elevated_busy(GauditWindow *self);
+void gaudit_window_elevated_end(GauditWindow *self, gaudit_verdict worst);
 
 G_END_DECLS

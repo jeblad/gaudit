@@ -43,6 +43,12 @@ extern "C" gaudit_status gaudit_model_add_finding(gaudit_model *model,
         || !valid_verdict(verdict))
         return GAUDIT_ERR_INVALID;
     try {
+        /* One finding per check: a later result replaces the earlier. */
+        for (auto &f : model->findings)
+            if (f.check_id == check_id) {
+                f.verdict = verdict;
+                return GAUDIT_OK;
+            }
         model->findings.push_back({check_id, verdict});
         return GAUDIT_OK;
     } catch (const std::bad_alloc &) {

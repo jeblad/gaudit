@@ -36,6 +36,14 @@ int main(void)
     CHECK(gaudit_model_worst(m) == GAUDIT_VERDICT_WARNING);
     CHECK(gaudit_model_count(m) == 3);
 
+    /* Run again: the new result replaces the old, in both directions. */
+    CHECK(gaudit_model_add_finding(m, "av.scheduled", GAUDIT_VERDICT_OK) == GAUDIT_OK);
+    CHECK(gaudit_model_worst(m) == GAUDIT_VERDICT_OK);
+    CHECK(gaudit_model_add_finding(m, "firewall.active", GAUDIT_VERDICT_CRITICAL) == GAUDIT_OK);
+    CHECK(gaudit_model_worst(m) == GAUDIT_VERDICT_CRITICAL);
+    CHECK(gaudit_model_add_finding(m, "firewall.active", GAUDIT_VERDICT_OK) == GAUDIT_OK);
+    CHECK(gaudit_model_count(m) == 3);
+
     /* Invalid input is rejected and leaves the model unchanged. */
     CHECK(gaudit_model_add_finding(m, NULL, GAUDIT_VERDICT_OK) == GAUDIT_ERR_INVALID);
     CHECK(gaudit_model_add_finding(m, "", GAUDIT_VERDICT_OK) == GAUDIT_ERR_INVALID);

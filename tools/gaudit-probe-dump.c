@@ -7,6 +7,7 @@
 #include "dpkg.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 
 static const char *const verdict_names[] = { "ok", "unknown", "warning", "critical" };
@@ -41,6 +42,9 @@ int main(void)
         if (present & (1u << s))
             printf(" [%s]", gaudit_package_system_label((gaudit_package_system)s));
     printf("\n");
+
+    if (strcmp(gaudit_pkg_backend_default()->name, "debian") != 0)
+        return 0;  /* the package list below is dpkg-specific */
 
     printf("Packages without a source:\n");
     gaudit_deb_counts counts;

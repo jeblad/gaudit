@@ -262,6 +262,9 @@ tests/             hand-written tests
 - `GAUDIT_DEVELOPER_BUILD=ON` (in `dev`) reads translations from the build tree. Never use it for packaging.
 - Hardening is on for all targets: stack protector, stack clash protection, CET, `_FORTIFY_SOURCE=3` (not in Debug), PIE and full RELRO with `BIND_NOW`.
 - Targeted, hand-written tests over clear execution paths, not a heavyweight test framework.
+- **Other distributions are tested in two layers:**
+  - In every normal session, backends for other distributions are tested against small fixtures in `tests/data/` (e.g. an rpm database and dnf metadata taken once from a container). They need no container and run with `ctest`.
+  - Real runs happen on demand with `tools/distro-test.sh fedora|arch|opensuse|debian`, never as part of `ctest`. It uses rootless podman (no root daemon; docker is not used), mounts the source read-only, builds and tests inside a `--rm` container, runs `gaudit-probe-dump`, and removes the image afterwards, so nothing stays on disk. Disk space is needed for other things.
 
 ## Open questions
 

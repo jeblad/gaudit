@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 02:55+0100\n"
+"POT-Creation-Date: 2026-11-10 03:17+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,28 +26,28 @@ msgstr ""
 msgid "There is nothing to set yet."
 msgstr ""
 
-#: src/gui/gaudit-app.c:81
+#: src/gui/gaudit-app.c:79
 msgid "Open Main Menu"
 msgstr ""
 
-#: src/gui/gaudit-app.c:82
+#: src/gui/gaudit-app.c:80
 msgid "Preferences"
 msgstr ""
 
-#: src/gui/gaudit-app.c:83
+#: src/gui/gaudit-app.c:81 src/gui/gaudit-app.c:101
 msgid "Keyboard Shortcuts"
 msgstr ""
 
-#: src/gui/gaudit-app.c:84
+#: src/gui/gaudit-app.c:82
 msgid "Quit"
 msgstr ""
 
-#: src/gui/gaudit-app.c:97 data/gaudit.desktop.in:6
+#: src/gui/gaudit-app.c:126 data/gaudit.desktop.in:6
 msgid "Check the security status of this computer"
 msgstr ""
 
 #. Translators: Replace with your names, one per line.
-#: src/gui/gaudit-app.c:104
+#: src/gui/gaudit-app.c:133
 msgid "translator-credits"
 msgstr ""
 

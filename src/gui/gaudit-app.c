@@ -72,18 +72,47 @@ static void on_preferences(GSimpleAction *action, GVariant *param, gpointer app)
     adw_dialog_present(ADW_DIALOG(dialog), active_window(app));
 }
 
+static const struct {
+    const char *title;  /* N_() */
+    const char *accel;
+} shortcuts[] = {
+    { N_("Open Main Menu"),     "F10" },
+    { N_("Preferences"),        "<Control>comma" },
+    { N_("Keyboard Shortcuts"), "<Control>question" },
+    { N_("Quit"),               "<Control>q" },
+};
+
 static void on_shortcuts(GSimpleAction *action, GVariant *param, gpointer app)
 {
     (void)action;
     (void)param;
+#if ADW_CHECK_VERSION(1, 8, 0)
     AdwShortcutsDialog *dialog = ADW_SHORTCUTS_DIALOG(adw_shortcuts_dialog_new());
     AdwShortcutsSection *section = adw_shortcuts_section_new(NULL);
-    adw_shortcuts_section_add(section, adw_shortcuts_item_new(_("Open Main Menu"), "F10"));
-    adw_shortcuts_section_add(section, adw_shortcuts_item_new(_("Preferences"), "<Control>comma"));
-    adw_shortcuts_section_add(section, adw_shortcuts_item_new(_("Keyboard Shortcuts"), "<Control>question"));
-    adw_shortcuts_section_add(section, adw_shortcuts_item_new(_("Quit"), "<Control>q"));
+    for (gsize i = 0; i < G_N_ELEMENTS(shortcuts); i++)
+        adw_shortcuts_section_add(section,
+            adw_shortcuts_item_new(_(shortcuts[i].title), shortcuts[i].accel));
     adw_shortcuts_dialog_add(dialog, section);
     adw_dialog_present(ADW_DIALOG(dialog), active_window(app));
+#else
+    /* libadwaita < 1.8 (e.g. Debian 13) has no AdwShortcutsDialog; show the
+     * same list as rows, avoiding the deprecated GtkShortcutsWindow. */
+    AdwPreferencesDialog *dialog = ADW_PREFERENCES_DIALOG(adw_preferences_dialog_new());
+    adw_dialog_set_title(ADW_DIALOG(dialog), _("Keyboard Shortcuts"));
+    AdwPreferencesPage *page = ADW_PREFERENCES_PAGE(adw_preferences_page_new());
+    AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+    for (gsize i = 0; i < G_N_ELEMENTS(shortcuts); i++) {
+        AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), _(shortcuts[i].title));
+        GtkWidget *label = gtk_shortcut_label_new(shortcuts[i].accel);
+        gtk_widget_set_valign(label, GTK_ALIGN_CENTER);
+        adw_action_row_add_suffix(row, label);
+        adw_preferences_group_add(group, GTK_WIDGET(row));
+    }
+    adw_preferences_page_add(page, group);
+    adw_preferences_dialog_add(dialog, page);
+    adw_dialog_present(ADW_DIALOG(dialog), active_window(app));
+#endif
 }
 
 static void on_about(GSimpleAction *action, GVariant *param, gpointer app)

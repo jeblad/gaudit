@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 02:55+0100\n"
+"POT-Creation-Date: 2026-11-10 03:17+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -23,28 +23,28 @@ msgstr "Generelt"
 msgid "There is nothing to set yet."
 msgstr "Det er ingenting å stille inn ennå."
 
-#: src/gui/gaudit-app.c:81
+#: src/gui/gaudit-app.c:79
 msgid "Open Main Menu"
 msgstr "Åpne hovedmenyen"
 
-#: src/gui/gaudit-app.c:82
+#: src/gui/gaudit-app.c:80
 msgid "Preferences"
 msgstr "Innstillinger"
 
-#: src/gui/gaudit-app.c:83
+#: src/gui/gaudit-app.c:81 src/gui/gaudit-app.c:101
 msgid "Keyboard Shortcuts"
 msgstr "Tastatursnarveier"
 
-#: src/gui/gaudit-app.c:84
+#: src/gui/gaudit-app.c:82
 msgid "Quit"
 msgstr "Avslutt"
 
-#: src/gui/gaudit-app.c:97 data/gaudit.desktop.in:6
+#: src/gui/gaudit-app.c:126 data/gaudit.desktop.in:6
 msgid "Check the security status of this computer"
 msgstr "Sjekk sikkerhetstilstanden på denne datamaskinen"
 
 #. Translators: Replace with your names, one per line.
-#: src/gui/gaudit-app.c:104
+#: src/gui/gaudit-app.c:133
 msgid "translator-credits"
 msgstr ""
 

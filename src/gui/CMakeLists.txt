@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # GUI: controller and view in C (GTK4 + libadwaita).
-pkg_check_modules(ADWAITA REQUIRED IMPORTED_TARGET gtk4 libadwaita-1>=1.4)
+# libadwaita 1.5 for AdwDialog; the shortcuts dialog uses 1.8 when available.
+pkg_check_modules(ADWAITA REQUIRED IMPORTED_TARGET gtk4 libadwaita-1>=1.5)
 
 add_executable(gaudit
   main.c

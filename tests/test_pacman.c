@@ -6,6 +6,7 @@
 #include "pacman-runner.h"
 
 #include <fcntl.h>
+#include <ftw.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,14 @@
 #include <time.h>
 
 static int failures;
+
+static int remove_entry(const char *path, const struct stat *sb, int type, struct FTW *ftw)
+{
+    (void)sb;
+    (void)type;
+    (void)ftw;
+    return remove(path);
+}
 
 #define CHECK(expr)                                                     \
     do {                                                                \
@@ -154,5 +163,7 @@ int main(void)
 
     if (failures)
         fprintf(stderr, "%d check(s) failed (fixtures in %s)\n", failures, base);
+    else
+        nftw(base, remove_entry, 16, FTW_DEPTH | FTW_PHYS);  /* kept on failure, to look at */
     return failures ? 1 : 0;
 }

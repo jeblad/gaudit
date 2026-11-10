@@ -9,6 +9,7 @@
 #include <lz4frame.h>
 #include <lzma.h>
 #include <stdint.h>
+#include <ftw.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +18,14 @@
 #include <zstd.h>
 
 static int failures;
+
+static int remove_entry(const char *path, const struct stat *sb, int type, struct FTW *ftw)
+{
+    (void)sb;
+    (void)type;
+    (void)ftw;
+    return remove(path);
+}
 
 #define CHECK(expr)                                                     \
     do {                                                                \
@@ -250,6 +259,8 @@ int main(void)
     CHECK(gaudit_deb_scan(DATA "/status", DATA "/lists", NULL, NULL, NULL) == GAUDIT_BACKEND_ERROR);
 
     if (failures)
-        fprintf(stderr, "%d check(s) failed\n", failures);
+        fprintf(stderr, "%d check(s) failed (fixtures in %s)\n", failures, tmp_dir);
+    else
+        nftw(tmp_dir, remove_entry, 16, FTW_DEPTH | FTW_PHYS);  /* kept on failure, to look at */
     return failures ? 1 : 0;
 }

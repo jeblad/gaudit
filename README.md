@@ -32,7 +32,7 @@ The Home page gives a quick status that never asks for a password:
 Deeper checks, such as whether the firewall is actually active or whether virus scans run regularly, will come as plugins with their own options and reports.
 
 > [!NOTE]
-> The first platform is Ubuntu. Distro-specific code sits behind a small backend interface, so other distributions can be added later.
+> The first platform is the Debian family (Ubuntu, Debian and derivatives). gAudit detects the distribution and says which checks it does not support there yet. Fedora, Arch and SUSE are planned next.
 
 ## Getting started
 

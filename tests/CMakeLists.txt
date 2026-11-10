@@ -10,14 +10,14 @@ target_link_libraries(test_probe PRIVATE gaudit_probe)
 add_test(NAME probe COMMAND test_probe)
 
 add_executable(test_apt_conf test_apt_conf.c)
-target_include_directories(test_apt_conf PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/ubuntu)
+target_include_directories(test_apt_conf PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/debian)
 target_compile_definitions(test_apt_conf PRIVATE
   GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(test_apt_conf PRIVATE gaudit_backend)
 add_test(NAME apt-conf COMMAND test_apt_conf)
 
 add_executable(test_dpkg test_dpkg.c)
-target_include_directories(test_dpkg PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/ubuntu)
+target_include_directories(test_dpkg PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/debian)
 target_compile_definitions(test_dpkg PRIVATE
   GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(test_dpkg PRIVATE gaudit_backend)
@@ -29,6 +29,13 @@ target_compile_definitions(test_flatpak PRIVATE _GNU_SOURCE
   GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
 target_link_libraries(test_flatpak PRIVATE gaudit_backend)
 add_test(NAME flatpak COMMAND test_flatpak)
+
+add_executable(test_os_release test_os_release.c)
+target_include_directories(test_os_release PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+target_compile_definitions(test_os_release PRIVATE
+  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_link_libraries(test_os_release PRIVATE gaudit_backend)
+add_test(NAME os-release COMMAND test_os_release)
 
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)

@@ -180,6 +180,26 @@ int main(void)
     all_good(); fake.flatpak_status = GAUDIT_BACKEND_ERROR;
     CHECK(run(GAUDIT_PROBE_FLATPAK) == GAUDIT_VERDICT_UNKNOWN);
 
+    /* A backend without package functions (e.g. the generic one), or one
+     * that says "not implemented": not supported, which is not unknown. */
+    static const gaudit_pkg_backend bare_pkg = { .name = "bare", .capability = fake_capability };
+    all_good();
+    gaudit_probe_collect(&bare_pkg, NOW, r);
+    CHECK(r[GAUDIT_PROBE_AUTO_UPDATES].unsupported);
+    CHECK(r[GAUDIT_PROBE_PACKAGE_INDEX].unsupported);
+    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported);
+    CHECK(r[GAUDIT_PROBE_OBSOLETE_PACKAGES].unsupported);
+    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].verdict == GAUDIT_VERDICT_UNKNOWN);
+    CHECK(!r[GAUDIT_PROBE_ANTIVIRUS].unsupported && r[GAUDIT_PROBE_ANTIVIRUS].verdict == GAUDIT_VERDICT_OK);
+    CHECK(!r[GAUDIT_PROBE_FLATPAK].applicable);
+    all_good(); fake.packages_status = GAUDIT_BACKEND_NOT_IMPLEMENTED;
+    gaudit_probe_collect(&fake_pkg, NOW, r);
+    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported && r[GAUDIT_PROBE_OBSOLETE_PACKAGES].unsupported);
+    all_good(); fake.packages_status = GAUDIT_BACKEND_ERROR;  /* could not tell: unknown, not unsupported */
+    gaudit_probe_collect(&fake_pkg, NOW, r);
+    CHECK(!r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported);
+    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].verdict == GAUDIT_VERDICT_UNKNOWN);
+
     /* No backend: everything unknown, ids still set. */
     gaudit_probe_collect(NULL, NOW, r);
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {

@@ -38,6 +38,7 @@ typedef struct {
     unsigned info_count;      /* _FLATPAK: end-of-life runtimes kept (pinned) but unused */
     int applicable;           /* 0: does not apply here (e.g. no Flatpak), not shown */
     const char *missing_capability;  /* set when software for the check is missing */
+    int unsupported;          /* 1: this check is not supported on this system (yet) */
 } gaudit_probe_result;
 
 /* Fills out[kind] for every kind. now: seconds since epoch. */

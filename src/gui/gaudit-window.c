@@ -98,8 +98,14 @@ static GtkWidget *verdict_icon(gaudit_verdict verdict)
 }
 
 /* Title and subtitle for a probe result. The subtitle is newly allocated. */
+static const char *probe_title(const gaudit_probe_result *r);
+
 static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
 {
+    if (r->unsupported) {
+        *subtitle = g_strdup(_("Not supported on this system yet"));
+        return probe_title(r);
+    }
     switch (r->kind) {
     case GAUDIT_PROBE_ANTIVIRUS:
         *subtitle = g_strdup(r->verdict == GAUDIT_VERDICT_OK
@@ -208,6 +214,16 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
     return r->id;
 }
 
+static const char *probe_title(const gaudit_probe_result *r)
+{
+    g_autofree char *ignored = NULL;
+    gaudit_probe_result copy = *r;
+    copy.unsupported = 0;
+    copy.verdict = GAUDIT_VERDICT_UNKNOWN;
+    copy.missing_capability = NULL;
+    return probe_text(&copy, &ignored);
+}
+
 static void on_missing_row_activated(AdwActionRow *row, gpointer user_data)
 {
     GauditWindow *self = GAUDIT_WINDOW(user_data);
@@ -234,8 +250,33 @@ static AdwNavigationPage *build_home(GauditWindow *self)
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 24);
 
     if (self->have_status) {
+        /* Host and distribution come from the system and are shown as
+         * plain text, never as markup. */
+        char host[256], distro[256], full[256];
+        gaudit_system_describe(host, sizeof host, distro, sizeof distro, full, sizeof full);
+        /* After the dash: how gAudit treats the system, i.e. which backend
+         * does the checks. Not read from the distribution. */
+        const char *family = g_strcmp0(self->pkg->name, "debian") == 0 ? _("Debian")
+                                                                       : _("generic");
+        /* Translators: "<distribution> – <how gAudit treats it>", e.g. "Ubuntu – Debian". */
+        g_autofree char *system = distro[0] != '\0'
+            ? g_strdup_printf(_("%s – %s"), distro, family)
+            : g_strdup(_("Unknown"));
+        /* Translators: "Status: <host name> (<system>)". */
+        g_autofree char *heading = g_strdup_printf(_("Status: %s (%s)"),
+                                                   host[0] != '\0' ? host : _("this computer"),
+                                                   system);
+        GtkWidget *heading_label = gtk_label_new(heading);
+        gtk_label_set_xalign(GTK_LABEL(heading_label), 0.0f);
+        gtk_label_set_wrap(GTK_LABEL(heading_label), TRUE);
+        gtk_widget_add_css_class(heading_label, "heading");
+        /* The version matters (releases go out of support), so it is one
+         * hover away. Tooltips are plain text here. */
+        if (full[0] != '\0')
+            gtk_widget_set_tooltip_text(heading_label, full);
+        gtk_box_append(GTK_BOX(box), heading_label);
+
         AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
-        adw_preferences_group_set_title(group, _("Status"));
         adw_preferences_group_set_description(group,
             _("A quick look that does not need your password."));
         for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
@@ -245,10 +286,15 @@ static AdwNavigationPage *build_home(GauditWindow *self)
             g_autofree char *subtitle = NULL;
             const char *title = probe_text(probe, &subtitle);
             AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
+            /* Subtitles carry data from the system: never interpret markup. */
+            adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
             adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), title);
             adw_action_row_set_subtitle(row, subtitle);
             adw_action_row_add_prefix(row, verdict_icon(probe->verdict));
-            if (probe->missing_capability != NULL) {
+            const gaudit_capability *missing = probe->missing_capability == NULL || self->pkg->capability == NULL
+                ? NULL : self->pkg->capability(probe->missing_capability);
+            /* Only lead on when the backend knows which packages to install. */
+            if (missing != NULL && missing->packages != NULL && missing->packages[0] != NULL) {
                 adw_action_row_add_suffix(row, gtk_image_new_from_icon_name("go-next-symbolic"));
                 gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), TRUE);
                 g_object_set_data(G_OBJECT(row), "gaudit-capability",

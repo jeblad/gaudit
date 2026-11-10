@@ -1,0 +1,4 @@
+# comment
+ID=debianish
+ID_LIKE="notdebian"
+NAME="Quote \"test\" \\ and \$x"

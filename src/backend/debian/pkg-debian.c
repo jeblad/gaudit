@@ -126,8 +126,8 @@ static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)
                                     FLATPAK_TIMEOUT_MS, out);
 }
 
-static const gaudit_pkg_backend ubuntu_pkg = {
-    .name = "ubuntu",
+static const gaudit_pkg_backend debian_pkg = {
+    .name = "debian",
     .manual_install_command = "sudo apt install",
     .fallback_install_argv = fallback_argv,
     .capability = capability,
@@ -137,7 +137,7 @@ static const gaudit_pkg_backend ubuntu_pkg = {
     .flatpak_state = flatpak_state,
 };
 
-const gaudit_pkg_backend *gaudit_pkg_backend_ubuntu(void)
+const gaudit_pkg_backend *gaudit_pkg_backend_debian(void)
 {
-    return &ubuntu_pkg;
+    return &debian_pkg;
 }

@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-only
-# Distro backends behind a thin interface. Only Ubuntu is implemented.
+# Distro backends behind a thin interface: Debian family, and a generic
+# fallback for everything else.
 add_library(gaudit_backend STATIC
   capability.c
+  os-release.c
   flatpak-runner.c
-  ubuntu/pkg-ubuntu.c
-  ubuntu/apt-conf.c
-  ubuntu/dpkg.c
+  debian/pkg-debian.c
+  debian/apt-conf.c
+  debian/dpkg.c
+  generic/pkg-generic.c
 )
 target_compile_definitions(gaudit_backend PRIVATE _GNU_SOURCE)
 target_include_directories(gaudit_backend PUBLIC include PRIVATE .)

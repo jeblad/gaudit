@@ -19,13 +19,19 @@ static void print_obsolete(const char *name, const char *arch, const char *versi
 
 int main(void)
 {
+    char host[256], name[256], full[256];
+    gaudit_system_describe(host, sizeof host, name, sizeof name, full, sizeof full);
+    printf("System:  %s (%s) [%s]\nBackend: %s\n", host[0] ? host : "?", name[0] ? name : "unknown",
+           full, gaudit_pkg_backend_default()->name);
+
     gaudit_probe_result r[GAUDIT_PROBE_COUNT];
     gaudit_probe_collect(gaudit_pkg_backend_default(), (int64_t)time(NULL), r);
 
     printf("Probes:\n");
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
-        printf("  %-26s %-8s count=%u age=%.1fd\n", r[k].id, verdict_names[r[k].verdict],
-               r[k].count, (double)r[k].age_seconds / 86400.0);
+        printf("  %-26s %-8s count=%u/%u/%u age=%.1fd%s%s\n", r[k].id, verdict_names[r[k].verdict],
+               r[k].count, r[k].extra_count, r[k].info_count, (double)r[k].age_seconds / 86400.0,
+               r[k].applicable ? "" : " not-applicable", r[k].unsupported ? " unsupported" : "");
 
     printf("Packages without a source:\n");
     gaudit_deb_counts counts;

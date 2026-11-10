@@ -28,7 +28,10 @@ This file collects decisions that have been made. Do not reopen them without a c
   - no exceptions across the boundary, only status codes. Header declarations are marked `GAUDIT_NOEXCEPT` (`noexcept` in C++, empty in C) so the compiler enforces it.
   - clear memory ownership (whoever allocates, frees)
 - The helper and the check processes are written in C.
-- First platform is Ubuntu. Distro-specific logic sits behind a thin backend interface per area (`pkg`, `firewall`, `scheduler`, …), so other distros later only need new backends.
+- First platform is the Debian family (Ubuntu, Debian and derivatives). Distro-specific logic sits behind a thin backend interface per area (`pkg`, `firewall`, `scheduler`, …), so other distros only need new backends. Next in order: **Fedora, Arch, SUSE**. Their package data is best read through their own libraries (libdnf5, libalpm, libzypp/rpm) in separate collectors, as for Flatpak.
+- **The backend is chosen from `/etc/os-release`** (fallback `/usr/lib/os-release`), read directly: `ID` or `ID_LIKE` naming `debian` or `ubuntu` gives the Debian backend. Everything else gets the generic backend, which knows only common program paths and Flatpak.
+- **Recognising a distribution is not the same as being able to check it.** Each check finds out by trying, through the backend. A check the backend cannot do shows "Not supported on this system yet", which is different from *unknown* ("could not find out"). Such rows are never hidden: updates matter too much to disappear silently.
+- Home shows what was detected as "Status: <host> (<distribution> – <family>)", e.g. "Status: chimera (Ubuntu – Debian)", or "(Unknown)" when os-release gives nothing. The part after the dash is how gAudit treats the system (which backend does the checks), not something read from the distribution. The full name with version and code name is in the tooltip, because releases go out of support. These values come from the system and are shown as plain text, never as markup. The same goes for all row titles and subtitles on Home.
 - Shipped as a regular distro package, **not** Flatpak. Its sandbox blocks the host access the app needs.
 
 ## User interface
@@ -220,7 +223,7 @@ GUI (user)  ──>  orchestrator (user)
 ```text
 src/gui/           GUI in C (controller: gaudit-app, view: gaudit-window, task pages)
 src/model/         model in C++ behind a C API (include/gaudit/model.h)
-src/backend/       distro interfaces (include/gaudit/backend.h), ubuntu/
+src/backend/       distro interfaces (include/gaudit/backend.h), os-release, debian/, generic/
 src/probe/         unprivileged status probes for Home (include/gaudit/probe.h), no GTK
 src/collectors/    separate collector programs (flatpak/: the only code linked against libflatpak)
 src/helper/        privileged helper (pkexec)

@@ -13,9 +13,3 @@ int gaudit_capability_present(const gaudit_capability *cap)
             return 0;
     return 1;
 }
-
-const gaudit_pkg_backend *gaudit_pkg_backend_default(void)
-{
-    /* TODO: select the backend from the detected distro. */
-    return gaudit_pkg_backend_ubuntu();
-}

@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -64,10 +65,21 @@ typedef struct gaudit_pkg_backend {
     gaudit_backend_status (*flatpak_state)(gaudit_flatpak_state *out);
 } gaudit_pkg_backend;
 
-const gaudit_pkg_backend *gaudit_pkg_backend_ubuntu(void);
+/* Debian family (Debian, Ubuntu and derivatives): dpkg/apt. */
+const gaudit_pkg_backend *gaudit_pkg_backend_debian(void);
 
-/* The backend for the running system. */
+/* Any other distribution: common paths and Flatpak only. */
+const gaudit_pkg_backend *gaudit_pkg_backend_generic(void);
+
+/* The backend for the running system, chosen from /etc/os-release. */
 const gaudit_pkg_backend *gaudit_pkg_backend_default(void);
+
+/* For display only; each is "" when it cannot be determined.
+ *   host    host name
+ *   name    short distribution name ("Ubuntu")
+ *   full    name, version and code name ("Ubuntu 26.10 Stonking Stoat") */
+void gaudit_system_describe(char *host, size_t host_len, char *name, size_t name_len,
+                            char *full, size_t full_len);
 
 /* 1 if every path of the capability exists and is executable, else 0.
  * Presentation only: the helper re-checks anything that matters. */

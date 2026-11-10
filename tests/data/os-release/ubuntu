@@ -1,0 +1,6 @@
+PRETTY_NAME="Ubuntu 26.10"
+NAME="Ubuntu"
+VERSION_ID="26.10"
+VERSION="26.10 (Stonking Stoat)"
+ID=ubuntu
+ID_LIKE=debian

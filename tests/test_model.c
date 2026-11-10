@@ -44,6 +44,16 @@ int main(void)
     CHECK(gaudit_model_add_finding(m, "firewall.active", GAUDIT_VERDICT_OK) == GAUDIT_OK);
     CHECK(gaudit_model_count(m) == 3);
 
+    /* The summary: one unknown makes it unknown, even next to a warning. */
+    CHECK(gaudit_model_summary(m) == GAUDIT_VERDICT_OK);
+    CHECK(gaudit_model_add_finding(m, "av.scheduled", GAUDIT_VERDICT_WARNING) == GAUDIT_OK);
+    CHECK(gaudit_model_summary(m) == GAUDIT_VERDICT_WARNING);
+    CHECK(gaudit_model_add_finding(m, "updates.recent", GAUDIT_VERDICT_UNKNOWN) == GAUDIT_OK);
+    CHECK(gaudit_model_worst(m) == GAUDIT_VERDICT_WARNING);
+    CHECK(gaudit_model_summary(m) == GAUDIT_VERDICT_UNKNOWN);
+    CHECK(gaudit_model_add_finding(m, "updates.recent", GAUDIT_VERDICT_OK) == GAUDIT_OK);
+    CHECK(gaudit_model_add_finding(m, "av.scheduled", GAUDIT_VERDICT_OK) == GAUDIT_OK);
+
     /* Invalid input is rejected and leaves the model unchanged. */
     CHECK(gaudit_model_add_finding(m, NULL, GAUDIT_VERDICT_OK) == GAUDIT_ERR_INVALID);
     CHECK(gaudit_model_add_finding(m, "", GAUDIT_VERDICT_OK) == GAUDIT_ERR_INVALID);
@@ -54,6 +64,7 @@ int main(void)
     /* NULL-tolerant accessors. */
     CHECK(gaudit_model_count(NULL) == 0);
     CHECK(gaudit_model_worst(NULL) == GAUDIT_VERDICT_UNKNOWN);
+    CHECK(gaudit_model_summary(NULL) == GAUDIT_VERDICT_UNKNOWN);
     gaudit_model_free(NULL);
 
     gaudit_model_free(m);

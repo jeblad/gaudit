@@ -4,6 +4,7 @@
 #include <glib/gi18n.h>
 
 #include "gaudit-window.h"
+#include "gaudit-crossfade.h"
 #include "gaudit-category.h"
 #include "gaudit-sourceless-page.h"
 #include "gaudit-firewall-text.h"
@@ -55,7 +56,28 @@ static void navigate(GauditWindow *self, int index, gboolean show_content);
 
 /* --- Home ----------------------------------------------------------------- */
 
-static void set_summary(AdwStatusPage *status, gboolean have_status, gaudit_verdict worst)
+/* Whether the checks that need the password have all been run and passed.
+ * Their results stay until the next run or restart. */
+static gboolean strict_passed(GauditWindow *self)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    gboolean any = FALSE;
+    for (gsize i = 0; i < n_tasks && i < GAUDIT_WINDOW_MAX_TASKS; i++) {
+        if (!tasks[i].home_elevated)
+            continue;
+        if (!self->elevated[i].have || self->elevated[i].fw.verdict != GAUDIT_VERDICT_OK)
+            return FALSE;
+        any = TRUE;
+    }
+    return any;
+}
+
+/* The shields have gAudit's own names, so no icon theme can replace them:
+ * their shapes carry the meaning, not only their colour (Yaru, for one,
+ * draws every level as the same shield in different colours). */
+static void set_summary(AdwStatusPage *status, gboolean have_status, gboolean strict,
+                        gaudit_verdict worst)
 {
     const char *icon, *title, *description;
 
@@ -73,33 +95,44 @@ static void set_summary(AdwStatusPage *status, gboolean have_status, gaudit_verd
     } else {
         switch (worst) {
         case GAUDIT_VERDICT_OK:
-            icon = "security-high-symbolic";
+            icon = strict ? "gaudit-status-ok-symbolic" : "gaudit-status-high-symbolic";
             title = _("No signs of problems found");
             /* Translators: Keep the meaning: a clean result is not a guarantee. */
             description = _("This does not prove the computer is safe, "
                             "only that the checks found nothing wrong.");
             break;
         case GAUDIT_VERDICT_WARNING:
-            icon = "security-medium-symbolic";
+            icon = "gaudit-status-medium-symbolic";
             title = _("Some things need attention");
             description = NULL;
             break;
         case GAUDIT_VERDICT_CRITICAL:
-            icon = "security-low-symbolic";
+            icon = "gaudit-status-low-symbolic";
             title = _("Serious problems found");
             description = NULL;
             break;
         case GAUDIT_VERDICT_UNKNOWN:
         default:
-            icon = "dialog-warning-symbolic";
+            icon = "gaudit-status-unknown-symbolic";
             title = _("Some checks could not be completed");
             description = NULL;
             break;
         }
     }
 
-    if (icon != NULL)
+    /* A shield that changes once the status is in (e.g. from "the simple
+     * checks passed" to "every check passed" after the password checks)
+     * fades into the new one; the first shield after the spinner just appears. */
+    const char *shown = g_object_get_data(G_OBJECT(status), "gaudit-shield");
+    if (icon != NULL && shown != NULL && have_status && g_strcmp0(shown, icon) != 0) {
+        g_autoptr(GdkPaintable) fade = gaudit_crossfade_new(GTK_WIDGET(status), shown, icon,
+                                                            128, 700);
+        adw_status_page_set_paintable(status, fade);
+    } else if (icon != NULL) {
         adw_status_page_set_icon_name(status, icon);
+    }
+    /* The names are static strings. */
+    g_object_set_data(G_OBJECT(status), "gaudit-shield", (gpointer)icon);
     adw_status_page_set_title(status, title);
     adw_status_page_set_description(status, description);
 }
@@ -657,7 +690,7 @@ static void build_elevated(GauditWindow *self, GtkWidget *box)
 static AdwNavigationPage *build_home(GauditWindow *self)
 {
     AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
-    set_summary(status, self->have_status, self->worst);
+    set_summary(status, self->have_status, strict_passed(self), self->worst);
 
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 24);
     set_weak(&self->home_status, status);
@@ -932,7 +965,7 @@ static void gaudit_window_init(GauditWindow *self)
     self->sidebar = GTK_LIST_BOX(gtk_list_box_new());
     gtk_widget_add_css_class(GTK_WIDGET(self->sidebar), "navigation-sidebar");
     gtk_list_box_append(self->sidebar,
-                        sidebar_row("go-home-symbolic", _("Home"), _("Overall status")));
+                        sidebar_row("gaudit-home-symbolic", _("Home"), _("Overall status")));
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
     for (gsize i = 0; i < n_tasks; i++)
@@ -951,7 +984,7 @@ static void gaudit_window_init(GauditWindow *self)
     GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     /* The disc is a button: it explains itself and lets the rights go. */
     self->elevated_marker = gtk_menu_button_new();
-    gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(self->elevated_marker), "media-record-symbolic");
+    gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(self->elevated_marker), "gaudit-elevated-rights-symbolic");
     gtk_widget_add_css_class(self->elevated_marker, "flat");
     gtk_widget_add_css_class(self->elevated_marker, "elevated-marker");
     gtk_widget_set_tooltip_text(self->elevated_marker, _("Running with administrator rights"));
@@ -1034,7 +1067,7 @@ void gaudit_window_begin_status(GauditWindow *self)
     memset(self->received, 0, sizeof self->received);
     self->have_status = FALSE;
     if (self->home_status != NULL)
-        set_summary(self->home_status, FALSE, GAUDIT_VERDICT_UNKNOWN);
+        set_summary(self->home_status, FALSE, FALSE, GAUDIT_VERDICT_UNKNOWN);
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
         fill_row(self, k);
 }
@@ -1054,7 +1087,7 @@ void gaudit_window_finish_status(GauditWindow *self, gaudit_verdict worst)
     self->have_status = TRUE;
     self->worst = worst;
     if (self->home_status != NULL)
-        set_summary(self->home_status, TRUE, worst);
+        set_summary(self->home_status, TRUE, strict_passed(self), worst);
 }
 
 /* --- Home's checks that need the password ---------------------------------- */
@@ -1126,5 +1159,5 @@ void gaudit_window_set_worst(GauditWindow *self, gaudit_verdict worst)
         return;
     self->worst = worst;
     if (self->home_status != NULL)
-        set_summary(self->home_status, TRUE, worst);
+        set_summary(self->home_status, TRUE, strict_passed(self), worst);
 }

@@ -7,7 +7,7 @@
 <gresources>
   <gresource prefix="/io/github/jeblad/gaudit/icons/scalable/actions">
     <!-- From the GNOME icon library, Jakub Steiner, CC0. -->
-    <file preprocess="xml-stripblanks" alias="fire-symbolic.svg">icons/scalable/actions/fire-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="gaudit-fire-symbolic.svg">icons/scalable/actions/gaudit-fire-symbolic.svg</file>
     <!-- Exported with the Icon Library app; source and license to be confirmed. -->
     <file preprocess="xml-stripblanks" alias="emblem-ok-symbolic.svg">icons/scalable/actions/emblem-ok-symbolic.svg</file>
     <!-- From adwaita-icon-theme, the GNOME Project, used under LGPL-3.0
@@ -19,14 +19,26 @@
     <file preprocess="xml-stripblanks" alias="dialog-question-symbolic.svg">icons/scalable/actions/dialog-question-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="dialog-warning-symbolic.svg">icons/scalable/actions/dialog-warning-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="edit-copy-symbolic.svg">icons/scalable/actions/edit-copy-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="go-home-symbolic.svg">icons/scalable/actions/go-home-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="gaudit-home-symbolic.svg">icons/scalable/actions/gaudit-home-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="go-next-symbolic.svg">icons/scalable/actions/go-next-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="media-record-symbolic.svg">icons/scalable/actions/media-record-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="open-menu-symbolic.svg">icons/scalable/actions/open-menu-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="preferences-system-symbolic.svg">icons/scalable/actions/preferences-system-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="security-high-symbolic.svg">icons/scalable/actions/security-high-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="security-low-symbolic.svg">icons/scalable/actions/security-low-symbolic.svg</file>
-    <file preprocess="xml-stripblanks" alias="security-medium-symbolic.svg">icons/scalable/actions/security-medium-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="system-software-install-symbolic.svg">icons/scalable/actions/system-software-install-symbolic.svg</file>
+    <!-- gAudit's own names, so no icon theme can replace them: the shape
+         carries the meaning. The shield outline is adwaita-icon-theme's
+         security-* (LGPL-3.0, as above); high, medium and low are those
+         icons renamed, ok and unknown add a check mark and a question mark. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-status-ok-symbolic.svg">icons/scalable/actions/gaudit-status-ok-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="gaudit-status-high-symbolic.svg">icons/scalable/actions/gaudit-status-high-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="gaudit-status-medium-symbolic.svg">icons/scalable/actions/gaudit-status-medium-symbolic.svg</file>
+    <!-- Half filled from the side reading starts on: mirrored for RTL, under
+         both names GTK has looked for (as adwaita-icon-theme ships them). -->
+    <file preprocess="xml-stripblanks" alias="gaudit-status-medium-rtl-symbolic.svg">icons/scalable/actions/gaudit-status-medium-rtl-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="gaudit-status-medium-symbolic-rtl.svg">icons/scalable/actions/gaudit-status-medium-rtl-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="gaudit-status-low-symbolic.svg">icons/scalable/actions/gaudit-status-low-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="gaudit-status-unknown-symbolic.svg">icons/scalable/actions/gaudit-status-unknown-symbolic.svg</file>
+    <!-- The marker for elevated rights: adwaita-icon-theme's media-record
+         (LGPL-3.0, as above), renamed so no theme can change or hide it. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-elevated-rights-symbolic.svg">icons/scalable/actions/gaudit-elevated-rights-symbolic.svg</file>
   </gresource>
 </gresources>

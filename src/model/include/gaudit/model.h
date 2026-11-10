@@ -49,6 +49,11 @@ size_t         gaudit_model_count(const gaudit_model *model) GAUDIT_NOEXCEPT;
 /* GAUDIT_VERDICT_UNKNOWN when the model is empty. */
 gaudit_verdict gaudit_model_worst(const gaudit_model *model) GAUDIT_NOEXCEPT;
 
+/* The overall status shown at the top of Home: like worst, except that a
+ * single unknown makes it unknown, since the outcome is then not known
+ * (an unknown check could hide something worse than any known finding). */
+gaudit_verdict gaudit_model_summary(const gaudit_model *model) GAUDIT_NOEXCEPT;
+
 #ifdef __cplusplus
 }
 #endif

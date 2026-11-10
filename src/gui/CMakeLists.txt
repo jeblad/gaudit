@@ -10,6 +10,8 @@ execute_process(COMMAND ${GLIB_COMPILE_RESOURCES} --generate-dependencies
                         --sourcedir ${PROJECT_SOURCE_DIR}/data ${GAUDIT_RESOURCE_XML}
                 OUTPUT_VARIABLE GAUDIT_RESOURCE_DEPS OUTPUT_STRIP_TRAILING_WHITESPACE)
 string(REPLACE "\n" ";" GAUDIT_RESOURCE_DEPS "${GAUDIT_RESOURCE_DEPS}")
+# The list is read when configuring: a changed resource file configures again.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GAUDIT_RESOURCE_XML})
 add_custom_command(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gaudit-resources.c
   COMMAND ${GLIB_COMPILE_RESOURCES} --generate-source --sourcedir ${PROJECT_SOURCE_DIR}/data
@@ -25,6 +27,7 @@ add_executable(gaudit
   gaudit-run-page.c
   gaudit-firewall-text.c
   gaudit-category.c
+  gaudit-crossfade.c
   gaudit-sourceless-page.c
   gaudit-session.c
   gaudit-window.c

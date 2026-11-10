@@ -15,7 +15,7 @@ void gaudit_firewall_text(const gaudit_firewall_report *f, const char **icon,
             : g_strdup_printf(ngettext("Incoming connections pass through %u firewall rule.",
                                        "Incoming connections pass through %u firewall rules.",
                                        f->input_rules), f->input_rules);
-        *icon = "security-high-symbolic";
+        *icon = "gaudit-status-high-symbolic";
         *title = g_strdup(_("The firewall is filtering incoming traffic"));
         /* Translators: Keep the meaning: active is not the same as right. */
         *description = g_strdup_printf("%s %s", how,
@@ -23,12 +23,12 @@ void gaudit_firewall_text(const gaudit_firewall_report *f, const char **icon,
         break;
     }
     case GAUDIT_VERDICT_UNKNOWN:
-        *icon = "dialog-question-symbolic";
+        *icon = "gaudit-status-unknown-symbolic";
         *title = g_strdup(_("The firewall could not be checked fully"));
         *description = g_strdup(_("This system uses the older iptables, whose rules gAudit cannot read yet."));
         break;
     default:
-        *icon = "security-low-symbolic";
+        *icon = "gaudit-status-medium-symbolic";
         *title = g_strdup(_("No firewall is filtering incoming traffic"));
         /* What the missing firewall leaves open, counted when the check ran. */
         *description = f->listening == 0

@@ -70,7 +70,7 @@ static void on_status_done(gboolean broken, gpointer user_data)
         if (r->applicable && gaudit_model_add_finding(job->app->model, r->id, r->verdict) != GAUDIT_OK)
             g_warning("gaudit: could not record finding %s", r->id);
     }
-    gaudit_window_finish_status(job->view, gaudit_model_worst(job->app->model));
+    gaudit_window_finish_status(job->view, gaudit_model_summary(job->app->model));
     g_object_unref(job->view);
     g_object_unref(job->app);
     g_free(job);
@@ -125,7 +125,7 @@ static void elevated_next(ElevatedJob *job);
 
 static void elevated_finish(ElevatedJob *job)
 {
-    gaudit_window_elevated_end(job->view, gaudit_model_worst(job->app->model));
+    gaudit_window_elevated_end(job->view, gaudit_model_summary(job->app->model));
     g_object_unref(job->view);
     g_object_unref(job->app);
     g_free(job);
@@ -300,7 +300,7 @@ static void on_session_result(const char *command, const gaudit_firewall_report 
             continue;
         if (gaudit_model_add_finding(self->model, tasks[i].id, result->verdict) != GAUDIT_OK)
             g_warning("gaudit: could not record finding %s", tasks[i].id);
-        gaudit_verdict worst = gaudit_model_worst(self->model);
+        gaudit_verdict worst = gaudit_model_summary(self->model);
         for (GList *w = gtk_application_get_windows(GTK_APPLICATION(app)); w != NULL; w = w->next)
             if (GAUDIT_IS_WINDOW(w->data)) {
                 gaudit_window_elevated_result(GAUDIT_WINDOW(w->data), i, GAUDIT_RUN_OK, result);

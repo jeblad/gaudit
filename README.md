@@ -110,7 +110,7 @@ Then translate the new strings in `po/<language>.po`. Translations affect securi
 
 ## Acknowledgements
 
-Icons: most are from [adwaita-icon-theme](https://gitlab.gnome.org/GNOME/adwaita-icon-theme) by the GNOME Project, used under the LGPL-3.0 (dual-licensed LGPL-3.0 or CC-BY-SA-3.0); `fire-symbolic` is from the GNOME icon library by Jakub Steiner (CC0). They are bundled in `data/icons/`, listed in `data/gaudit.gresource.xml`.
+Icons: most are from [adwaita-icon-theme](https://gitlab.gnome.org/GNOME/adwaita-icon-theme) by the GNOME Project, used under the LGPL-3.0 (dual-licensed LGPL-3.0 or CC-BY-SA-3.0); `gaudit-fire-symbolic` is `fire-symbolic` from the GNOME icon library by Jakub Steiner (CC0), renamed; `gaudit-home-symbolic` is adwaita-icon-theme's `go-home-symbolic`, renamed (LGPL-3.0). The `gaudit-status-*` shields are adwaita-icon-theme's `security-*` icons, renamed, and two added on the same shield outline with a check mark and a question mark (LGPL-3.0). `gaudit-elevated-rights-symbolic` is adwaita-icon-theme's `media-record-symbolic`, renamed (LGPL-3.0). They are bundled in `data/icons/`, listed in `data/gaudit.gresource.xml`.
 
 Created with assistance from AI tools (Claude Opus) across all parts of this work.
 

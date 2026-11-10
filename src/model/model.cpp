@@ -73,3 +73,13 @@ extern "C" gaudit_verdict gaudit_model_worst(const gaudit_model *model) noexcept
             worst = f.verdict;
     return worst;
 }
+
+extern "C" gaudit_verdict gaudit_model_summary(const gaudit_model *model) noexcept
+{
+    if (model == nullptr || model->findings.empty())
+        return GAUDIT_VERDICT_UNKNOWN;
+    for (const auto &f : model->findings)
+        if (f.verdict == GAUDIT_VERDICT_UNKNOWN)
+            return GAUDIT_VERDICT_UNKNOWN;
+    return gaudit_model_worst(model);
+}

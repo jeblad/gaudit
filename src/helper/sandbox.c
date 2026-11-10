@@ -104,6 +104,29 @@ static int set_caps(const cap_value_t *caps, size_t n)
     return rc == 0 ? 0 : -1;
 }
 
+/* The kernel clears permitted and effective on the change to a non-root
+ * uid, but not inheritable (pkexec can pass bits in, e.g. cap_wake_alarm). */
+static int clear_inheritable(void)
+{
+    cap_t state = cap_get_proc();
+    if (state == NULL)
+        return -1;
+    int rc = cap_clear_flag(state, CAP_INHERITABLE) != 0 || cap_set_proc(state) != 0;
+    cap_free(state);
+    return rc == 0 ? 0 : -1;
+}
+
+/* 1 if the process holds no capability in any set. */
+static int no_capabilities(void)
+{
+    cap_t now = cap_get_proc();
+    cap_t none = cap_init();
+    int empty = now != NULL && none != NULL && cap_compare(now, none) == 0;
+    cap_free(now);
+    cap_free(none);
+    return empty;
+}
+
 int gaudit_sandbox_enter(const gaudit_sandbox *spec)
 {
     if (spec == NULL || clearenv() != 0)
@@ -116,12 +139,14 @@ int gaudit_sandbox_enter(const gaudit_sandbox *spec)
         /* Empty the bounding set while still root, then become nobody; the
          * kernel clears the current capabilities on the uid change. */
         if (limit_bounding(NULL, 0) != 0
+            || clear_inheritable() != 0
             || setgroups(0, NULL) != 0
             || setresgid(GAUDIT_NOBODY_GID, GAUDIT_NOBODY_GID, GAUDIT_NOBODY_GID) != 0
             || setresuid(GAUDIT_NOBODY_UID, GAUDIT_NOBODY_UID, GAUDIT_NOBODY_UID) != 0)
             return -1;
-        /* It must not be possible to get root back. */
-        if (setresuid(0, 0, 0) == 0)
+        /* It must not be possible to get root back, and nothing may be left
+         * in any capability set; otherwise the check does not run. */
+        if (setresuid(0, 0, 0) == 0 || !no_capabilities())
             return -1;
     } else {
         if (limit_bounding(spec->caps, spec->n_caps) != 0

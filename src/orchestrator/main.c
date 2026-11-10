@@ -14,7 +14,7 @@
  *   gaudit-orchestrator session
  *
  * Runs on request, one at a time, as the GUI asks for them on stdin ("run
- * firewall", "quit"). The first run starts the privileged helper through
+ * firewall", "run integrity", "quit"). The first run starts the privileged helper through
  * pkexec (which asks for the administrator password) in its session mode;
  * later runs within the helper's lease use the same helper without asking
  * again. The helper decides when the lease ends, not this process. Writes
@@ -84,7 +84,17 @@ static long elapsed_ms(const struct timespec *start)
 /* --- Session: runs on request through the helper ------------------------ */
 
 #define PKEXEC_PATH      "/usr/bin/pkexec"
-#define RUN_DEADLINE_MS  (5 * 60 * 1000)  /* includes typing the password */
+/* What the GUI may ask for, the helper command it becomes, and how long
+ * the run may take, typing the password included. */
+static const struct {
+    const char *request;
+    const char *helper_cmd;
+    long deadline_ms;
+} runs[] = {
+    { "run firewall",  "firewall\n",  5 * 60 * 1000L },
+    { "run integrity", "integrity\n", 20 * 60 * 1000L },  /* the helper allows 15 */
+};
+enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_KINDS };
 #define MAX_HELPER_OUT   (256 * 1024)     /* over a whole session */
 #define MAX_LINE_LEN     1024
 
@@ -162,8 +172,12 @@ typedef struct {
     int overdue;            /* its deadline has passed and been dealt with */
     int queued;             /* waits for the ending helper to be gone */
     struct timespec run_start;
+    int kind;               /* RUN_FIREWALL, RUN_INTEGRITY */
     int have_result;
     gaudit_firewall_report fw;
+    gaudit_integrity_report integrity;
+    gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
+    unsigned n_files;
 } session_state;
 
 static void close_helper_input(session_state *st)
@@ -216,6 +230,73 @@ static int start_helper(session_state *st)
     return 0;
 }
 
+/* A line of an integrity run: findings, the result, then the helper's
+ * summary. Collected, and passed on only when the run has succeeded. */
+static int on_integrity_line(session_state *st, char *line, long long *failed,
+                             const gaudit_sexpr_field *summary)
+{
+    static const char *const kinds[] = { "changed", "missing", "unreadable" };
+    char kind[16];
+    gaudit_integrity_file f = { 0 };
+    const gaudit_sexpr_field file[] = {
+        { .key = "kind",    .text = kind, .text_len = sizeof kind },
+        { .key = "package", .text = f.package, .text_len = sizeof f.package },
+        { .key = "path",    .text = f.path, .text_len = sizeof f.path },
+    };
+    if (!st->have_result && gaudit_sexpr_parse(line, "integrity-file", file, 3) == 0) {
+        if (st->n_files >= GAUDIT_INTEGRITY_SHOWN || f.package[0] == '\0' || f.path[0] != '/')
+            return -1;
+        int k = -1;
+        for (int i = 0; i < 3; i++)
+            if (strcmp(kind, kinds[i]) == 0)
+                k = i;
+        if (k < 0)
+            return -1;
+        f.kind = (gaudit_integrity_file_kind)k;
+        st->files[st->n_files++] = f;
+        return 0;
+    }
+    long long v[12];
+    static const char *const keys[12] = {
+        "packages", "files", "checked", "changed", "missing", "unreadable", "excluded",
+        "diverted", "bad-lines", "megabytes", "shown", "seconds",
+    };
+    gaudit_sexpr_field integ[12];
+    for (int i = 0; i < 12; i++)
+        integ[i] = (gaudit_sexpr_field){ .key = keys[i], .value = &v[i], .max = 100000000LL };
+    if (!st->have_result && gaudit_sexpr_parse(line, "integrity", integ, 12) == 0) {
+        gaudit_integrity_report *r = &st->integrity;
+        *r = (gaudit_integrity_report){
+            .packages = (unsigned long)v[0], .files = (unsigned long)v[1],
+            .checked = (unsigned long)v[2], .changed = (unsigned long)v[3],
+            .missing = (unsigned long)v[4], .unreadable = (unsigned long)v[5],
+            .excluded = (unsigned long)v[6], .diverted = (unsigned long)v[7],
+            .bad_lines = (unsigned long)v[8], .megabytes = (unsigned long)v[9],
+            .shown = (unsigned)v[10], .seconds = (unsigned)v[11],
+        };
+        if (r->shown != st->n_files)
+            return -1;
+        r->verdict = gaudit_integrity_verdict(r);
+        st->have_result = 1;
+        return 0;
+    }
+    if (gaudit_sexpr_parse(line, "helper", summary, 4) == 0) {
+        st->running = 0;
+        if (*failed != 0 || !st->have_result)
+            return emit_end(GAUDIT_RUN_FAILED);
+        for (unsigned i = 0; i < st->n_files; i++) {
+            gaudit_run_event ev = { .type = GAUDIT_RUN_EVENT_INTEGRITY_FILE, .file = st->files[i] };
+            if (emit(&ev) != 0)
+                return -1;
+        }
+        gaudit_run_event res = { .type = GAUDIT_RUN_EVENT_INTEGRITY, .integrity = st->integrity };
+        if (emit(&res) != 0)
+            return -1;
+        return emit_end(GAUDIT_RUN_OK);
+    }
+    return -1;
+}
+
 static int on_helper_line(char *line, void *ctx)
 {
     session_state *st = ctx;
@@ -262,6 +343,8 @@ static int on_helper_line(char *line, void *ctx)
     }
     if (!st->running)
         return -1;  /* nothing else comes unasked */
+    if (st->kind == RUN_INTEGRITY)
+        return on_integrity_line(st, line, &failed, summary);
     if (!st->have_result && gaudit_sexpr_parse(line, "firewall", fw, sizeof fw / sizeof fw[0]) == 0) {
         st->have_result = 1;
         st->fw = (gaudit_firewall_report){
@@ -316,7 +399,7 @@ static int helper_gone(session_state *st, int broken)
         /* A run asked for while the lease ran out: a new helper, which
          * asks for the password again. */
         st->queued = 0;
-        if (start_helper(st) != 0 || send_helper(st, "firewall\n") != 0) {
+        if (start_helper(st) != 0 || send_helper(st, runs[st->kind].helper_cmd) != 0) {
             st->running = 0;
             return emit_end(GAUDIT_RUN_FAILED) != 0 ? -1 : r;
         }
@@ -344,7 +427,7 @@ static int send_helper(session_state *st, const char *cmd)
     return n == (ssize_t)len ? 0 : -1;
 }
 
-/* A command from the GUI: "run firewall" or "quit". */
+/* A command from the GUI: one of runs[], or "quit". */
 static int on_gui_line(char *line, void *ctx)
 {
     session_state *st = ctx;
@@ -352,11 +435,17 @@ static int on_gui_line(char *line, void *ctx)
         close_helper_input(st);  /* the helper ends its session */
         return 0;
     }
-    if (strcmp(line, "run firewall") != 0 || st->running)
+    int kind = -1;
+    for (int i = 0; i < RUN_KINDS; i++)
+        if (strcmp(line, runs[i].request) == 0)
+            kind = i;
+    if (kind < 0 || st->running)
         return -1;  /* unknown, or one run at a time */
+    st->kind = kind;
     st->running = 1;
     st->overdue = 0;
     st->have_result = 0;
+    st->n_files = 0;
     clock_gettime(CLOCK_MONOTONIC, &st->run_start);
     if (st->pid > 0 && st->to_helper < 0) {
         st->queued = 1;  /* the helper is ending; a new one follows */
@@ -367,7 +456,7 @@ static int on_gui_line(char *line, void *ctx)
         return emit_end(GAUDIT_RUN_FAILED);
     }
     /* Waits in the pipe until the helper runs (after the password). */
-    if (send_helper(st, "firewall\n") != 0)
+    if (send_helper(st, runs[st->kind].helper_cmd) != 0)
         close_helper_input(st);  /* the helper's end reports the run */
     return 0;
 }
@@ -386,7 +475,7 @@ static int run_session(void)
         };
         int timeout = -1;
         if (st.running && !st.overdue) {
-            long left = RUN_DEADLINE_MS - elapsed_ms(&st.run_start);
+            long left = runs[st.kind].deadline_ms - elapsed_ms(&st.run_start);
             timeout = left > 0 ? (int)left : 0;
         }
         int pr = poll(pfd, 2, timeout);

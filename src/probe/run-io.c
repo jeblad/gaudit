@@ -2,6 +2,7 @@
 #include "gaudit/run.h"
 
 #include "collector.h"
+#include "probe-quote.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -18,6 +19,26 @@ gaudit_verdict gaudit_firewall_verdict(const gaudit_firewall_report *r)
     if (r->legacy > 0)
         return GAUDIT_VERDICT_UNKNOWN;
     return GAUDIT_VERDICT_WARNING;
+}
+
+gaudit_verdict gaudit_integrity_verdict(const gaudit_integrity_report *r)
+{
+    if (r == NULL)
+        return GAUDIT_VERDICT_UNKNOWN;
+    if (r->changed > 0 || r->missing > 0)
+        return GAUDIT_VERDICT_WARNING;
+    if (r->unreadable > 0 || r->bad_lines > 0 || r->checked == 0)
+        return GAUDIT_VERDICT_UNKNOWN;
+    return GAUDIT_VERDICT_OK;
+}
+
+/* The report's own consistency, for the parser and the orchestrator. */
+static int integrity_consistent(const gaudit_integrity_report *r)
+{
+    return r->checked <= r->files && r->changed <= r->checked
+        && r->missing + r->unreadable + r->excluded + r->diverted + r->checked <= r->files
+        && r->shown <= GAUDIT_INTEGRITY_SHOWN
+        && r->shown <= r->changed + r->missing + r->unreadable;
 }
 
 int gaudit_run_format(const gaudit_run_event *ev, char *buf, size_t len)
@@ -37,6 +58,26 @@ int gaudit_run_format(const gaudit_run_event *ev, char *buf, size_t len)
                      (int)f->verdict, f->tables, f->input_chains, f->input_drop,
                      f->input_rules, f->rules, f->legacy, f->listening);
         break;
+    case GAUDIT_RUN_EVENT_INTEGRITY_FILE: {
+        char pkg[300], path[600];
+        if (gaudit_probe_quote(pkg, sizeof pkg, ev->file.package) != 0
+            || gaudit_probe_quote(path, sizeof path, ev->file.path) != 0)
+            return -1;
+        n = snprintf(buf, len, "(integrity-file (kind %d) (package %s) (path %s))\n",
+                     (int)ev->file.kind, pkg, path);
+        break;
+    }
+    case GAUDIT_RUN_EVENT_INTEGRITY: {
+        const gaudit_integrity_report *r = &ev->integrity;
+        n = snprintf(buf, len,
+                     "(integrity (verdict %d) (packages %lu) (files %lu) (checked %lu) (changed %lu)"
+                     " (missing %lu) (unreadable %lu) (excluded %lu) (diverted %lu) (bad-lines %lu)"
+                     " (megabytes %lu) (shown %u) (seconds %u))\n",
+                     (int)r->verdict, r->packages, r->files, r->checked, r->changed, r->missing,
+                     r->unreadable, r->excluded, r->diverted, r->bad_lines, r->megabytes, r->shown,
+                     r->seconds);
+        break;
+    }
     case GAUDIT_RUN_EVENT_END:
         n = snprintf(buf, len, "(end (status %d))\n", (int)ev->status);
         break;
@@ -87,6 +128,45 @@ int gaudit_run_parse_line(const char *line, gaudit_run_event *out)
         { .key = "legacy",       .value = &g, .max = MAX_COUNT },
         { .key = "listening",    .value = &h, .max = 65536 },
     };
+    long long k;
+    const gaudit_sexpr_field file[] = {
+        { .key = "kind",    .value = &k, .max = GAUDIT_INTEGRITY_FILE_UNREADABLE },
+        { .key = "package", .text = ev.file.package, .text_len = sizeof ev.file.package },
+        { .key = "path",    .text = ev.file.path, .text_len = sizeof ev.file.path },
+    };
+    if (gaudit_sexpr_parse(copy, "integrity-file", file, 3) == 0) {
+        if (ev.file.package[0] == '\0' || ev.file.path[0] != '/')
+            return -1;
+        ev.type = GAUDIT_RUN_EVENT_INTEGRITY_FILE;
+        ev.file.kind = (gaudit_integrity_file_kind)k;
+        *out = ev;
+        return 0;
+    }
+    long long v[13];
+    static const char *const keys[13] = {
+        "verdict", "packages", "files", "checked", "changed", "missing", "unreadable",
+        "excluded", "diverted", "bad-lines", "megabytes", "shown", "seconds",
+    };
+    gaudit_sexpr_field integ[13];
+    for (int i = 0; i < 13; i++)
+        integ[i] = (gaudit_sexpr_field){ .key = keys[i], .value = &v[i], .max = MAX_COUNT };
+    integ[0].max = GAUDIT_VERDICT_CRITICAL;
+    if (gaudit_sexpr_parse(copy, "integrity", integ, 13) == 0) {
+        gaudit_integrity_report *r = &ev.integrity;
+        *r = (gaudit_integrity_report){
+            .verdict = (gaudit_verdict)v[0], .packages = (unsigned long)v[1],
+            .files = (unsigned long)v[2], .checked = (unsigned long)v[3],
+            .changed = (unsigned long)v[4], .missing = (unsigned long)v[5],
+            .unreadable = (unsigned long)v[6], .excluded = (unsigned long)v[7],
+            .diverted = (unsigned long)v[8], .bad_lines = (unsigned long)v[9],
+            .megabytes = (unsigned long)v[10], .shown = (unsigned)v[11], .seconds = (unsigned)v[12],
+        };
+        if (!integrity_consistent(r) || r->verdict != gaudit_integrity_verdict(r))
+            return -1;
+        ev.type = GAUDIT_RUN_EVENT_INTEGRITY;
+        *out = ev;
+        return 0;
+    }
     if (gaudit_sexpr_parse(copy, "firewall", fw, sizeof fw / sizeof fw[0]) == 0) {
         ev.type = GAUDIT_RUN_EVENT_FIREWALL;
         ev.firewall = (gaudit_firewall_report){

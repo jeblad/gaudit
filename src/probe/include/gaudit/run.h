@@ -4,6 +4,9 @@
  *
  *   (elevated (on 1))   the helper runs as root; (on 0) when it has ended
  *   (firewall ...)      the firewall result
+ *   (integrity-file ...) one finding of the package integrity check (at most
+ *                       GAUDIT_INTEGRITY_SHOWN, before the result)
+ *   (integrity ...)     the package integrity result
  *   (end (status S))    always last; S is a gaudit_run_status */
 #pragma once
 
@@ -33,18 +36,60 @@ typedef struct {
     unsigned listening;     /* services listening for the network (the orchestrator's count) */
 } gaudit_firewall_report;
 
+/* The package integrity check: every deb package's files against dpkg's
+ * md5sums (see the helper). */
+typedef struct {
+    gaudit_verdict verdict;
+    unsigned long packages;
+    unsigned long files;        /* in the md5sums lists */
+    unsigned long checked;      /* read and compared */
+    unsigned long changed;
+    unsigned long missing;
+    unsigned long unreadable;
+    unsigned long excluded;     /* missing, but kept out by dpkg's path-exclude */
+    unsigned long diverted;     /* skipped: moved aside with dpkg-divert */
+    unsigned long bad_lines;    /* malformed lines in the md5sums lists */
+    unsigned long megabytes;    /* read */
+    unsigned shown;             /* findings listed before the result */
+    unsigned seconds;
+} gaudit_integrity_report;
+
+#define GAUDIT_INTEGRITY_SHOWN 40
+
+typedef enum {
+    GAUDIT_INTEGRITY_FILE_CHANGED = 0,
+    GAUDIT_INTEGRITY_FILE_MISSING = 1,
+    GAUDIT_INTEGRITY_FILE_UNREADABLE = 2,
+} gaudit_integrity_file_kind;
+
+typedef struct {
+    gaudit_integrity_file_kind kind;
+    char package[128];
+    char path[256];
+} gaudit_integrity_file;
+
 typedef enum {
     GAUDIT_RUN_EVENT_ELEVATED,
     GAUDIT_RUN_EVENT_FIREWALL,
+    GAUDIT_RUN_EVENT_INTEGRITY_FILE,
+    GAUDIT_RUN_EVENT_INTEGRITY,
     GAUDIT_RUN_EVENT_END,
 } gaudit_run_event_type;
 
 typedef struct {
     gaudit_run_event_type type;
-    int elevated;                     /* _ELEVATED */
-    gaudit_firewall_report firewall;  /* _FIREWALL */
-    gaudit_run_status status;         /* _END */
+    int elevated;                       /* _ELEVATED */
+    gaudit_firewall_report firewall;    /* _FIREWALL */
+    gaudit_integrity_file file;         /* _INTEGRITY_FILE */
+    gaudit_integrity_report integrity;  /* _INTEGRITY */
+    gaudit_run_status status;           /* _END */
 } gaudit_run_event;
+
+/* The verdict for an integrity result: a changed file is a warning (it
+ * may be harmless, but nothing should change installed files), a missing
+ * one too; nothing found is OK. Files that could not be read, or
+ * malformed lists, make it unknown when nothing worse was found. */
+gaudit_verdict gaudit_integrity_verdict(const gaudit_integrity_report *r);
 
 /* The firewall's verdict from what the helper found. Interim, in C, until
  * the rule engine takes over: incoming traffic must meet a filter chain

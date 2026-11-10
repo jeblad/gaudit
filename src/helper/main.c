@@ -257,7 +257,7 @@ static void on_integrity(gaudit_integrity_kind kind, const char *package, const 
                          void *ctx)
 {
     unsigned *shown = ctx;
-    char pkg[160], file[320];
+    char pkg[130], file[258];  /* what the receiving parsers accept */
     if (*shown >= INTEGRITY_SHOWN || !quote(package, pkg, sizeof pkg)
         || !quote(path, file, sizeof file))
         return;

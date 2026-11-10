@@ -150,6 +150,14 @@ int main(void)
         { .type = GAUDIT_RUN_EVENT_FIREWALL, .firewall = { .verdict = GAUDIT_VERDICT_OK,
           .tables = 3, .input_chains = 2, .input_drop = 1, .input_rules = 7, .rules = 40, .legacy = 0,
           .listening = 2 } },
+        { .type = GAUDIT_RUN_EVENT_INTEGRITY_FILE, .file = { .kind = GAUDIT_INTEGRITY_FILE_CHANGED,
+          .package = "libc6:amd64", .path = "/usr/lib/x86_64-linux-gnu/libc.so.6" } },
+        { .type = GAUDIT_RUN_EVENT_INTEGRITY_FILE, .file = { .kind = GAUDIT_INTEGRITY_FILE_MISSING,
+          .package = "odd", .path = "/usr/share/odd/a \"quoted\" \\ name" } },
+        { .type = GAUDIT_RUN_EVENT_INTEGRITY, .integrity = { .verdict = GAUDIT_VERDICT_WARNING,
+          .packages = 3105, .files = 446591, .checked = 446000, .changed = 1, .missing = 1,
+          .unreadable = 589, .excluded = 0, .diverted = 1, .bad_lines = 0, .megabytes = 31734,
+          .shown = 2, .seconds = 44 } },
         { .type = GAUDIT_RUN_EVENT_ELEVATED, .elevated = 0 },
         { .type = GAUDIT_RUN_EVENT_END, .status = GAUDIT_RUN_CANCELLED },
     };
@@ -160,7 +168,11 @@ int main(void)
         CHECK(gaudit_run_parse_line(rl, &back) == 0);
         CHECK(back.type == evs[i].type && back.elevated == evs[i].elevated
               && back.status == evs[i].status
-              && memcmp(&back.firewall, &evs[i].firewall, sizeof back.firewall) == 0);
+              && memcmp(&back.firewall, &evs[i].firewall, sizeof back.firewall) == 0
+              && memcmp(&back.integrity, &evs[i].integrity, sizeof back.integrity) == 0
+              && back.file.kind == evs[i].file.kind
+              && strcmp(back.file.package, evs[i].file.package) == 0
+              && strcmp(back.file.path, evs[i].file.path) == 0);
     }
     gaudit_run_event ev;
     CHECK(gaudit_run_parse_line("(end (status 4))", &ev) != 0);           /* no such status */
@@ -169,6 +181,32 @@ int main(void)
     CHECK(gaudit_run_parse_line("(firewall (verdict 0))", &ev) != 0);     /* fields missing */
     CHECK(gaudit_run_parse_line("(helper-start (version 1) (caller 0))", &ev) != 0);  /* helper's, not ours */
     CHECK(gaudit_run_parse_line("", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(integrity-file (kind 3) (package \"a\") (path \"/x\"))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(integrity-file (kind 0) (package \"a\") (path \"x\"))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(integrity-file (kind 0) (package \"\") (path \"/x\"))", &ev) != 0);
+    /* A verdict that does not follow from the counts, and counts that do
+     * not add up, are both protocol violations. */
+    CHECK(gaudit_run_parse_line("(integrity (verdict 0) (packages 1) (files 2) (checked 2) (changed 1)"
+                                " (missing 0) (unreadable 0) (excluded 0) (diverted 0) (bad-lines 0)"
+                                " (megabytes 0) (shown 0) (seconds 0))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(integrity (verdict 2) (packages 1) (files 2) (checked 2) (changed 1)"
+                                " (missing 1) (unreadable 0) (excluded 0) (diverted 0) (bad-lines 0)"
+                                " (megabytes 0) (shown 0) (seconds 0))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(integrity (verdict 2) (packages 1) (files 2) (checked 2) (changed 1)"
+                                " (missing 0) (unreadable 0) (excluded 0) (diverted 0) (bad-lines 0)"
+                                " (megabytes 0) (shown 2) (seconds 0))", &ev) != 0);
+
+    /* The integrity verdict. */
+    gaudit_integrity_report ir = { .files = 10, .checked = 10 };
+    CHECK(gaudit_integrity_verdict(&ir) == GAUDIT_VERDICT_OK);
+    ir.unreadable = 1;
+    CHECK(gaudit_integrity_verdict(&ir) == GAUDIT_VERDICT_UNKNOWN);  /* could not see everything */
+    ir.changed = 1;
+    CHECK(gaudit_integrity_verdict(&ir) == GAUDIT_VERDICT_WARNING);  /* worse than unknown */
+    ir = (gaudit_integrity_report){ .files = 10, .checked = 9, .missing = 1 };
+    CHECK(gaudit_integrity_verdict(&ir) == GAUDIT_VERDICT_WARNING);
+    ir = (gaudit_integrity_report){ 0 };
+    CHECK(gaudit_integrity_verdict(&ir) == GAUDIT_VERDICT_UNKNOWN);  /* nothing checked */
 
     /* The interim firewall verdict. */
     gaudit_firewall_report fw = { 0 };

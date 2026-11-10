@@ -112,17 +112,6 @@ static const char app_css[] =
     ".elevated-marker {\n"
     "  color: var(--destructive-color);\n"
     "}\n"
-    /* The tool to choose on a category page: a filled badge with icon and
-     * text, so it does not rest on colour alone. */
-    ".recommended-badge {\n"
-    "  padding: 2px 10px 2px 6px;\n"
-    "  border-radius: 9999px;\n"
-    "  background-color: var(--accent-bg-color);\n"
-    "  color: var(--accent-fg-color);\n"
-    "}\n"
-    ".recommended-badge:dir(rtl) {\n"
-    "  padding: 2px 6px 2px 10px;\n"
-    "}\n"
     ".navigation-sidebar row:selected .sidebar-icon {\n"
     "  background-color: var(--accent-bg-color);\n"
     "  color: var(--accent-fg-color);\n"
@@ -351,6 +340,11 @@ static void on_window_removed(GtkApplication *app, GtkWindow *window, gpointer u
 static void gaudit_app_startup(GApplication *app)
 {
     G_APPLICATION_CLASS(gaudit_app_parent_class)->startup(app);
+
+    /* A selectable label (the command fields) must not select all of its
+     * text when it gets focus: the user expects to select it, finds it
+     * already selected, and has to undo that first. */
+    g_object_set(gtk_settings_get_default(), "gtk-label-select-on-focus", FALSE, NULL);
 
     gaudit_session_set_elevated_listener(on_elevated_changed, app);
     gaudit_session_set_result_listener(on_session_result, app);

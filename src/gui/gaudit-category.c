@@ -99,9 +99,10 @@ AdwNavigationPage *gaudit_category_page_new(const GauditCategory *category,
             adw_preferences_group_set_title(group, _(tool->name));
             if (pass == 0) {
                 /* Icon then text in reading order; the box mirrors itself
-                 * in right-to-left languages. */
-                GtkWidget *tag = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
-                gtk_widget_add_css_class(tag, "recommended-badge");
+                 * in right-to-left languages. No filled background or
+                 * accent colour: those read as a button, and this is not
+                 * one. The icon carries the signal, not colour. */
+                GtkWidget *tag = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
                 gtk_widget_set_valign(tag, GTK_ALIGN_CENTER);
                 gtk_box_append(GTK_BOX(tag), gtk_image_new_from_icon_name("dialog-information-symbolic"));
                 GtkWidget *text = gtk_label_new(_("Recommended"));

@@ -20,6 +20,7 @@ typedef enum {
     GAUDIT_PROBE_ANTIVIRUS,         /* some known antivirus program is installed */
     GAUDIT_PROBE_FIREWALL,          /* some known firewall is installed */
     GAUDIT_PROBE_AUTO_UPDATES,      /* updates are installed automatically */
+    GAUDIT_PROBE_SECURITY_SOURCE,   /* security updates come from the distribution itself */
     GAUDIT_PROBE_PACKAGE_INDEX,     /* when updates were last checked for */
     GAUDIT_PROBE_PENDING_UPGRADES,  /* updates waiting to be installed */
     GAUDIT_PROBE_OBSOLETE_PACKAGES, /* packages no software source offers */
@@ -49,6 +50,7 @@ typedef struct {
     unsigned mask;            /* _OTHER_PACKAGE_SYSTEMS: 1 << gaudit_package_system */
     int64_t until_epoch;      /* _SNAP: automatic refreshes held until then (0: not held) */
     int service_down;         /* _SNAP: snapd did not answer */
+    char text[64];            /* _SECURITY_SOURCE: the mirror's host name */
     /* _SNAP also uses count (devmode), extra_count (held), info_count
      * (classic, informs only) and age_seconds (since the last refresh, -1 unknown). */
 } gaudit_probe_result;

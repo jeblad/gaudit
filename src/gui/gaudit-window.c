@@ -194,6 +194,17 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
                              : _("No firewall found"));
         return _("Firewall");
 
+    case GAUDIT_PROBE_SECURITY_SOURCE:
+        if (r->verdict == GAUDIT_VERDICT_UNKNOWN)
+            *subtitle = g_strdup(_("Could not find out where security updates come from"));
+        else if (r->verdict == GAUDIT_VERDICT_OK)
+            *subtitle = g_strdup(_("Security updates come directly from the distribution"));
+        else
+            /* Translators: %s is a host name, e.g. no.archive.ubuntu.com. */
+            *subtitle = g_strdup_printf(_("Security updates come from %s, a mirror that may lag behind"),
+                                        r->text[0] != '\0' ? r->text : "?");
+        return _("Source of security updates");
+
     case GAUDIT_PROBE_PACKAGE_INDEX:
         /* When the package lists were refreshed, which is not the same as
          * packages having been upgraded. */

@@ -10,6 +10,7 @@ add_library(gaudit_backend STATIC
   snap-runner.c
   debian/pkg-debian.c
   debian/apt-conf.c
+  debian/apt-sources.c
   debian/dpkg.c
   debian/compressed.c
   fedora/pkg-fedora.c

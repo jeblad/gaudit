@@ -65,6 +65,13 @@ target_compile_definitions(test_dnf PRIVATE
 target_link_libraries(test_dnf PRIVATE gaudit_backend)
 add_test(NAME dnf COMMAND test_dnf)
 
+add_executable(test_apt_sources test_apt_sources.c)
+target_include_directories(test_apt_sources PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/debian)
+target_compile_definitions(test_apt_sources PRIVATE
+  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_link_libraries(test_apt_sources PRIVATE gaudit_backend)
+add_test(NAME apt-sources COMMAND test_apt_sources)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

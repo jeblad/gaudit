@@ -85,6 +85,18 @@ static gaudit_backend_status fake_snap(gaudit_snap_state *out)
     return fake_snap_status;
 }
 
+static gaudit_backend_status fake_sec_status;
+static unsigned fake_sec_official, fake_sec_mirror;
+
+static gaudit_backend_status fake_security(unsigned *official, unsigned *mirror,
+                                           char *host, size_t len)
+{
+    *official = fake_sec_official;
+    *mirror = fake_sec_mirror;
+    snprintf(host, len, "%s", fake_sec_mirror ? "mirror.example.org" : "");
+    return fake_sec_status;
+}
+
 static unsigned fake_present_mask;
 
 static unsigned fake_present(void)
@@ -215,6 +227,32 @@ int main(void)
     gaudit_probe_collect(&fake_pkg, NOW, r);
     CHECK(!r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported);
     CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].verdict == GAUDIT_VERDICT_UNKNOWN);
+
+    /* Source of security updates. */
+    {
+        static const gaudit_pkg_backend sec_pkg = { .name = "sec", .capability = fake_capability,
+                                                    .security_sources = fake_security };
+        fake_sec_status = GAUDIT_BACKEND_OK;
+        fake_sec_official = 1; fake_sec_mirror = 0;
+        gaudit_probe_collect(&sec_pkg, NOW, r);
+        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].applicable);
+        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].verdict == GAUDIT_VERDICT_OK);
+        fake_sec_official = 0; fake_sec_mirror = 1;
+        gaudit_probe_collect(&sec_pkg, NOW, r);
+        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].verdict == GAUDIT_VERDICT_WARNING);
+        CHECK(strcmp(r[GAUDIT_PROBE_SECURITY_SOURCE].text, "mirror.example.org") == 0);
+        fake_sec_official = 1; fake_sec_mirror = 1;  /* one mirror is enough to warn */
+        gaudit_probe_collect(&sec_pkg, NOW, r);
+        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].verdict == GAUDIT_VERDICT_WARNING);
+        fake_sec_official = 0; fake_sec_mirror = 0;  /* no security suite */
+        gaudit_probe_collect(&sec_pkg, NOW, r);
+        CHECK(!r[GAUDIT_PROBE_SECURITY_SOURCE].applicable);
+        fake_sec_status = GAUDIT_BACKEND_ERROR;
+        gaudit_probe_collect(&sec_pkg, NOW, r);
+        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].verdict == GAUDIT_VERDICT_UNKNOWN);
+        gaudit_probe_collect(&fake_pkg, NOW, r);  /* backend without the function */
+        CHECK(!r[GAUDIT_PROBE_SECURITY_SOURCE].applicable);
+    }
 
     /* Snap. */
     static const gaudit_pkg_backend snap_pkg = { .name = "snap", .capability = fake_capability,

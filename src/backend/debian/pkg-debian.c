@@ -3,6 +3,7 @@
 #include "gaudit/backend.h"
 
 #include "apt-conf.h"
+#include "apt-sources.h"
 #include "dpkg.h"
 #include "flatpak-runner.h"
 #include "snap-runner.h"
@@ -129,6 +130,13 @@ static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)
                                     FLATPAK_TIMEOUT_MS, out);
 }
 
+static gaudit_backend_status security_sources(unsigned *out_official, unsigned *out_mirror,
+                                              char *host, size_t host_len)
+{
+    return gaudit_apt_security_sources("/var/lib/apt/lists", out_official, out_mirror,
+                                       host, host_len);
+}
+
 static int detect(void)
 {
     return gaudit_deb_present("/var/lib/dpkg/status", "/usr/bin/dpkg");
@@ -153,6 +161,7 @@ static const gaudit_pkg_backend debian_pkg = {
     .package_state = package_state,
     .flatpak_state = flatpak_state,
     .snap_state = snap_state,
+    .security_sources = security_sources,
 };
 
 const gaudit_pkg_backend *gaudit_pkg_backend_debian(void)

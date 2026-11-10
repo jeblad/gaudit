@@ -106,6 +106,12 @@ typedef struct gaudit_pkg_backend {
     /* Snap, if in use; statuses as for flatpak_state. Capability
      * "libjson-glib" names the package when the library is missing. */
     gaudit_backend_status (*snap_state)(gaudit_snap_state *out);
+
+    /* Where security updates come from: counts of official and mirror
+     * origins; the first mirror host is copied to host. NULL when the
+     * distribution has no separate security source to check. */
+    gaudit_backend_status (*security_sources)(unsigned *out_official, unsigned *out_mirror,
+                                              char *host, size_t host_len);
 } gaudit_pkg_backend;
 
 /* Debian family (Debian, Ubuntu and derivatives): dpkg/apt. */

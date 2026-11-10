@@ -57,6 +57,25 @@ static void auto_updates(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
     r->verdict = enabled ? GAUDIT_VERDICT_OK : GAUDIT_VERDICT_WARNING;
 }
 
+/* A mirror may lag behind, and security updates must not wait for it. */
+static void security_source(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
+{
+    if (pkg->security_sources == NULL) {
+        r->applicable = 0;  /* no separate security source on this system */
+        return;
+    }
+    unsigned official = 0, mirror = 0;
+    gaudit_backend_status status =
+        pkg->security_sources(&official, &mirror, r->text, sizeof r->text);
+    if (status != GAUDIT_BACKEND_OK)
+        return;  /* unknown */
+    if (official == 0 && mirror == 0) {
+        r->applicable = 0;  /* no security suite configured at all (e.g. Debian unstable) */
+        return;
+    }
+    r->verdict = mirror > 0 ? GAUDIT_VERDICT_WARNING : GAUDIT_VERDICT_OK;
+}
+
 static void package_state(const gaudit_pkg_backend *pkg,
                           gaudit_probe_result *pending, gaudit_probe_result *obsolete)
 {
@@ -182,6 +201,7 @@ void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_bac
         out[k].mask = 0;
         out[k].until_epoch = 0;
         out[k].service_down = 0;
+        out[k].text[0] = '\0';
     }
     out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].id = "status.other-package-systems";
     out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable = 0;
@@ -196,6 +216,7 @@ void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_bac
     out[GAUDIT_PROBE_ANTIVIRUS].id = "status.antivirus";
     out[GAUDIT_PROBE_FIREWALL].id = "status.firewall";
     out[GAUDIT_PROBE_AUTO_UPDATES].id = "status.auto-updates";
+    out[GAUDIT_PROBE_SECURITY_SOURCE].id = "status.security-source";
     out[GAUDIT_PROBE_PACKAGE_INDEX].id = "status.package-index";
     out[GAUDIT_PROBE_PENDING_UPGRADES].id = "status.pending-upgrades";
     out[GAUDIT_PROBE_OBSOLETE_PACKAGES].id = "status.obsolete-packages";
@@ -209,6 +230,7 @@ void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_bac
     out[GAUDIT_PROBE_FIREWALL].verdict = any_present(pkg, firewall_caps);
     index_age(pkg, now, &out[GAUDIT_PROBE_PACKAGE_INDEX]);
     auto_updates(pkg, &out[GAUDIT_PROBE_AUTO_UPDATES]);
+    security_source(pkg, &out[GAUDIT_PROBE_SECURITY_SOURCE]);
     package_state(pkg, &out[GAUDIT_PROBE_PENDING_UPGRADES],
                   &out[GAUDIT_PROBE_OBSOLETE_PACKAGES]);
     flatpak(pkg, &out[GAUDIT_PROBE_FLATPAK]);

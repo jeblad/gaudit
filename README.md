@@ -25,6 +25,7 @@ The Home page gives a quick status that never asks for a password:
 | Firewall | Whether a known firewall is installed |
 | Automatic updates | Whether security updates are installed automatically |
 | Checking for updates | When the package lists were last refreshed |
+| Source of security updates | Whether security updates come straight from the distribution, not from a mirror that may lag behind (Debian family) |
 | Pending updates | Updates waiting to be installed, following apt's own candidate selection (pinning, backports, phased updates) |
 | Packages without a source | Installed packages that no software source offers any more, so they never get security fixes |
 | Snap apps | Snaps held back or paused from updating, not updated for a week, or running in developer mode; classic snaps are shown for information (shown only if Snap is installed) |

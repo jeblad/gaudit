@@ -30,6 +30,7 @@
 #include "gaudit/backend.h"
 #include "gaudit/probe.h"
 #include "gaudit/run.h"
+#include "gaudit/sourceless.h"
 
 #include "collector.h"
 
@@ -430,6 +431,60 @@ static int run_session(void)
     return failed;
 }
 
+/* --- packages: the list of packages without a source -------------------- */
+
+typedef struct {
+    unsigned count, shown;
+    int failed;
+} list_state;
+
+static void on_sourceless(const char *name, const char *arch, const char *version,
+                          gaudit_sourceless_group group, const char *offered, void *ctx)
+{
+    list_state *st = ctx;
+    st->count++;
+    if (st->failed || st->shown >= GAUDIT_SOURCELESS_MAX_SHOWN)
+        return;
+    gaudit_sourceless_package p = { .group = group };
+    /* Names longer than the fields are counted but not sent. */
+    if (snprintf(p.name, sizeof p.name, "%s", name) >= (int)sizeof p.name
+        || snprintf(p.arch, sizeof p.arch, "%s", arch != NULL ? arch : "") >= (int)sizeof p.arch
+        || snprintf(p.version, sizeof p.version, "%s", version) >= (int)sizeof p.version
+        || snprintf(p.offered, sizeof p.offered, "%s", offered != NULL ? offered : "")
+               >= (int)sizeof p.offered)
+        return;
+    char line[1024];
+    if (gaudit_sourceless_format_package(&p, line, sizeof line) != 0
+        || fputs(line, stdout) == EOF) {
+        st->failed = 1;
+        return;
+    }
+    st->shown++;
+}
+
+static int list_packages(void)
+{
+    const gaudit_pkg_backend *pkg = gaudit_pkg_backend_default();
+    list_state st = { 0 };
+    gaudit_sourceless_summary sum = { .status = GAUDIT_SOURCELESS_UNSUPPORTED };
+    if (pkg->sourceless_packages != NULL) {
+        gaudit_backend_status r = pkg->sourceless_packages(on_sourceless, &st);
+        sum.status = r == GAUDIT_BACKEND_OK && !st.failed ? GAUDIT_SOURCELESS_OK
+                   : r == GAUDIT_BACKEND_NOT_IMPLEMENTED ? GAUDIT_SOURCELESS_UNSUPPORTED
+                   : GAUDIT_SOURCELESS_UNKNOWN;
+    }
+    if (sum.status == GAUDIT_SOURCELESS_OK) {
+        sum.count = st.count;
+        sum.shown = st.shown;
+    } else if (st.shown > 0) {
+        return 1;  /* lines already sent for a list that is not valid: none of it counts */
+    }
+    char line[256];
+    if (gaudit_sourceless_format_summary(&sum, line, sizeof line) != 0 || fputs(line, stdout) == EOF)
+        return 1;
+    return fflush(stdout) == 0 ? 0 : 1;
+}
+
 /* --- Home status ------------------------------------------------------------ */
 
 static int status_refresh(void)
@@ -496,6 +551,8 @@ int main(int argc, char *argv[])
         return status_refresh();
     if (argc == 2 && strcmp(argv[1], "session") == 0)
         return run_session();
-    fputs("usage: gaudit-orchestrator [session]\n", stderr);
+    if (argc == 2 && strcmp(argv[1], "packages") == 0)
+        return list_packages();
+    fputs("usage: gaudit-orchestrator [session | packages]\n", stderr);
     return 2;
 }

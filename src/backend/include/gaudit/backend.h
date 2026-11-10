@@ -55,6 +55,21 @@ typedef enum {
 
 /* An abstract capability a task depends on (e.g. "clamav"), mapped by the
  * backend to concrete programs and the packages that provide them. */
+/* Why an installed package has no source (see the Debian backend). */
+typedef enum {
+    GAUDIT_SOURCELESS_ABOVE_SOURCE = 0, /* offered only in a lower version: no updates until the
+                                           source passes it (the most important) */
+    GAUDIT_SOURCELESS_LEFTOVER,         /* offered nowhere; by the distribution: probably left
+                                           over from an older release */
+    GAUDIT_SOURCELESS_OTHER_SOURCE,     /* offered nowhere; by someone else */
+    GAUDIT_SOURCELESS_GROUPS
+} gaudit_sourceless_group;
+
+/* One package without a source. offered: for ABOVE_SOURCE, the highest
+ * version a source offers; NULL otherwise. */
+typedef void (*gaudit_sourceless_fn)(const char *name, const char *arch, const char *version,
+                                     gaudit_sourceless_group group, const char *offered, void *ctx);
+
 typedef struct gaudit_capability {
     const char *id;
     const char *const *paths;     /* absolute paths, NULL-terminated */
@@ -97,6 +112,10 @@ typedef struct gaudit_pkg_backend {
     /* Installed packages no software source offers any more, and packages
      * an upgrade would update. */
     gaudit_backend_status (*package_state)(unsigned *out_obsolete, unsigned *out_upgradable);
+
+    /* The packages package_state counts as without a source, one call
+     * each, sorted into groups. NULL where the backend cannot list them. */
+    gaudit_backend_status (*sourceless_packages)(gaudit_sourceless_fn fn, void *ctx);
 
     /* Flatpak, if in use. UNAVAILABLE: Flatpak is not installed.
      * NOT_IMPLEMENTED: built without the collector. MISSING_DEPENDENCY:

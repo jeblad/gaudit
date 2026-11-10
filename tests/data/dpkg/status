@@ -54,3 +54,22 @@ Package: thunderbird
 Status: install ok installed
 Architecture: amd64
 Version: 137.0~build1
+
+Package: oldlib
+Status: install ok installed
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Architecture: amd64
+Version: 2.1-3ubuntu1
+
+Package: changed
+Status: install ok installed
+Maintainer: Some Person <person@example.net>
+Original-Maintainer: Debian Team <team@lists.debian.org>
+Architecture: amd64
+Version: 1.4-2
+
+Package: vendor-tool
+Status: install ok installed
+Maintainer: Example Vendor <support@vendor.example>
+Architecture: amd64
+Version: 3.0.1

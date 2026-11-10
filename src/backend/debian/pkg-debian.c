@@ -110,6 +110,13 @@ static gaudit_backend_status automatic_updates(int *out_enabled)
     return gaudit_apt_unattended_upgrade("/etc/apt/apt.conf", "/etc/apt/apt.conf.d", out_enabled);
 }
 
+static gaudit_backend_status sourceless_packages(gaudit_sourceless_fn fn, void *ctx)
+{
+    gaudit_deb_counts counts;
+    return gaudit_deb_scan_ex("/var/lib/dpkg/status", "/var/lib/apt/lists",
+                              "/etc/apt/preferences", "/etc/apt/preferences.d", &counts, fn, ctx);
+}
+
 static gaudit_backend_status package_state(unsigned *out_obsolete, unsigned *out_upgradable)
 {
     if (out_obsolete == NULL || out_upgradable == NULL)
@@ -165,6 +172,7 @@ static const gaudit_pkg_backend debian_pkg = {
     .last_index_update = last_index_update,
     .automatic_updates = automatic_updates,
     .package_state = package_state,
+    .sourceless_packages = sourceless_packages,
     .flatpak_state = flatpak_state,
     .snap_state = snap_state,
     .security_sources = security_sources,

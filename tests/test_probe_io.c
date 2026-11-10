@@ -3,6 +3,7 @@
  * anything else. The GUI treats this input as untrusted. */
 #include "gaudit/probe.h"
 #include "gaudit/run.h"
+#include "gaudit/sourceless.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -182,6 +183,31 @@ int main(void)
     fw = (gaudit_firewall_report){ .legacy = 2 };
     CHECK(gaudit_firewall_verdict(&fw) == GAUDIT_VERDICT_UNKNOWN);       /* rules out of sight */
     CHECK(gaudit_firewall_verdict(NULL) == GAUDIT_VERDICT_UNKNOWN);
+
+    /* Packages without a source: round trip, and only the protocol parses. */
+    gaudit_sourceless_package sp = { .name = "bzip2", .arch = "amd64", .version = "1.0.8-6ubuntu0.1",
+                                     .offered = "1.0.8-6build2", .group = GAUDIT_SOURCELESS_ABOVE_SOURCE };
+    gaudit_sourceless_package sp_back;
+    gaudit_sourceless_summary ss = { .status = GAUDIT_SOURCELESS_OK, .count = 73, .shown = 73 }, ss_back;
+    char sl[1024];
+    CHECK(gaudit_sourceless_format_package(&sp, sl, sizeof sl) == 0);
+    CHECK(gaudit_sourceless_parse_line(sl, &sp_back, &ss_back) == 1);
+    CHECK(memcmp(&sp, &sp_back, sizeof sp) == 0);
+    CHECK(gaudit_sourceless_format_summary(&ss, sl, sizeof sl) == 0);
+    CHECK(gaudit_sourceless_parse_line(sl, &sp_back, &ss_back) == 2);
+    CHECK(ss_back.count == 73 && ss_back.shown == 73 && ss_back.status == GAUDIT_SOURCELESS_OK);
+    /* A quote in a name is escaped, and survives. */
+    snprintf(sp.name, sizeof sp.name, "odd\"name");
+    CHECK(gaudit_sourceless_format_package(&sp, sl, sizeof sl) == 0);
+    CHECK(gaudit_sourceless_parse_line(sl, &sp_back, &ss_back) == 1 && strcmp(sp_back.name, "odd\"name") == 0);
+    CHECK(gaudit_sourceless_parse_line("(packages (status 0) (count 2) (shown 3))", &sp_back, &ss_back) == -1);
+    CHECK(gaudit_sourceless_parse_line("(packages (status 3) (count 2) (shown 2))", &sp_back, &ss_back) == -1);
+    CHECK(gaudit_sourceless_parse_line("(package (name \"x\") (arch \"\") (version \"1\") (group 3) (offered \"\"))",
+                                       &sp_back, &ss_back) == -1);   /* no such group */
+    CHECK(gaudit_sourceless_parse_line("(package (name \"\") (arch \"\") (version \"1\") (group 0) (offered \"\"))",
+                                       &sp_back, &ss_back) == -1);   /* no name */
+    sp.group = (gaudit_sourceless_group)7;
+    CHECK(gaudit_sourceless_format_package(&sp, sl, sizeof sl) == -1);
 
     if (failures)
         fprintf(stderr, "%d check(s) failed\n", failures);

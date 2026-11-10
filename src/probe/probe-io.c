@@ -4,6 +4,7 @@
 #include "gaudit/probe.h"
 
 #include "collector.h"
+#include "probe-quote.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,7 +18,7 @@ static int parse_one(const char *line, gaudit_probe_result *out);
 
 /* Text as a quoted string: \" and \\ escaped, other non-printable bytes
  * replaced, so the receiving parser always accepts it. */
-static int quote(char *out, size_t len, const char *text)
+int gaudit_probe_quote(char *out, size_t len, const char *text)
 {
     size_t o = 0;
     if (len < 3)
@@ -47,9 +48,9 @@ int gaudit_probe_format(const gaudit_probe_result *r, char *buf, size_t len)
 {
     char missing[80], detail[80], text[160];
     if (r == NULL || buf == NULL
-        || quote(missing, sizeof missing, r->missing_capability) != 0
-        || quote(detail, sizeof detail, r->detail) != 0
-        || quote(text, sizeof text, r->text) != 0)
+        || gaudit_probe_quote(missing, sizeof missing, r->missing_capability) != 0
+        || gaudit_probe_quote(detail, sizeof detail, r->detail) != 0
+        || gaudit_probe_quote(text, sizeof text, r->text) != 0)
         return -1;
     int n = snprintf(buf, len,
                      "(probe (kind %d) (verdict %d) (applicable %d) (unsupported %d)"

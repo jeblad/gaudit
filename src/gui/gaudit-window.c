@@ -5,6 +5,7 @@
 
 #include "gaudit-window.h"
 #include "gaudit-category.h"
+#include "gaudit-sourceless-page.h"
 #include "gaudit-firewall-text.h"
 #include "gaudit-session.h"
 #include "gaudit-task.h"
@@ -383,6 +384,10 @@ static const char *probe_title(const gaudit_probe_result *r)
 static void on_missing_row_activated(AdwActionRow *row, gpointer user_data)
 {
     GauditWindow *self = GAUDIT_WINDOW(user_data);
+    if (g_object_get_data(G_OBJECT(row), "gaudit-sourceless") != NULL) {
+        adw_navigation_view_push(self->content, gaudit_sourceless_page_new());
+        return;
+    }
     const GauditCategory *category = g_object_get_data(G_OBJECT(row), "gaudit-category");
     if (category != NULL) {
         /* Nothing in the category is installed: choose one. */
@@ -469,6 +474,7 @@ static void fill_row(GauditWindow *self, int k)
     g_object_set_data(G_OBJECT(row), "gaudit-task-button", NULL);
     g_object_set_data(G_OBJECT(row), "gaudit-capability", NULL);
     g_object_set_data(G_OBJECT(row), "gaudit-category", NULL);
+    g_object_set_data(G_OBJECT(row), "gaudit-sourceless", NULL);
     gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), FALSE);
 
     if (!self->received[k]) {
@@ -510,6 +516,19 @@ static void fill_row(GauditWindow *self, int k)
         g_signal_connect(button, "clicked", G_CALLBACK(on_task_button_clicked), self);
         adw_action_row_add_suffix(row, button);
         g_object_set_data(G_OBJECT(row), "gaudit-task-button", button);
+    }
+
+    /* Packages without a source: the row leads to the list, where the
+     * backend can give one. */
+    if (probe->kind == GAUDIT_PROBE_OBSOLETE_PACKAGES && probe->count > 0
+        && probe->verdict != GAUDIT_VERDICT_UNKNOWN && self->pkg->sourceless_packages != NULL) {
+        GtkWidget *next = gtk_image_new_from_icon_name("go-next-symbolic");
+        adw_action_row_add_suffix(row, next);
+        g_object_set_data(G_OBJECT(row), "gaudit-suffix", next);
+        gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), TRUE);
+        g_object_set_data(G_OBJECT(row), "gaudit-sourceless", GINT_TO_POINTER(1));
+        gtk_widget_set_visible(GTK_WIDGET(row), TRUE);
+        return;
     }
 
     /* A category with nothing installed (no firewall, no antivirus): the

@@ -10,6 +10,7 @@ add_executable(gaudit
   gaudit-run-page.c
   gaudit-firewall-text.c
   gaudit-category.c
+  gaudit-sourceless-page.c
   gaudit-session.c
   gaudit-window.c
   gaudit-task.c

@@ -115,6 +115,8 @@ typedef struct {
     char arch[64];
     char version[MAX_VERSION];
     char status[128];
+    char maintainer[256];
+    int original_maintainer;  /* Original-Maintainer: present (a distribution's change) */
     int phased;  /* Phased-Update-Percentage, -1 if absent */
 } stanza;
 
@@ -168,8 +170,13 @@ static int read_stanzas(const char *path, stanza_fn fn, void *ctx)
             continue;  /* continuation line */
         have = 1;
 
-        char phased[16];
+        char phased[16], ignored[8];
+        if (copy_field(line, "Original-Maintainer:", ignored, sizeof ignored)) {
+            s.original_maintainer = 1;
+            continue;
+        }
         if (copy_field(line, "Package:", s.package, sizeof s.package)
+            || copy_field(line, "Maintainer:", s.maintainer, sizeof s.maintainer)
             || copy_field(line, "Architecture:", s.arch, sizeof s.arch)
             || copy_field(line, "Version:", s.version, sizeof s.version)
             || copy_field(line, "Status:", s.status, sizeof s.status))
@@ -558,6 +565,8 @@ typedef struct {
     char *name;
     char *arch;
     char *version;
+    int from_distribution;  /* maintained by the distribution (see is_distribution) */
+    char *older;        /* the highest lower version some source offers, or NULL */
     int same;           /* the installed version is offered by some source */
     int installed_prio; /* priority of the installed version */
     int has_newer;      /* some installable newer version exists */
@@ -582,6 +591,24 @@ static int is_installed(const char *status)
     return last != NULL && strcmp(last + 1, "installed") == 0;
 }
 
+/* Maintained by Ubuntu or Debian, judged from the dpkg status: a package
+ * the distribution changed (Original-Maintainer), or a maintainer address
+ * at the distribution. A rule of thumb, never more: shown as "probably". */
+static int is_distribution(const stanza *s)
+{
+    static const char *const domains[] = {
+        "@lists.ubuntu.com>", "@ubuntu.com>", "@canonical.com>",
+        "@debian.org>", "@lists.debian.org>", "@alioth-lists.debian.net>",
+        "@lists.alioth.debian.org>", "@tracker.debian.org>",
+    };
+    if (s->original_maintainer)
+        return 1;
+    for (size_t i = 0; i < sizeof domains / sizeof domains[0]; i++)
+        if (strstr(s->maintainer, domains[i]) != NULL)
+            return 1;
+    return 0;
+}
+
 static int collect_installed(const stanza *s, void *ctx)
 {
     entry_list *l = ctx;
@@ -602,6 +629,7 @@ static int collect_installed(const stanza *s, void *ctx)
     e->name = strdup(s->package);
     e->arch = strdup(s->arch);
     e->version = strdup(s->version);
+    e->from_distribution = is_distribution(s);
     if (e->name == NULL || e->arch == NULL || e->version == NULL) {
         free(e->name);
         free(e->arch);
@@ -618,6 +646,7 @@ static void free_entries(entry_list *l)
         free(l->items[i].name);
         free(l->items[i].arch);
         free(l->items[i].version);
+        free(l->items[i].older);
     }
     free(l->items);
 }
@@ -649,6 +678,16 @@ static int match_available(const stanza *s, void *vctx)
         e->same = 1;
         if (prio > e->installed_prio)
             e->installed_prio = prio;
+    } else if (c < 0) {
+        /* Offered, but only below what is installed: remembered, since
+         * such a package gets no updates until the source passes it. */
+        if (e->older == NULL || gaudit_deb_version_compare(s->version, e->older) > 0) {
+            char *v = strdup(s->version);
+            if (v == NULL)
+                return -1;
+            free(e->older);
+            e->older = v;
+        }
     } else if (c > 0) {
         /* Never installable when pinned below 0, and phased updates are held
          * back until they reach everyone. Downgrades (c < 0) are not counted. */
@@ -785,8 +824,11 @@ gaudit_backend_status gaudit_deb_scan_ex(const char *status_file, const char *li
          * and no upgrade will replace it. */
         if (!e->same && !upgradable && !versioned_kernel_package(e->name)) {
             out->obsolete++;
+            gaudit_deb_group group = e->older != NULL ? GAUDIT_SOURCELESS_ABOVE_SOURCE
+                                   : e->from_distribution ? GAUDIT_SOURCELESS_LEFTOVER
+                                   : GAUDIT_SOURCELESS_OTHER_SOURCE;
             if (on_obsolete != NULL)
-                on_obsolete(e->name, e->arch, e->version, cb_ctx);
+                on_obsolete(e->name, e->arch, e->version, group, e->older, cb_ctx);
         }
     }
 

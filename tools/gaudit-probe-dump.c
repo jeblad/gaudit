@@ -12,10 +12,15 @@
 
 static const char *const verdict_names[] = { "ok", "unknown", "warning", "critical" };
 
-static void print_obsolete(const char *name, const char *arch, const char *version, void *ctx)
+static void print_obsolete(const char *name, const char *arch, const char *version,
+                           gaudit_deb_group group, const char *offered, void *ctx)
 {
+    static const char *const groups[] = { "above-source", "leftover", "other-source" };
     (void)ctx;
-    printf("  %s:%s %s\n", name, arch, version);
+    if (offered != NULL)
+        printf("  %-12s %s:%s %s  (offered: %s)\n", groups[group], name, arch, version, offered);
+    else
+        printf("  %-12s %s:%s %s\n", groups[group], name, arch, version);
 }
 
 int main(void)

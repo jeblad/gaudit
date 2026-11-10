@@ -41,11 +41,26 @@ static int remove_entry(const char *path, const struct stat *sb, int type, struc
 
 #define DATA GAUDIT_TEST_DATA_DIR "/dpkg"
 
-static void count_reported(const char *name, const char *arch, const char *version, void *ctx)
+/* Which group each sourceless package lands in, and what is offered. */
+static void count_reported(const char *name, const char *arch, const char *version,
+                           gaudit_deb_group group, const char *offered, void *ctx)
 {
     (void)arch;
     (void)version;
-    CHECK(strcmp(name, "c") == 0 || strcmp(name, "h") == 0 || strcmp(name, "thunderbird") == 0);
+    if (strcmp(name, "h") == 0)            /* 1:0.5 installed, only 2.0 offered */
+        CHECK(group == GAUDIT_SOURCELESS_ABOVE_SOURCE && offered != NULL && strcmp(offered, "2.0") == 0);
+    else if (strcmp(name, "oldlib") == 0)  /* Ubuntu maintainer, offered nowhere */
+        CHECK(group == GAUDIT_SOURCELESS_LEFTOVER && offered == NULL);
+    else if (strcmp(name, "changed") == 0) /* Original-Maintainer: changed by the distribution */
+        CHECK(group == GAUDIT_SOURCELESS_LEFTOVER);
+    else if (strcmp(name, "c") == 0 || strcmp(name, "vendor-tool") == 0)
+        CHECK(group == GAUDIT_SOURCELESS_OTHER_SOURCE && offered == NULL);
+    else if (strcmp(name, "thunderbird") == 0)
+        /* Offered only above (1:1snap1) and pinned away: not "above the
+         * source"; no distribution maintainer in the fixture. */
+        CHECK(group == GAUDIT_SOURCELESS_OTHER_SOURCE);
+    else
+        CHECK(!"unexpected package");
     (*(unsigned *)ctx)++;
 }
 
@@ -157,7 +172,7 @@ static void compressed_cases(void)
             fprintf(stderr, "%s: status %d, upgradable %u, obsolete %u\n",
                     formats[i], (int)st, c.upgradable, c.obsolete);
         CHECK(st == GAUDIT_BACKEND_OK);
-        CHECK(c.upgradable == 3 && c.obsolete == 2);  /* as for the plain lists */
+        CHECK(c.upgradable == 3 && c.obsolete == 5);  /* as for the plain lists */
 
         /* A truncated file is an error, never a short but "valid" index. */
         st = gaudit_deb_scan(DATA "/status", make_lists(formats[i], 1), NULL, NULL, &c);
@@ -219,7 +234,7 @@ int main(void)
      * like upgrades for firefox and thunderbird. */
     CHECK(gaudit_deb_scan(DATA "/status", DATA "/lists", NULL, NULL, &counts) == GAUDIT_BACKEND_OK);
     CHECK(counts.upgradable == 3);
-    CHECK(counts.obsolete == 2);
+    CHECK(counts.obsolete == 5);  /* c, h, oldlib, changed, vendor-tool */
 
     /* With a common pinning setup (mozilla at 1000, Ubuntu's firefox and thunderbird at -1):
      * nothing to upgrade there, and thunderbird is left without a source,
@@ -227,13 +242,13 @@ int main(void)
     CHECK(gaudit_deb_scan(DATA "/status", DATA "/lists", DATA "/no-such-preferences",
                           DATA "/preferences.d", &counts) == GAUDIT_BACKEND_OK);
     CHECK(counts.upgradable == 1);
-    CHECK(counts.obsolete == 3);
+    CHECK(counts.obsolete == 6);  /* ... and thunderbird */
 
     /* The obsolete callback reports exactly the counted packages. */
     unsigned reported = 0;
     CHECK(gaudit_deb_scan_ex(DATA "/status", DATA "/lists", NULL, DATA "/preferences.d",
                              &counts, count_reported, &reported) == GAUDIT_BACKEND_OK);
-    CHECK(reported == 3);
+    CHECK(reported == 6);
 
     /* Pinning we cannot follow: no guess. */
     CHECK(gaudit_deb_scan(DATA "/status", DATA "/lists", NULL, DATA "/preferences-regex.d", &counts)

@@ -37,9 +37,16 @@ gaudit_backend_status gaudit_deb_scan(const char *status_file, const char *lists
                                       const char *prefs_file, const char *prefs_dir,
                                       gaudit_deb_counts *out);
 
-/* Called once per package counted as obsolete. */
-typedef void (*gaudit_deb_package_fn)(const char *name, const char *arch,
-                                      const char *version, void *ctx);
+/* Why a package has no source: GAUDIT_SOURCELESS_ABOVE_SOURCE is certain
+ * (a source offers the name, only lower); LEFTOVER and OTHER_SOURCE are
+ * told apart by the maintainer in the dpkg status (Ubuntu or Debian, or an
+ * Original-Maintainer), a rule of thumb. */
+typedef gaudit_sourceless_group gaudit_deb_group;
+
+/* Called once per package counted as obsolete. offered: for ABOVE_SOURCE,
+ * the highest version a source offers; NULL otherwise. */
+typedef void (*gaudit_deb_package_fn)(const char *name, const char *arch, const char *version,
+                                      gaudit_deb_group group, const char *offered, void *ctx);
 
 /* As gaudit_deb_scan, and reports each obsolete package (on_obsolete may be NULL). */
 gaudit_backend_status gaudit_deb_scan_ex(const char *status_file, const char *lists_dir,

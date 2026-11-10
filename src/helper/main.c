@@ -1,19 +1,30 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* gaudit-helper: privileged helper, started via pkexec.
  *
- *   gaudit-helper selftest
+ *   gaudit-helper selftest | firewall | session
  *
- * Runs each check in its own child process, reduced to what that check
- * needs (sandbox.c), and writes one S-expression line per check on stdout,
- * followed by a (helper ...) summary line. The only command so far is
- * "selftest", whose checks report the privileges they actually ended up
- * with, so the sandbox can be verified.
+ * Writes (helper-start ...) as soon as it runs as root, so the caller
+ * knows the authorization went through. Then runs each check in its own
+ * child process, reduced to what that check needs (sandbox.c), writes one
+ * S-expression line per check on stdout, and ends with a (helper ...)
+ * summary line.
+ *
+ *   selftest  the privileges the checks actually end up with, so the
+ *             sandbox can be verified
+ *   firewall  the nftables ruleset (root with CAP_NET_ADMIN only) and
+ *             whether legacy iptables tables are loaded
+ *   session   keeps the rights for more commands (one per line on stdin:
+ *             a command name, or "quit") within the lease of lease.h, and
+ *             ends with (helper-end (reason ...)): idle, cap, quit, eof or
+ *             bad-command. An unknown command ends the session.
  *
  * Never translates output: it runs as root, and its output is a
  * language-neutral protocol. Verifying the signed manifest, inspecting the
  * other gaudit processes and the root-owned log come later. */
 #include "config.h"
 
+#include "lease.h"
+#include "nft.h"
 #include "sandbox.h"
 
 #include <dirent.h>
@@ -178,6 +189,41 @@ static void selftest(void *ctx)
     cap_free(caps);
 }
 
+/* --- firewall ------------------------------------------------------------- */
+
+/* Tables loaded in legacy iptables (x_tables), which nftables does not
+ * show: a system using them would otherwise look unprotected. Lines in
+ * /proc/net/ip{,6}_tables_names, which are absent when the legacy modules
+ * are not loaded. */
+static int legacy_tables(void)
+{
+    static const char *const files[] = { "/proc/net/ip_tables_names", "/proc/net/ip6_tables_names" };
+    int n = 0;
+    for (size_t i = 0; i < sizeof files / sizeof files[0]; i++) {
+        FILE *f = fopen(files[i], "re");
+        if (f == NULL)
+            continue;
+        char line[64];
+        while (fgets(line, sizeof line, f) != NULL)
+            if (line[0] != '\n')
+                n++;
+        fclose(f);
+    }
+    return n;
+}
+
+static void firewall(void *ctx)
+{
+    (void)ctx;
+    gaudit_nft_summary s;
+    if (gaudit_nft_read(&s) != 0)
+        _exit(1);  /* no line: the caller reports the check as failed */
+    printf("(firewall (tables %u) (chains %u) (input-chains %u) (input-drop %u)"
+           " (input-rules %u) (rules %u) (legacy %d))\n",
+           s.tables, s.chains, s.input_chains, s.input_drop, s.input_rules, s.rules,
+           legacy_tables());
+}
+
 /* --- main ----------------------------------------------------------------- */
 
 /* PKEXEC_UID as set by pkexec, -1 if absent or not a plain number. Only
@@ -196,10 +242,154 @@ static long caller_uid(void)
     return v;
 }
 
+/* --- Commands ------------------------------------------------------------- */
+
+typedef struct {
+    const char *variant;
+    gaudit_sandbox spec;
+    check_fn fn;
+} check_def;
+
+static const cap_value_t read_caps[] = { CAP_DAC_READ_SEARCH };
+static const cap_value_t net_caps[] = { CAP_NET_ADMIN };
+
+static const check_def selftest_checks[] = {
+    { "nobody",          { .to_nobody = 1 },                                  selftest },
+    { "dac-read-search", { .to_nobody = 0, .caps = read_caps, .n_caps = 1 }, selftest },
+};
+static const check_def firewall_checks[] = {
+    { "firewall",        { .to_nobody = 0, .caps = net_caps, .n_caps = 1 },  firewall },
+};
+
+static const struct {
+    const char *name;
+    const check_def *checks;
+    size_t n_checks;
+} commands[] = {
+    { "selftest", selftest_checks, sizeof selftest_checks / sizeof selftest_checks[0] },
+    { "firewall", firewall_checks, sizeof firewall_checks / sizeof firewall_checks[0] },
+};
+
+static int find_command(const char *name)
+{
+    for (size_t i = 0; i < sizeof commands / sizeof commands[0]; i++)
+        if (strcmp(commands[i].name, name) == 0)
+            return (int)i;
+    return -1;
+}
+
+/* Runs every check of command i and ends with the (helper ...) summary.
+ * 0 when all checks succeeded. */
+static int run_command(int i, long caller)
+{
+    int ok = 0, failed = 0;
+    for (size_t c = 0; c < commands[i].n_checks; c++) {
+        const check_def *def = &commands[i].checks[c];
+        char out[MAX_CHECK_OUTPUT];
+        if (run_check(&def->spec, def->fn, (void *)def->variant, out, sizeof out) == 0) {
+            fputs(out, stdout);
+            ok++;
+        } else {
+            failed++;
+        }
+    }
+    printf("(helper (version 1) (caller %ld) (checks-ok %d) (checks-failed %d))\n",
+           caller, ok, failed);
+    return fflush(stdout) == 0 && failed == 0 ? 0 : 1;
+}
+
+/* --- Session ------------------------------------------------------------- */
+
+#define MAX_COMMAND 64
+
+/* One command line from stdin within timeout_ms, without the newline.
+ * 1: a line; 0: timeout; -1: end of input, error, or a line too long. */
+static int read_command(char *line, size_t len, long long timeout_ms)
+{
+    static char buf[MAX_COMMAND];
+    static size_t used;
+    long long deadline = gaudit_lease_now() + timeout_ms;
+    for (;;) {
+        char *nl = memchr(buf, '\n', used);
+        if (nl != NULL) {
+            size_t n = (size_t)(nl - buf);
+            if (n >= len)
+                return -1;
+            memcpy(line, buf, n);
+            line[n] = '\0';
+            used -= n + 1;
+            memmove(buf, nl + 1, used);
+            return 1;
+        }
+        if (used >= sizeof buf)
+            return -1;
+        long long left = deadline - gaudit_lease_now();
+        if (left <= 0)
+            return 0;
+        struct pollfd pfd = { .fd = STDIN_FILENO, .events = POLLIN };
+        int pr = poll(&pfd, 1, left > 60000 ? 60000 : (int)left);
+        if (pr < 0 && errno == EINTR)
+            continue;
+        if (pr < 0)
+            return -1;
+        if (pr == 0)
+            continue;  /* re-check the deadline on the boot clock */
+        ssize_t n = read(STDIN_FILENO, buf + used, sizeof buf - used);
+        if (n < 0 && errno == EINTR)
+            continue;
+        if (n <= 0)
+            return -1;
+        used += (size_t)n;
+    }
+}
+
+static int session(long caller)
+{
+    gaudit_lease lease;
+    gaudit_lease_begin(&lease, gaudit_lease_now());
+    const char *reason = "eof";
+    int status = 0;
+    for (;;) {
+        long long wait_ms;
+        gaudit_lease_state st = gaudit_lease_check(&lease, gaudit_lease_now(), &wait_ms);
+        if (st != GAUDIT_LEASE_LIVE) {
+            reason = st == GAUDIT_LEASE_CAP ? "cap" : "idle";
+            break;
+        }
+        char line[MAX_COMMAND];
+        int r = read_command(line, sizeof line, wait_ms);
+        if (r == 0)
+            continue;  /* the lease decides on the next round */
+        if (r < 0) {
+            reason = "eof";
+            break;
+        }
+        if (strcmp(line, "quit") == 0) {
+            reason = "quit";
+            break;
+        }
+        int i = find_command(line);
+        if (i < 0) {
+            reason = "bad-command";
+            status = 1;
+            break;
+        }
+        /* A run under way when the cap is reached may finish. */
+        run_command(i, caller);
+        gaudit_lease_renew(&lease, gaudit_lease_now());
+    }
+    printf("(helper-end (reason \"%s\"))\n", reason);
+    return fflush(stdout) == 0 ? status : 1;
+}
+
+/* --- main ----------------------------------------------------------------- */
+
 int main(int argc, char *argv[])
 {
-    if (argc != 2 || strcmp(argv[1], "selftest") != 0) {
-        fputs("usage: gaudit-helper selftest\n", stderr);
+    int cmd = argc == 2 ? find_command(argv[1]) : -1;
+    int is_session = argc == 2 && strcmp(argv[1], "session") == 0;
+    if (cmd < 0 && !is_session) {
+        fputs("usage: gaudit-helper selftest | firewall | session\n", stderr);
         return 2;
     }
     if (getuid() != 0 || geteuid() != 0) {
@@ -213,30 +403,16 @@ int main(int argc, char *argv[])
     umask(077);
     if (chdir("/") != 0)
         return 1;
-    /* Nothing inherited beyond stdin, stdout (to the caller) and stderr. */
+    /* Nothing inherited beyond stdin (commands in a session), stdout (to
+     * the caller) and stderr. */
     if (syscall(SYS_close_range, 3U, ~0U, 0) != 0)
         return 1;
 
-    static const cap_value_t read_caps[] = { CAP_DAC_READ_SEARCH };
-    static const struct {
-        const char *variant;
-        gaudit_sandbox spec;
-    } runs[] = {
-        { "nobody",          { .to_nobody = 1 } },
-        { "dac-read-search", { .to_nobody = 0, .caps = read_caps, .n_caps = 1 } },
-    };
-
-    int ok = 0, failed = 0;
-    for (size_t i = 0; i < sizeof runs / sizeof runs[0]; i++) {
-        char out[MAX_CHECK_OUTPUT];
-        if (run_check(&runs[i].spec, selftest, (void *)runs[i].variant, out, sizeof out) == 0) {
-            fputs(out, stdout);
-            ok++;
-        } else {
-            failed++;
-        }
-    }
-    printf("(helper (version 1) (caller %ld) (checks-ok %d) (checks-failed %d))\n",
-           caller, ok, failed);
-    return fflush(stdout) == 0 && failed == 0 ? 0 : 1;
+    /* The lease in seconds, so the caller can show it; 0 0 for a single
+     * command. */
+    printf("(helper-start (version 1) (caller %ld) (idle %lld) (cap %lld))\n", caller,
+           is_session ? GAUDIT_LEASE_IDLE_MS / 1000 : 0, is_session ? GAUDIT_LEASE_CAP_MS / 1000 : 0);
+    if (fflush(stdout) != 0)
+        return 1;
+    return is_session ? session(caller) : run_command(cmd, caller);
 }

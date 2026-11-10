@@ -2,6 +2,7 @@
 /* Probe results over the orchestrator pipe: write and read back, and reject
  * anything else. The GUI treats this input as untrusted. */
 #include "gaudit/probe.h"
+#include "gaudit/run.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -141,6 +142,45 @@ int main(void)
     CHECK(all == (1u << GAUDIT_PROBE_COUNT) - 1);
     CHECK(gaudit_probe_task_kinds(GAUDIT_PROBE_TASK_COUNT) == 0);
     CHECK(gaudit_probe_task_kinds(-1) == 0);
+
+    /* Runs on request: every event round-trips, and only the protocol parses. */
+    gaudit_run_event evs[] = {
+        { .type = GAUDIT_RUN_EVENT_ELEVATED, .elevated = 1 },
+        { .type = GAUDIT_RUN_EVENT_FIREWALL, .firewall = { .verdict = GAUDIT_VERDICT_OK,
+          .tables = 3, .input_chains = 2, .input_drop = 1, .input_rules = 7, .rules = 40, .legacy = 0 } },
+        { .type = GAUDIT_RUN_EVENT_ELEVATED, .elevated = 0 },
+        { .type = GAUDIT_RUN_EVENT_END, .status = GAUDIT_RUN_CANCELLED },
+    };
+    for (size_t i = 0; i < sizeof evs / sizeof evs[0]; i++) {
+        char rl[512];
+        gaudit_run_event back;
+        CHECK(gaudit_run_format(&evs[i], rl, sizeof rl) == 0);
+        CHECK(gaudit_run_parse_line(rl, &back) == 0);
+        CHECK(back.type == evs[i].type && back.elevated == evs[i].elevated
+              && back.status == evs[i].status
+              && memcmp(&back.firewall, &evs[i].firewall, sizeof back.firewall) == 0);
+    }
+    gaudit_run_event ev;
+    CHECK(gaudit_run_parse_line("(end (status 4))", &ev) != 0);           /* no such status */
+    CHECK(gaudit_run_parse_line("(elevated (on 2))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(elevated (on 1) (on 1))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(firewall (verdict 0))", &ev) != 0);     /* fields missing */
+    CHECK(gaudit_run_parse_line("(helper-start (version 1) (caller 0))", &ev) != 0);  /* helper's, not ours */
+    CHECK(gaudit_run_parse_line("", &ev) != 0);
+
+    /* The interim firewall verdict. */
+    gaudit_firewall_report fw = { 0 };
+    CHECK(gaudit_firewall_verdict(&fw) == GAUDIT_VERDICT_WARNING);       /* nothing at all */
+    fw.input_chains = 1;
+    CHECK(gaudit_firewall_verdict(&fw) == GAUDIT_VERDICT_WARNING);       /* accepts everything */
+    fw.input_drop = 1;
+    CHECK(gaudit_firewall_verdict(&fw) == GAUDIT_VERDICT_OK);            /* ufw: policy drop */
+    fw.input_drop = 0;
+    fw.input_rules = 12;
+    CHECK(gaudit_firewall_verdict(&fw) == GAUDIT_VERDICT_OK);            /* firewalld: rules */
+    fw = (gaudit_firewall_report){ .legacy = 2 };
+    CHECK(gaudit_firewall_verdict(&fw) == GAUDIT_VERDICT_UNKNOWN);       /* rules out of sight */
+    CHECK(gaudit_firewall_verdict(NULL) == GAUDIT_VERDICT_UNKNOWN);
 
     if (failures)
         fprintf(stderr, "%d check(s) failed\n", failures);

@@ -6,6 +6,9 @@ pkg_check_modules(ADWAITA REQUIRED IMPORTED_TARGET gtk4 libadwaita-1>=1.5)
 add_executable(gaudit
   main.c
   gaudit-app.c
+  gaudit-orchestrator.c
+  gaudit-run-page.c
+  gaudit-session.c
   gaudit-window.c
   gaudit-task.c
   gaudit-task-page.c

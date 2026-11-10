@@ -4,6 +4,7 @@
 #include <glib/gi18n.h>
 
 #include "gaudit-window.h"
+#include "gaudit-session.h"
 #include "gaudit-task.h"
 #include "gaudit-task-page.h"
 
@@ -630,6 +631,14 @@ static GSettings *open_settings(void)
     return schema != NULL ? g_settings_new_full(schema, NULL, NULL) : NULL;
 }
 
+static void on_drop_clicked(GtkButton *button, gpointer user_data)
+{
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    gtk_menu_button_popdown(GTK_MENU_BUTTON(self->elevated_marker));
+    (void)button;
+    gaudit_session_drop();
+}
+
 static gboolean on_close_request(GtkWindow *window, gpointer user_data)
 {
     (void)user_data;
@@ -712,13 +721,36 @@ static void gaudit_window_init(GauditWindow *self)
      * the app holds elevated rights, and the primary menu at the end. */
     AdwHeaderBar *sidebar_header = ADW_HEADER_BAR(adw_header_bar_new());
     GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    self->elevated_marker = gtk_image_new_from_icon_name("media-record-symbolic");
+    /* The disc is a button: it explains itself and lets the rights go. */
+    self->elevated_marker = gtk_menu_button_new();
+    gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(self->elevated_marker), "media-record-symbolic");
+    gtk_widget_add_css_class(self->elevated_marker, "flat");
     gtk_widget_add_css_class(self->elevated_marker, "elevated-marker");
     gtk_widget_set_tooltip_text(self->elevated_marker, _("Running with administrator rights"));
     gtk_accessible_update_property(GTK_ACCESSIBLE(self->elevated_marker),
                                    GTK_ACCESSIBLE_PROPERTY_LABEL,
                                    _("Running with administrator rights"), -1);
-    gtk_widget_set_visible(self->elevated_marker, FALSE);
+    GtkWidget *pop_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_set_margin_top(pop_box, 6);
+    gtk_widget_set_margin_bottom(pop_box, 6);
+    gtk_widget_set_margin_start(pop_box, 6);
+    gtk_widget_set_margin_end(pop_box, 6);
+    /* The times are the helper's lease (src/helper/lease.h). */
+    GtkWidget *pop_text = gtk_label_new(
+        _("gAudit holds administrator rights. They end 2 minutes after the last check "
+          "that needs them, and at the latest 30 minutes after you gave the password."));
+    gtk_label_set_wrap(GTK_LABEL(pop_text), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(pop_text), 36);
+    gtk_label_set_xalign(GTK_LABEL(pop_text), 0.0f);
+    gtk_box_append(GTK_BOX(pop_box), pop_text);
+    GtkWidget *drop = gtk_button_new_with_label(_("Drop Administrator Rights"));
+    gtk_widget_add_css_class(drop, "destructive-action");
+    g_signal_connect(drop, "clicked", G_CALLBACK(on_drop_clicked), self);
+    gtk_box_append(GTK_BOX(pop_box), drop);
+    GtkWidget *popover = gtk_popover_new();
+    gtk_popover_set_child(GTK_POPOVER(popover), pop_box);
+    gtk_menu_button_set_popover(GTK_MENU_BUTTON(self->elevated_marker), popover);
+    gtk_widget_set_visible(self->elevated_marker, gaudit_session_elevated());
     gtk_box_append(GTK_BOX(title_box), self->elevated_marker);
     GtkWidget *title = gtk_label_new(_("Audit Center"));
     gtk_widget_add_css_class(title, "title");
@@ -757,6 +789,8 @@ static void gaudit_window_init(GauditWindow *self)
 void gaudit_window_set_elevated(GauditWindow *self, gboolean elevated)
 {
     g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    if (!elevated)
+        gtk_menu_button_popdown(GTK_MENU_BUTTON(self->elevated_marker));
     gtk_widget_set_visible(self->elevated_marker, elevated);
 }
 

@@ -25,6 +25,7 @@ typedef struct {
     const char *const *capabilities;  /* NULL-terminated, resolved by the backend */
     const GauditTaskParam *params;
     gsize n_params;
+    const char *run_command;  /* the orchestrator session's command for a run */
 } GauditTaskInfo;
 
 const GauditTaskInfo *gaudit_tasks_get(gsize *n_tasks);

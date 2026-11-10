@@ -1,0 +1,109 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+#include "config.h"
+
+#include <glib/gi18n.h>
+
+#include "gaudit-run-page.h"
+#include "gaudit-session.h"
+#include "gaudit-task-page.h"
+#include "gaudit/run.h"
+
+typedef struct {
+    AdwStatusPage *status;  /* weak: the page may be left while the run goes on */
+    gaudit_firewall_report firewall;
+} RunJob;
+
+static void show(RunJob *job, const char *icon, const char *title, const char *description)
+{
+    if (job->status == NULL)
+        return;
+    adw_status_page_set_paintable(job->status, NULL);
+    adw_status_page_set_icon_name(job->status, icon);
+    adw_status_page_set_title(job->status, title);
+    adw_status_page_set_description(job->status, description);
+}
+
+static void show_firewall(RunJob *job)
+{
+    const gaudit_firewall_report *f = &job->firewall;
+    switch (f->verdict) {
+    case GAUDIT_VERDICT_OK: {
+        g_autofree char *how = f->input_drop > 0
+            ? g_strdup(_("Incoming connections are blocked unless a rule allows them."))
+            : g_strdup_printf(ngettext("Incoming connections pass through %u firewall rule.",
+                                       "Incoming connections pass through %u firewall rules.",
+                                       f->input_rules), f->input_rules);
+        /* Translators: Keep the meaning: active is not the same as right. */
+        g_autofree char *text = g_strdup_printf("%s %s", how,
+            _("This shows that a firewall is active, not that its rules suit you."));
+        show(job, "security-high-symbolic", _("The firewall is filtering incoming traffic"), text);
+        break;
+    }
+    case GAUDIT_VERDICT_UNKNOWN:
+        show(job, "dialog-question-symbolic", _("The firewall could not be checked fully"),
+             _("This system uses the older iptables, whose rules gAudit cannot read yet."));
+        break;
+    default:
+        show(job, "security-low-symbolic", _("No firewall is filtering incoming traffic"),
+             _("Other computers on the network can reach every service running on this one. "
+               "Switch the firewall on in the settings of your firewall program."));
+        break;
+    }
+}
+
+static void on_progress(gpointer user_data)
+{
+    RunJob *job = user_data;
+    if (job->status != NULL) {
+        adw_status_page_set_title(job->status, _("Checking the firewall…"));
+        adw_status_page_set_description(job->status, NULL);
+    }
+}
+
+static void on_run_done(gaudit_run_status status, const gaudit_firewall_report *result,
+                        gpointer user_data)
+{
+    RunJob *job = user_data;
+    if (status == GAUDIT_RUN_OK && result != NULL) {
+        job->firewall = *result;
+        show_firewall(job);
+    } else if (status == GAUDIT_RUN_CANCELLED) {
+        show(job, "dialog-information-symbolic", _("The check was cancelled"),
+             _("No password was given, so the firewall was not checked."));
+    } else if (status == GAUDIT_RUN_DENIED) {
+        show(job, "dialog-password-symbolic", _("Not authorized"),
+             _("The password was not accepted, or this account may not run administrator checks."));
+    } else {
+        show(job, "dialog-warning-symbolic", _("The check could not be completed"),
+             _("Nothing is known about the firewall from this run."));
+    }
+    if (job->status != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(job->status), (gpointer *)&job->status);
+    g_free(job);
+}
+
+AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)
+{
+    AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
+#if ADW_CHECK_VERSION(1, 6, 0)
+    g_autoptr(AdwSpinnerPaintable) spinner = adw_spinner_paintable_new(GTK_WIDGET(status));
+    adw_status_page_set_paintable(status, GDK_PAINTABLE(spinner));
+#else
+    adw_status_page_set_icon_name(status, "content-loading-symbolic");
+#endif
+    adw_status_page_set_title(status, _("Waiting for the password"));
+    adw_status_page_set_description(status,
+        _("Reading the firewall rules needs the administrator password."));
+    AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status), _(task->title), "run");
+
+    RunJob *job = g_new0(RunJob, 1);
+    job->status = status;
+    g_object_add_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
+    if (!gaudit_session_run(task->run_command, on_progress, on_run_done, job)) {
+        show(job, "dialog-information-symbolic", _("Another check is running"),
+             _("Wait until it has finished, then start this one again."));
+        g_object_remove_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
+        g_free(job);
+    }
+    return page;
+}

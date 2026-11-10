@@ -10,9 +10,12 @@
     <defaults>
       <allow_any>no</allow_any>
       <allow_inactive>no</allow_inactive>
-      <!-- Remembered for a few minutes, like sudo in a terminal. The app shows
-           a marker while it holds elevated rights. -->
-      <allow_active>auth_admin_keep</allow_active>
+      <!-- Never remembered by polkit: the helper keeps its rights itself
+           for a short lease (2 minutes after the last check, 30 at most),
+           and the app shows a marker for exactly that time. A polkit
+           memory would let anything on the account start the helper
+           without a password, unseen. -->
+      <allow_active>auth_admin</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">@GAUDIT_HELPER_PATH@</annotate>
   </action>

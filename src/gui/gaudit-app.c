@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "gaudit-app.h"
+#include "gaudit-orchestrator.h"
+#include "gaudit-session.h"
 #include "gaudit-window.h"
 #include "gaudit/backend.h"
 #include "gaudit/model.h"
@@ -24,39 +26,42 @@ G_DEFINE_FINAL_TYPE(GauditApp, gaudit_app, ADW_TYPE_APPLICATION)
  * It writes one line per result as soon as that result is known, and each
  * Home row is filled in as its line arrives.
  *
- * Its output is untrusted input: at most MAX_OUTPUT bytes, a timeout, and
- * a strict parser for every line. A line that breaks the protocol (bad
+ * Every line is parsed strictly. A line that breaks the protocol (bad
  * format, a kind repeated, too much output) means none of it can be
  * trusted: every row becomes unknown, also those already shown. A row
  * whose answer never came (timeout, a task that failed) becomes unknown on
  * its own. Never a guess. */
 
 #define ORCHESTRATOR_TIMEOUT_S 60
-#define MAX_OUTPUT (64 * 1024)
-#define MAX_LINE 1024
-#define READ_CHUNK 8192
 
 typedef struct {
     GauditApp *app;
     GauditWindow *view;
-    GSubprocess *proc;
-    GCancellable *cancel;  /* stops reading at the timeout */
-    GByteArray *pending;  /* bytes after the last complete line */
-    gsize total;
-    guint timeout_id;
-    gboolean broken;      /* protocol violated: trust nothing */
     gaudit_probe_result results[GAUDIT_PROBE_COUNT];
     gboolean seen[GAUDIT_PROBE_COUNT];
 } RefreshJob;
 
-static void refresh_finish(RefreshJob *job)
+static gboolean on_status_line(const char *line, gpointer user_data)
 {
+    RefreshJob *job = user_data;
+    gaudit_probe_result r;
+    if (gaudit_probe_parse_line(line, &r) != 0 || job->seen[r.kind])
+        return FALSE;  /* malformed, or a kind repeated */
+    job->seen[r.kind] = TRUE;
+    job->results[r.kind] = r;
+    gaudit_window_show_probe(job->view, &r);
+    return TRUE;
+}
+
+static void on_status_done(gboolean broken, gpointer user_data)
+{
+    RefreshJob *job = user_data;
     gaudit_probe_result defaults[GAUDIT_PROBE_COUNT];
     gaudit_probe_init(defaults);
-    if (job->broken)
+    if (broken)
         g_warning("gaudit: the status check broke the protocol; showing every row as unknown");
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
-        if (job->broken || !job->seen[k]) {
+        if (broken || !job->seen[k]) {
             job->results[k] = defaults[k];
             gaudit_window_show_probe(job->view, &job->results[k]);
         }
@@ -65,87 +70,9 @@ static void refresh_finish(RefreshJob *job)
             g_warning("gaudit: could not record finding %s", r->id);
     }
     gaudit_window_finish_status(job->view, gaudit_model_worst(job->app->model));
-
-    if (job->timeout_id != 0)
-        g_source_remove(job->timeout_id);
-    g_clear_object(&job->proc);
-    g_clear_object(&job->cancel);
-    g_byte_array_unref(job->pending);
     g_object_unref(job->view);
-    g_application_release(G_APPLICATION(job->app));
     g_object_unref(job->app);
     g_free(job);
-}
-
-static gboolean on_refresh_timeout(gpointer user_data)
-{
-    RefreshJob *job = user_data;
-    job->timeout_id = 0;
-    g_cancellable_cancel(job->cancel);   /* the read ends; refresh_finish follows */
-    g_subprocess_force_exit(job->proc);
-    return G_SOURCE_REMOVE;
-}
-
-static void on_orchestrator_exited(GObject *source, GAsyncResult *res, gpointer user_data)
-{
-    RefreshJob *job = user_data;
-    g_autoptr(GError) error = NULL;
-    /* A failed exit only means some answers are missing; those rows become
-     * unknown in refresh_finish. */
-    if (!g_subprocess_wait_check_finish(G_SUBPROCESS(source), res, &error))
-        g_debug("gaudit: orchestrator: %s", error->message);
-    if (job->pending->len > 0)
-        job->broken = TRUE;  /* output ended in the middle of a line */
-    refresh_finish(job);
-}
-
-/* Parses and shows every complete line in pending; FALSE on a violation. */
-static gboolean take_lines(RefreshJob *job)
-{
-    for (;;) {
-        const guint8 *data = job->pending->data;
-        const guint8 *nl = memchr(data, '\n', job->pending->len);
-        if (nl == NULL)
-            return job->pending->len < MAX_LINE;
-        gsize len = (gsize)(nl - data);
-        if (len >= MAX_LINE || memchr(data, '\0', len) != NULL)
-            return FALSE;
-        char line[MAX_LINE];
-        memcpy(line, data, len);
-        line[len] = '\0';
-        g_byte_array_remove_range(job->pending, 0, (guint)len + 1);
-
-        gaudit_probe_result r;
-        if (gaudit_probe_parse_line(line, &r) != 0 || job->seen[r.kind])
-            return FALSE;
-        job->seen[r.kind] = TRUE;
-        job->results[r.kind] = r;
-        gaudit_window_show_probe(job->view, &r);
-    }
-}
-
-static void on_output_read(GObject *source, GAsyncResult *res, gpointer user_data)
-{
-    RefreshJob *job = user_data;
-    g_autoptr(GError) error = NULL;
-    g_autoptr(GBytes) bytes = g_input_stream_read_bytes_finish(G_INPUT_STREAM(source), res, &error);
-
-    gsize n = bytes != NULL ? g_bytes_get_size(bytes) : 0;
-    if (n > 0 && !job->broken) {
-        job->total += n;
-        g_byte_array_append(job->pending, g_bytes_get_data(bytes, NULL), (guint)n);
-        if (job->total > MAX_OUTPUT || !take_lines(job)) {
-            job->broken = TRUE;
-            g_subprocess_force_exit(job->proc);
-        }
-    }
-    if (n > 0 && !job->broken) {
-        g_input_stream_read_bytes_async(G_INPUT_STREAM(source), READ_CHUNK, G_PRIORITY_DEFAULT,
-                                        job->cancel, on_output_read, job);
-        return;
-    }
-    /* End of output (or failure): wait for the process to exit. */
-    g_subprocess_wait_check_async(job->proc, NULL, on_orchestrator_exited, job);
 }
 
 static void refresh_status(GauditApp *self, GauditWindow *view)
@@ -153,28 +80,8 @@ static void refresh_status(GauditApp *self, GauditWindow *view)
     RefreshJob *job = g_new0(RefreshJob, 1);
     job->app = g_object_ref(self);
     job->view = g_object_ref(view);
-    job->pending = g_byte_array_new();
-    job->cancel = g_cancellable_new();
-    g_application_hold(G_APPLICATION(self));  /* do not quit halfway */
     gaudit_window_begin_status(view);
-
-    /* Nothing from our environment is passed on, except HOME. */
-    g_autoptr(GSubprocessLauncher) launcher =
-        g_subprocess_launcher_new(G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_SILENCE);
-    g_autofree char *home = g_strdup_printf("HOME=%s", g_get_home_dir());
-    char *env[] = { home, NULL };
-    g_subprocess_launcher_set_environ(launcher, env);
-
-    g_autoptr(GError) error = NULL;
-    job->proc = g_subprocess_launcher_spawn(launcher, &error, GAUDIT_ORCHESTRATOR_PATH, NULL);
-    if (job->proc == NULL) {
-        g_warning("gaudit: could not start %s: %s", GAUDIT_ORCHESTRATOR_PATH, error->message);
-        refresh_finish(job);
-        return;
-    }
-    job->timeout_id = g_timeout_add_seconds(ORCHESTRATOR_TIMEOUT_S, on_refresh_timeout, job);
-    g_input_stream_read_bytes_async(g_subprocess_get_stdout_pipe(job->proc), READ_CHUNK,
-                                    G_PRIORITY_DEFAULT, job->cancel, on_output_read, job);
+    gaudit_orchestrator_start(NULL, ORCHESTRATOR_TIMEOUT_S, FALSE, on_status_line, on_status_done, job);
 }
 
 /* Sidebar icons sit on a filled circle. It is grey, like the row
@@ -306,9 +213,30 @@ static void set_accel(GApplication *app, const char *action, const char *accel)
     gtk_application_set_accels_for_action(GTK_APPLICATION(app), action, accels);
 }
 
+/* The red disc follows the helper in every window. */
+static void on_elevated_changed(gboolean on, gpointer app)
+{
+    for (GList *w = gtk_application_get_windows(GTK_APPLICATION(app)); w != NULL; w = w->next)
+        if (GAUDIT_IS_WINDOW(w->data))
+            gaudit_window_set_elevated(GAUDIT_WINDOW(w->data), on);
+}
+
+/* With the last window gone, so are the elevated rights: nobody would see
+ * the red disc. (Jobs that go on in the background come later.) */
+static void on_window_removed(GtkApplication *app, GtkWindow *window, gpointer user_data)
+{
+    (void)window;
+    (void)user_data;
+    if (gtk_application_get_windows(app) == NULL)
+        gaudit_session_end();
+}
+
 static void gaudit_app_startup(GApplication *app)
 {
     G_APPLICATION_CLASS(gaudit_app_parent_class)->startup(app);
+
+    gaudit_session_set_elevated_listener(on_elevated_changed, app);
+    g_signal_connect(app, "window-removed", G_CALLBACK(on_window_removed), NULL);
 
     g_action_map_add_action_entries(G_ACTION_MAP(app), app_actions,
                                     G_N_ELEMENTS(app_actions), app);

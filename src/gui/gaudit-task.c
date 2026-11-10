@@ -3,11 +3,34 @@
 
 #include "gaudit-task.h"
 
+#include <glib/gi18n.h>
+
+/* Built-in tasks, written in C until the plugin description format exists;
+ * they then move to it and are marked core. */
+static const GauditTaskInfo tasks[] = {
+    {
+        .id = "core.firewall",
+        .title = N_("Firewall"),
+        .summary = N_("Checks that a firewall is actually filtering incoming network traffic."),
+        .details = N_("A firewall decides which connections from other computers may reach "
+                      "this one. Having a firewall program installed is not enough: it also "
+                      "has to be switched on. This check looks at the rules the system is "
+                      "using right now, whichever program set them up.\n\n"
+                      "Reading the rules needs the administrator password, because only the "
+                      "administrator may look at them. gAudit only reads the rules; it "
+                      "changes nothing."),
+        .icon = "network-workgroup-symbolic",
+        .capabilities = NULL,  /* reads the kernel's rules: nothing to install */
+        .params = NULL,
+        .n_params = 0,
+        .run_command = "run firewall",
+    },
+};
+
 const GauditTaskInfo *gaudit_tasks_get(gsize *n_tasks)
 {
-    /* Empty until tasks come from plugins; the sidebar then shows Home only. */
-    *n_tasks = 0;
-    return NULL;
+    *n_tasks = G_N_ELEMENTS(tasks);
+    return tasks;
 }
 
 GPtrArray *gaudit_task_missing_packages(const GauditTaskInfo *task,

@@ -3,6 +3,7 @@
 
 #include <glib/gi18n.h>
 
+#include "gaudit-run-page.h"
 #include "gaudit-task-page.h"
 
 AdwNavigationPage *gaudit_page_wrap(GtkWidget *content, const char *title, const char *tag)
@@ -40,14 +41,8 @@ static void on_start_clicked(GtkButton *button, gpointer user_data)
     GtkWidget *nav = gtk_widget_get_ancestor(GTK_WIDGET(button), ADW_TYPE_NAVIGATION_VIEW);
     g_return_if_fail(nav != NULL);
 
-    /* TODO: hand the selected parameters to the orchestrator and show progress. */
-    AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
-    adw_status_page_set_icon_name(status, "dialog-information-symbolic");
-    adw_status_page_set_title(status, _("Check started"));
-    adw_status_page_set_description(status, _("Running checks is not implemented yet."));
-
-    adw_navigation_view_push(ADW_NAVIGATION_VIEW(nav),
-                             gaudit_page_wrap(GTK_WIDGET(status), _(task->title), "run"));
+    /* TODO: hand the selected parameters to the orchestrator. */
+    adw_navigation_view_push(ADW_NAVIGATION_VIEW(nav), gaudit_run_page_new(task));
 }
 
 /* --- Page 1: settings ----------------------------------------------------- */
@@ -80,7 +75,10 @@ static GtkWidget *build_settings(const GauditTaskInfo *task)
         g_object_set_data(G_OBJECT(row), "gaudit-param", (gpointer)p->id);
         adw_preferences_group_add(params, GTK_WIDGET(row));
     }
-    adw_preferences_page_add(page, params);
+    if (task->n_params > 0)
+        adw_preferences_page_add(page, params);
+    else
+        g_object_unref(g_object_ref_sink(params));  /* nothing to set */
 
     AdwPreferencesGroup *actions = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
     GtkWidget *start = gtk_button_new_with_label(_("Start"));

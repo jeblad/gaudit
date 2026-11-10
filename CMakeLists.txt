@@ -41,9 +41,12 @@ else()
   set(GAUDIT_LOCALEDIR ${CMAKE_INSTALL_FULL_LOCALEDIR})
 endif()
 set(GAUDIT_PKGLIBEXECDIR ${CMAKE_INSTALL_FULL_LIBEXECDIR}/gaudit)
-set(GAUDIT_HELPER_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-helper)
-# Collectors run from the build tree in developer builds.
+# Collectors run from the build tree in developer builds. So does the
+# helper: pkexec then asks for the password without the policy's message
+# (the policy is not installed), and the binary it runs is writable by the
+# developer. Never for packaging.
 if(GAUDIT_DEVELOPER_BUILD)
+  set(GAUDIT_HELPER_PATH ${PROJECT_BINARY_DIR}/src/helper/gaudit-helper)
   set(GAUDIT_ORCHESTRATOR_PATH ${PROJECT_BINARY_DIR}/src/orchestrator/gaudit-orchestrator)
   set(GAUDIT_SCHEMA_DIR ${PROJECT_BINARY_DIR}/data/schemas)
   set(GAUDIT_FLATPAK_PROBE_PATH ${PROJECT_BINARY_DIR}/src/collectors/flatpak/gaudit-flatpak-probe)
@@ -51,6 +54,7 @@ if(GAUDIT_DEVELOPER_BUILD)
   set(GAUDIT_DNF_PROBE_PATH ${PROJECT_BINARY_DIR}/src/collectors/dnf/gaudit-dnf-probe)
   set(GAUDIT_PACMAN_PROBE_PATH ${PROJECT_BINARY_DIR}/src/collectors/pacman/gaudit-pacman-probe)
 else()
+  set(GAUDIT_HELPER_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-helper)
   set(GAUDIT_ORCHESTRATOR_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-orchestrator)
   set(GAUDIT_SCHEMA_DIR "")  # the system schema directory
   set(GAUDIT_FLATPAK_PROBE_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-flatpak-probe)

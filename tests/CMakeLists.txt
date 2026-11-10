@@ -89,6 +89,15 @@ target_compile_definitions(test_sandbox PRIVATE _GNU_SOURCE)
 target_link_libraries(test_sandbox PRIVATE gaudit_sandbox)
 add_test(NAME sandbox COMMAND test_sandbox)
 
+add_executable(test_nft test_nft.c)
+target_compile_definitions(test_nft PRIVATE _GNU_SOURCE)
+target_link_libraries(test_nft PRIVATE gaudit_sandbox)
+add_test(NAME nft COMMAND test_nft)
+
+add_executable(test_lease test_lease.c)
+target_link_libraries(test_lease PRIVATE gaudit_sandbox)
+add_test(NAME lease COMMAND test_lease)
+
 add_executable(test_private_files test_private_files.c)
 target_include_directories(test_private_files PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
 target_compile_definitions(test_private_files PRIVATE _GNU_SOURCE

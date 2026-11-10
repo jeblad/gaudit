@@ -130,3 +130,8 @@ endif()
 add_executable(test_capability test_capability.c)
 target_link_libraries(test_capability PRIVATE gaudit_backend gaudit_config)
 add_test(NAME capability COMMAND test_capability)
+
+add_executable(test_integrity test_integrity.c)
+target_compile_definitions(test_integrity PRIVATE _GNU_SOURCE)
+target_link_libraries(test_integrity PRIVATE gaudit_sandbox)
+add_test(NAME integrity COMMAND test_integrity)

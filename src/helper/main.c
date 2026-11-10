@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* gaudit-helper: privileged helper, started via pkexec.
  *
- *   gaudit-helper selftest | firewall | session
+ *   gaudit-helper selftest | firewall | integrity | session
  *
  * Writes (helper-start ...) as soon as it runs as root, so the caller
  * knows the authorization went through. Then runs each check in its own
@@ -13,6 +13,9 @@
  *             sandbox can be verified
  *   firewall  the nftables ruleset (root with CAP_NET_ADMIN only) and
  *             whether legacy iptables tables are loaded
+ *   integrity every deb package's files against dpkg's md5sums (root with
+ *             CAP_DAC_READ_SEARCH only, several threads, up to 15 minutes):
+ *             up to 40 (integrity-file ...) lines, then (integrity ...)
  *   session   keeps the rights for more commands (one per line on stdin:
  *             a command name, or "quit") within the lease of lease.h, and
  *             ends with (helper-end (reason ...)): idle, cap, quit, eof or
@@ -23,6 +26,7 @@
  * other gaudit processes and the root-owned log come later. */
 #include "config.h"
 
+#include "integrity.h"
 #include "lease.h"
 #include "nft.h"
 #include "sandbox.h"
@@ -61,9 +65,10 @@ static long elapsed_ms(const struct timespec *start)
 }
 
 /* Fork, sandbox the child as spec says, run fn there with stdout on a pipe,
- * and collect at most MAX_CHECK_OUTPUT bytes within the timeout.
+ * and collect less than len bytes within timeout_ms.
  * 0 on success (buf holds the output), -1 otherwise. */
-static int run_check(const gaudit_sandbox *spec, check_fn fn, void *ctx, char *buf, size_t len)
+static int run_check(const gaudit_sandbox *spec, check_fn fn, void *ctx, long timeout_ms,
+                     char *buf, size_t len)
 {
     int fds[2];
     if (len < 2 || pipe2(fds, O_CLOEXEC) != 0)
@@ -91,7 +96,7 @@ static int run_check(const gaudit_sandbox *spec, check_fn fn, void *ctx, char *b
     size_t used = 0;
     int failed = 0;
     for (;;) {
-        long left = CHECK_TIMEOUT_MS - elapsed_ms(&start);
+        long left = timeout_ms - elapsed_ms(&start);
         struct pollfd pfd = { .fd = fds[0], .events = POLLIN };
         int pr = left > 0 ? poll(&pfd, 1, (int)left) : 0;
         if (pr < 0 && errno == EINTR)
@@ -224,6 +229,65 @@ static void firewall(void *ctx)
            legacy_tables());
 }
 
+/* --- integrity ------------------------------------------------------------ */
+
+#define INTEGRITY_SHOWN 40
+
+static const char *const kind_names[] = { "changed", "missing", "unreadable" };
+
+/* Printable ASCII only, '"' and '\\' escaped; 0 if it does not fit or has
+ * anything else (the finding is then counted but not listed). */
+static int quote(const char *in, char *out, size_t len)
+{
+    size_t n = 0;
+    out[n++] = '"';
+    for (const char *c = in; *c != '\0'; c++) {
+        if (*c < 0x20 || *c > 0x7e || n + 3 >= len)
+            return 0;
+        if (*c == '"' || *c == '\\')
+            out[n++] = '\\';
+        out[n++] = *c;
+    }
+    out[n++] = '"';
+    out[n] = '\0';
+    return 1;
+}
+
+static void on_integrity(gaudit_integrity_kind kind, const char *package, const char *path,
+                         void *ctx)
+{
+    unsigned *shown = ctx;
+    char pkg[160], file[320];
+    if (*shown >= INTEGRITY_SHOWN || !quote(package, pkg, sizeof pkg)
+        || !quote(path, file, sizeof file))
+        return;
+    printf("(integrity-file (kind %s) (package %s) (path %s))\n", kind_names[kind], pkg, file);
+    (*shown)++;
+}
+
+static void integrity(void *ctx)
+{
+    (void)ctx;
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    /* Past about eight threads the disk sets the pace, not the CPU. */
+    gaudit_integrity_paths paths = {
+        .root = "", .info_dir = "/var/lib/dpkg/info", .diversions = "/var/lib/dpkg/diversions",
+        .cfg_file = "/etc/dpkg/dpkg.cfg", .cfg_dir = "/etc/dpkg/dpkg.cfg.d",
+        .threads = cpus < 1 ? 1 : cpus > 8 ? 8 : (unsigned)cpus,
+    };
+    struct timespec start;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    unsigned shown = 0;
+    gaudit_integrity_result r;
+    if (gaudit_integrity_scan(&paths, &r, on_integrity, &shown) != 0)
+        _exit(1);
+    printf("(integrity (packages %u) (files %lu) (checked %lu) (changed %lu) (missing %lu)"
+           " (unreadable %lu) (excluded %lu) (diverted %lu) (bad-lines %lu) (megabytes %llu)"
+           " (shown %u) (seconds %ld))\n",
+           r.packages, r.files, r.checked, r.changed, r.missing, r.unreadable, r.excluded,
+           r.diverted, r.bad_lines, r.bytes / 1000000, shown, elapsed_ms(&start) / 1000);
+}
+
 /* --- main ----------------------------------------------------------------- */
 
 /* PKEXEC_UID as set by pkexec, -1 if absent or not a plain number. Only
@@ -248,17 +312,26 @@ typedef struct {
     const char *variant;
     gaudit_sandbox spec;
     check_fn fn;
+    long timeout_ms;    /* 0: CHECK_TIMEOUT_MS */
+    size_t max_output;  /* 0: MAX_CHECK_OUTPUT */
 } check_def;
 
 static const cap_value_t read_caps[] = { CAP_DAC_READ_SEARCH };
 static const cap_value_t net_caps[] = { CAP_NET_ADMIN };
 
 static const check_def selftest_checks[] = {
-    { "nobody",          { .to_nobody = 1 },                                  selftest },
-    { "dac-read-search", { .to_nobody = 0, .caps = read_caps, .n_caps = 1 }, selftest },
+    { "nobody",          { .to_nobody = 1 },                                  selftest, 0, 0 },
+    { "dac-read-search", { .to_nobody = 0, .caps = read_caps, .n_caps = 1 }, selftest, 0, 0 },
 };
 static const check_def firewall_checks[] = {
-    { "firewall",        { .to_nobody = 0, .caps = net_caps, .n_caps = 1 },  firewall },
+    { "firewall",        { .to_nobody = 0, .caps = net_caps, .n_caps = 1 },  firewall, 0, 0 },
+};
+
+/* Reading every package file takes time: half a minute on a fast disk,
+ * several minutes on a slow one. */
+static const check_def integrity_checks[] = {
+    { "integrity",       { .to_nobody = 0, .caps = read_caps, .n_caps = 1 }, integrity,
+      15 * 60 * 1000L, 16384 },
 };
 
 static const struct {
@@ -268,6 +341,7 @@ static const struct {
 } commands[] = {
     { "selftest", selftest_checks, sizeof selftest_checks / sizeof selftest_checks[0] },
     { "firewall", firewall_checks, sizeof firewall_checks / sizeof firewall_checks[0] },
+    { "integrity", integrity_checks, sizeof integrity_checks / sizeof integrity_checks[0] },
 };
 
 static int find_command(const char *name)
@@ -285,13 +359,17 @@ static int run_command(int i, long caller)
     int ok = 0, failed = 0;
     for (size_t c = 0; c < commands[i].n_checks; c++) {
         const check_def *def = &commands[i].checks[c];
-        char out[MAX_CHECK_OUTPUT];
-        if (run_check(&def->spec, def->fn, (void *)def->variant, out, sizeof out) == 0) {
+        size_t len = def->max_output > 0 ? def->max_output : MAX_CHECK_OUTPUT;
+        char *out = malloc(len);
+        if (out != NULL
+            && run_check(&def->spec, def->fn, (void *)def->variant,
+                         def->timeout_ms > 0 ? def->timeout_ms : CHECK_TIMEOUT_MS, out, len) == 0) {
             fputs(out, stdout);
             ok++;
         } else {
             failed++;
         }
+        free(out);
     }
     printf("(helper (version 1) (caller %ld) (checks-ok %d) (checks-failed %d))\n",
            caller, ok, failed);
@@ -389,7 +467,7 @@ int main(int argc, char *argv[])
     int cmd = argc == 2 ? find_command(argv[1]) : -1;
     int is_session = argc == 2 && strcmp(argv[1], "session") == 0;
     if (cmd < 0 && !is_session) {
-        fputs("usage: gaudit-helper selftest | firewall | session\n", stderr);
+        fputs("usage: gaudit-helper selftest | firewall | integrity | session\n", stderr);
         return 2;
     }
     if (getuid() != 0 || geteuid() != 0) {

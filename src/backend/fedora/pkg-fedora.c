@@ -40,6 +40,9 @@ static const gaudit_capability capabilities[] = {
     { "libdnf5",      no_paths,        libdnf5_pkgs },
 };
 
+/* The distribution's usual choice when nothing in a category is installed. */
+static const char *const recommended[] = { "firewalld", "clamav", NULL };
+
 static const char *const fallback_argv[] = {
     "/usr/bin/pkexec", "/usr/bin/dnf", "install", "-y", "--", NULL
 };
@@ -103,6 +106,7 @@ static const gaudit_pkg_backend fedora_pkg = {
     .package_systems_present = gaudit_package_systems_present_here,
     .private_files = gaudit_private_files_here,
     .listening = gaudit_listening_here,
+    .recommended = recommended,
     .manual_install_command = "sudo dnf install",
     .fallback_install_argv = fallback_argv,
     .capability = capability,

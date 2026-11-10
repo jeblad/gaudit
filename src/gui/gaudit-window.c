@@ -4,6 +4,7 @@
 #include <glib/gi18n.h>
 
 #include "gaudit-window.h"
+#include "gaudit-category.h"
 #include "gaudit-firewall-text.h"
 #include "gaudit-session.h"
 #include "gaudit-task.h"
@@ -382,6 +383,12 @@ static const char *probe_title(const gaudit_probe_result *r)
 static void on_missing_row_activated(AdwActionRow *row, gpointer user_data)
 {
     GauditWindow *self = GAUDIT_WINDOW(user_data);
+    const GauditCategory *category = g_object_get_data(G_OBJECT(row), "gaudit-category");
+    if (category != NULL) {
+        /* Nothing in the category is installed: choose one. */
+        adw_navigation_view_push(self->content, gaudit_category_page_new(category, self->pkg));
+        return;
+    }
     const char *capability = g_object_get_data(G_OBJECT(row), "gaudit-capability");
     if (capability == NULL)
         return;  /* nothing missing (or still checking) */
@@ -461,6 +468,7 @@ static void fill_row(GauditWindow *self, int k)
         adw_action_row_remove(row, old);
     g_object_set_data(G_OBJECT(row), "gaudit-task-button", NULL);
     g_object_set_data(G_OBJECT(row), "gaudit-capability", NULL);
+    g_object_set_data(G_OBJECT(row), "gaudit-category", NULL);
     gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), FALSE);
 
     if (!self->received[k]) {
@@ -502,6 +510,19 @@ static void fill_row(GauditWindow *self, int k)
         g_signal_connect(button, "clicked", G_CALLBACK(on_task_button_clicked), self);
         adw_action_row_add_suffix(row, button);
         g_object_set_data(G_OBJECT(row), "gaudit-task-button", button);
+    }
+
+    /* A category with nothing installed (no firewall, no antivirus): the
+     * row leads to choosing one. */
+    const GauditCategory *category = gaudit_category_for_probe(probe->id);
+    if (category != NULL && probe->verdict == GAUDIT_VERDICT_WARNING) {
+        GtkWidget *next = gtk_image_new_from_icon_name("go-next-symbolic");
+        adw_action_row_add_suffix(row, next);
+        g_object_set_data(G_OBJECT(row), "gaudit-suffix", next);
+        gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), TRUE);
+        g_object_set_data(G_OBJECT(row), "gaudit-category", (gpointer)category);
+        gtk_widget_set_visible(GTK_WIDGET(row), TRUE);
+        return;
     }
 
     const gaudit_capability *missing = probe->missing_capability[0] == '\0' || self->pkg->capability == NULL

@@ -3,6 +3,7 @@
 
 #include <glib/gi18n.h>
 
+#include "gaudit-category.h"
 #include "gaudit-firewall-text.h"
 #include "gaudit-run-page.h"
 #include "gaudit-session.h"
@@ -25,18 +26,6 @@ static void show(RunJob *job, const char *icon, const char *title, const char *d
     adw_status_page_set_description(job->status, description);
 }
 
-/* How to switch on each known firewall program: fixed commands, never
- * built from anything the system says. Which one applies is decided from
- * what the backend sees installed (presentation only; gAudit does not run
- * it, the user does). */
-static const struct {
-    const char *capability;
-    const char *enable;
-} firewall_tools[] = {
-    { "ufw",       "sudo ufw enable" },
-    { "firewalld", "sudo systemctl enable --now firewalld" },
-};
-
 static GtkWidget *small_note(const char *text)
 {
     GtkWidget *label = gtk_label_new(text);
@@ -47,19 +36,25 @@ static GtkWidget *small_note(const char *text)
     return label;
 }
 
+static void on_choose_clicked(GtkButton *button, gpointer user_data)
+{
+    const GauditCategory *category = user_data;
+    GtkWidget *nav = gtk_widget_get_ancestor(GTK_WIDGET(button), ADW_TYPE_NAVIGATION_VIEW);
+    if (nav != NULL && category != NULL)
+        adw_navigation_view_push(ADW_NAVIGATION_VIEW(nav),
+                                 gaudit_category_page_new(category, gaudit_pkg_backend_default()));
+}
+
 /* The manual way to switch the firewall on, under the warning. */
 static void show_enable(RunJob *job)
 {
     if (job->status == NULL)
         return;
     const gaudit_pkg_backend *pkg = gaudit_pkg_backend_default();
-    const char *command = NULL;
-    for (size_t i = 0; i < G_N_ELEMENTS(firewall_tools) && command == NULL; i++) {
-        const gaudit_capability *cap = pkg->capability != NULL
-            ? pkg->capability(firewall_tools[i].capability) : NULL;
-        if (gaudit_capability_present(cap))
-            command = firewall_tools[i].enable;
-    }
+    const GauditCategory *firewalls = gaudit_category_for_probe("status.firewall");
+    /* Fixed commands from the category's table, for the program the
+     * backend sees installed (presentation only; the user runs it). */
+    const char *command = gaudit_category_enable_command(firewalls, pkg);
 
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
     if (command != NULL) {
@@ -72,8 +67,13 @@ static void show_enable(RunJob *job)
             _("If you use this computer from another one, for example over SSH, allow that "
               "in the firewall first, or you will be shut out.")));
     } else {
-        gtk_box_append(GTK_BOX(box), small_note(
-            _("No known firewall program is installed. Install one first, for example ufw.")));
+        gtk_box_append(GTK_BOX(box), small_note(_("No known firewall program is installed.")));
+        GtkWidget *choose = gtk_button_new_with_label(_("Choose a Firewall"));
+        gtk_widget_add_css_class(choose, "pill");
+        gtk_widget_add_css_class(choose, "suggested-action");
+        gtk_widget_set_halign(choose, GTK_ALIGN_CENTER);
+        g_signal_connect(choose, "clicked", G_CALLBACK(on_choose_clicked), (gpointer)firewalls);
+        gtk_box_append(GTK_BOX(box), choose);
     }
     GtkWidget *clamp = adw_clamp_new();
     adw_clamp_set_child(ADW_CLAMP(clamp), box);

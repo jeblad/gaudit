@@ -118,6 +118,11 @@ typedef struct gaudit_pkg_backend {
      * distribution: backends point it at gaudit_private_files_here. */
     gaudit_backend_status (*private_files)(unsigned *out_count, char *first, size_t first_len);
 
+    /* Capabilities recommended when a category (firewall, antivirus) has
+     * nothing installed: the distribution's usual choice. NULL-terminated;
+     * NULL for none. Presentation only. */
+    const char *const *recommended;
+
     /* Services listening for connections from the network (distinct TCP
      * ports, loopback left out), and how many of them run under the
      * user's own account. Backends point it at gaudit_listening_here. */

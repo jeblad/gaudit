@@ -40,6 +40,9 @@ static const gaudit_capability capabilities[] = {
     { "libjson-glib", no_paths,     libjson_glib_pkgs },
 };
 
+/* The distribution's usual choice when nothing in a category is installed. */
+static const char *const recommended[] = { "ufw", "clamav", NULL };
+
 static const char *const fallback_argv[] = {
     "/usr/bin/pkexec", "/usr/bin/apt-get", "install", "--", NULL
 };
@@ -155,6 +158,7 @@ static const gaudit_pkg_backend debian_pkg = {
     .package_systems_present = gaudit_package_systems_present_here,
     .private_files = gaudit_private_files_here,
     .listening = gaudit_listening_here,
+    .recommended = recommended,
     .manual_install_command = "sudo apt install",
     .fallback_install_argv = fallback_argv,
     .capability = capability,

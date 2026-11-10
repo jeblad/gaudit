@@ -4,5 +4,6 @@ src/gui/gaudit-task-page.c
 src/gui/gaudit-task.c
 src/gui/gaudit-run-page.c
 src/gui/gaudit-firewall-text.c
+src/gui/gaudit-category.c
 data/gaudit.desktop.in
 data/gaudit.policy.in

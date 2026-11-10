@@ -24,8 +24,12 @@ typedef enum {
     GAUDIT_PROBE_PENDING_UPGRADES,  /* updates waiting to be installed */
     GAUDIT_PROBE_OBSOLETE_PACKAGES, /* packages no software source offers */
     GAUDIT_PROBE_FLATPAK,           /* Flatpak apps on end-of-life runtimes */
+    GAUDIT_PROBE_SNAP,              /* snaps that are not kept up to date or unconfined */
     GAUDIT_PROBE_COUNT
 } gaudit_probe_kind;
+
+/* Snaps not refreshed automatically for longer than this is a warning. */
+#define GAUDIT_PROBE_SNAP_MAX_AGE (7 * 24 * 60 * 60)
 
 /* Package index older than this is a warning. */
 #define GAUDIT_PROBE_INDEX_MAX_AGE (7 * 24 * 60 * 60)
@@ -43,6 +47,10 @@ typedef struct {
     int unsupported;          /* 1: this check is not supported on this system (yet) */
     const char *detail;       /* _PACKAGE_SYSTEM: the expected package system, e.g. "dpkg/apt" */
     unsigned mask;            /* _OTHER_PACKAGE_SYSTEMS: 1 << gaudit_package_system */
+    int64_t until_epoch;      /* _SNAP: automatic refreshes held until then (0: not held) */
+    int service_down;         /* _SNAP: snapd did not answer */
+    /* _SNAP also uses count (devmode), extra_count (held), info_count
+     * (classic, informs only) and age_seconds (since the last refresh, -1 unknown). */
 } gaudit_probe_result;
 
 /* Fills out[kind] for every kind. now: seconds since epoch. */

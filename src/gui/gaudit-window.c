@@ -117,6 +117,59 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
         return _("Package system");
     }
 
+    case GAUDIT_PROBE_SNAP:
+        if (r->missing_capability != NULL) {
+            *subtitle = g_strdup(_("Software needed to check snaps is missing"));
+        } else if (r->service_down) {
+            *subtitle = g_strdup(_("The snap service is not running, so snaps are not updated"));
+        } else if (r->verdict == GAUDIT_VERDICT_UNKNOWN) {
+            *subtitle = g_strdup(_("Could not check the snaps"));
+        } else {
+            const char *parts[6];
+            int n = 0;
+            g_autofree char *hold = NULL, *age = NULL, *held = NULL, *devmode = NULL, *classic = NULL;
+            if (r->until_epoch > 0) {
+                g_autoptr(GDateTime) until = g_date_time_new_from_unix_local(r->until_epoch);
+                g_autofree char *date = until != NULL ? g_date_time_format(until, "%x") : g_strdup("?");
+                /* Translators: %s is a date. */
+                hold = g_strdup_printf(_("Automatic updates are paused until %s"), date);
+                parts[n++] = hold;
+            }
+            if (r->age_seconds > GAUDIT_PROBE_SNAP_MAX_AGE) {
+                gint64 days = r->age_seconds / (24 * 60 * 60);
+                age = g_strdup_printf(ngettext("Last updated %d day ago", "Last updated %d days ago",
+                                               (unsigned long)days),
+                                      (int)MIN(days, G_MAXINT));
+                parts[n++] = age;
+            }
+            if (r->extra_count > 0) {
+                held = g_strdup_printf(ngettext("%u snap is held back from updates",
+                                                "%u snaps are held back from updates",
+                                                r->extra_count),
+                                       r->extra_count);
+                parts[n++] = held;
+            }
+            if (r->count > 0) {
+                devmode = g_strdup_printf(ngettext("%u snap runs in developer mode, without a working sandbox",
+                                                   "%u snaps run in developer mode, without a working sandbox",
+                                                   r->count),
+                                          r->count);
+                parts[n++] = devmode;
+            }
+            if (n == 0)
+                parts[n++] = _("Snaps are updated automatically");
+            if (r->info_count > 0) {
+                classic = g_strdup_printf(ngettext("%u snap runs without a sandbox by design (classic)",
+                                                   "%u snaps run without a sandbox by design (classic)",
+                                                   r->info_count),
+                                          r->info_count);
+                parts[n++] = classic;
+            }
+            parts[n] = NULL;
+            *subtitle = g_strjoinv(" · ", (char **)parts);
+        }
+        return _("Snap apps");
+
     case GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS: {
         g_autoptr(GPtrArray) names = g_ptr_array_new();
         for (int s = 0; s < GAUDIT_PKGSYS_COUNT; s++)

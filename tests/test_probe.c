@@ -76,6 +76,15 @@ static gaudit_backend_status fake_flatpak(gaudit_flatpak_state *out)
     return fake.flatpak_status;
 }
 
+static gaudit_backend_status fake_snap_status;
+static gaudit_snap_state fake_snap_st;
+
+static gaudit_backend_status fake_snap(gaudit_snap_state *out)
+{
+    *out = fake_snap_st;
+    return fake_snap_status;
+}
+
 static unsigned fake_present_mask;
 
 static unsigned fake_present(void)
@@ -206,6 +215,41 @@ int main(void)
     gaudit_probe_collect(&fake_pkg, NOW, r);
     CHECK(!r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported);
     CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].verdict == GAUDIT_VERDICT_UNKNOWN);
+
+    /* Snap. */
+    static const gaudit_pkg_backend snap_pkg = { .name = "snap", .capability = fake_capability,
+                                                 .snap_state = fake_snap };
+    const gaudit_snap_state fresh = { .running = 1, .snaps = 10, .last_refresh = NOW - DAY };
+#define SNAP_RUN(state, status) (fake_snap_st = (state), fake_snap_status = (status), \
+                                 gaudit_probe_collect(&snap_pkg, NOW, r), r[GAUDIT_PROBE_SNAP])
+    {
+        gaudit_snap_state s = fresh;
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_OK);
+        s.classic = 2;  /* informs only */
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_OK);
+        CHECK(r[GAUDIT_PROBE_SNAP].info_count == 2);
+        s = fresh; s.devmode = 1;
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_WARNING);
+        s = fresh; s.held = 1;
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_WARNING);
+        s = fresh; s.refresh_hold = NOW + DAY;
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_WARNING);
+        CHECK(r[GAUDIT_PROBE_SNAP].until_epoch == NOW + DAY);
+        s = fresh; s.refresh_hold = NOW - DAY;  /* hold already over */
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_OK);
+        s = fresh; s.last_refresh = NOW - GAUDIT_PROBE_SNAP_MAX_AGE - 1;
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_WARNING);
+        s = fresh; s.last_refresh = 0;  /* unknown time alone is no finding */
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_OK);
+        s = fresh; s.running = 0;
+        CHECK(SNAP_RUN(s, GAUDIT_BACKEND_OK).verdict == GAUDIT_VERDICT_WARNING);
+        CHECK(r[GAUDIT_PROBE_SNAP].service_down);
+        CHECK(!SNAP_RUN(fresh, GAUDIT_BACKEND_UNAVAILABLE).applicable);
+        CHECK(!SNAP_RUN(fresh, GAUDIT_BACKEND_NOT_IMPLEMENTED).applicable);
+        CHECK(SNAP_RUN(fresh, GAUDIT_BACKEND_MISSING_DEPENDENCY).missing_capability != NULL);
+        CHECK(SNAP_RUN(fresh, GAUDIT_BACKEND_ERROR).verdict == GAUDIT_VERDICT_UNKNOWN);
+    }
+#undef SNAP_RUN
 
     /* Package systems this backend does not check. */
     static const gaudit_pkg_backend deb_like = {

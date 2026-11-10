@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 01:50+0100\n"
+"POT-Creation-Date: 2026-11-10 02:55+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -90,7 +90,7 @@ msgstr ""
 msgid "Serious"
 msgstr ""
 
-#: src/gui/gaudit-window.c:88 src/gui/gaudit-window.c:286
+#: src/gui/gaudit-window.c:88 src/gui/gaudit-window.c:339
 msgid "Unknown"
 msgstr ""
 
@@ -112,216 +112,270 @@ msgstr ""
 msgid "Package system"
 msgstr ""
 
+#: src/gui/gaudit-window.c:122
+msgid "Software needed to check snaps is missing"
+msgstr ""
+
+#: src/gui/gaudit-window.c:124
+msgid "The snap service is not running, so snaps are not updated"
+msgstr ""
+
+#: src/gui/gaudit-window.c:126
+msgid "Could not check the snaps"
+msgstr ""
+
+#. Translators: %s is a date.
+#: src/gui/gaudit-window.c:135
+#, c-format
+msgid "Automatic updates are paused until %s"
+msgstr ""
+
+#: src/gui/gaudit-window.c:140
+#, c-format
+msgid "Last updated %d day ago"
+msgid_plural "Last updated %d days ago"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:146
+#, c-format
+msgid "%u snap is held back from updates"
+msgid_plural "%u snaps are held back from updates"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:153
+#, c-format
+msgid "%u snap runs in developer mode, without a working sandbox"
+msgid_plural "%u snaps run in developer mode, without a working sandbox"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:160
+msgid "Snaps are updated automatically"
+msgstr ""
+
+#: src/gui/gaudit-window.c:162
+#, c-format
+msgid "%u snap runs without a sandbox by design (classic)"
+msgid_plural "%u snaps run without a sandbox by design (classic)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:171
+msgid "Snap apps"
+msgstr ""
+
 #. Translators: %s is a list of package systems, e.g. "rpm, Nix".
-#: src/gui/gaudit-window.c:128
+#: src/gui/gaudit-window.c:181
 #, c-format
 msgid "Packages managed by %s are not checked"
 msgstr ""
 
-#: src/gui/gaudit-window.c:129
+#: src/gui/gaudit-window.c:182
 msgid "Other package systems"
 msgstr ""
 
-#: src/gui/gaudit-window.c:134
+#: src/gui/gaudit-window.c:187
 msgid "An antivirus program is installed"
 msgstr ""
 
-#: src/gui/gaudit-window.c:135
+#: src/gui/gaudit-window.c:188
 msgid "No antivirus program found"
 msgstr ""
 
-#: src/gui/gaudit-window.c:136
+#: src/gui/gaudit-window.c:189
 msgid "Antivirus"
 msgstr ""
 
-#: src/gui/gaudit-window.c:140
+#: src/gui/gaudit-window.c:193
 msgid "A firewall is installed"
 msgstr ""
 
-#: src/gui/gaudit-window.c:141
+#: src/gui/gaudit-window.c:194
 msgid "No firewall found"
 msgstr ""
 
-#: src/gui/gaudit-window.c:142
+#: src/gui/gaudit-window.c:195
 msgid "Firewall"
 msgstr ""
 
-#: src/gui/gaudit-window.c:148
+#: src/gui/gaudit-window.c:201
 msgid "Could not find out when updates were last checked for"
 msgstr ""
 
-#: src/gui/gaudit-window.c:152
+#: src/gui/gaudit-window.c:205
 msgid "Last checked today"
 msgstr ""
 
-#: src/gui/gaudit-window.c:154
+#: src/gui/gaudit-window.c:207
 #, c-format
 msgid "Last checked %d day ago"
 msgid_plural "Last checked %d days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:159
+#: src/gui/gaudit-window.c:212
 msgid "Checking for updates"
 msgstr ""
 
-#: src/gui/gaudit-window.c:163
+#: src/gui/gaudit-window.c:216
 msgid "Could not find out whether updates are waiting"
 msgstr ""
 
-#: src/gui/gaudit-window.c:165
+#: src/gui/gaudit-window.c:218
 msgid "No updates are waiting"
 msgstr ""
 
-#: src/gui/gaudit-window.c:167
+#: src/gui/gaudit-window.c:220
 #, c-format
 msgid "%u update is waiting to be installed"
 msgid_plural "%u updates are waiting to be installed"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:171
+#: src/gui/gaudit-window.c:224
 msgid "Pending updates"
 msgstr ""
 
-#: src/gui/gaudit-window.c:175
+#: src/gui/gaudit-window.c:228
 msgid "Could not find out where the installed packages come from"
 msgstr ""
 
-#: src/gui/gaudit-window.c:177
+#: src/gui/gaudit-window.c:230
 msgid "All packages come from a software source"
 msgstr ""
 
-#: src/gui/gaudit-window.c:179
+#: src/gui/gaudit-window.c:232
 #, c-format
 msgid "%u package is no longer offered by any software source"
 msgid_plural "%u packages are no longer offered by any software source"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:183
+#: src/gui/gaudit-window.c:236
 msgid "Packages without a source"
 msgstr ""
 
-#: src/gui/gaudit-window.c:187
+#: src/gui/gaudit-window.c:240
 msgid "Updates are installed automatically"
 msgstr ""
 
-#: src/gui/gaudit-window.c:189
+#: src/gui/gaudit-window.c:242
 msgid "Automatic updates are switched off"
 msgstr ""
 
-#: src/gui/gaudit-window.c:190
+#: src/gui/gaudit-window.c:243
 msgid "Could not find out whether automatic updates are switched on"
 msgstr ""
 
-#: src/gui/gaudit-window.c:191
+#: src/gui/gaudit-window.c:244
 msgid "Automatic updates"
 msgstr ""
 
-#: src/gui/gaudit-window.c:195
+#: src/gui/gaudit-window.c:248
 msgid "Software needed to check Flatpak apps is missing"
 msgstr ""
 
-#: src/gui/gaudit-window.c:197
+#: src/gui/gaudit-window.c:250
 msgid "Could not check the Flatpak apps"
 msgstr ""
 
-#: src/gui/gaudit-window.c:199
+#: src/gui/gaudit-window.c:252
 msgid "No apps use runtimes without security updates"
 msgstr ""
 
-#: src/gui/gaudit-window.c:204
+#: src/gui/gaudit-window.c:257
 #, c-format
 msgid "%u app uses a runtime without security updates"
 msgid_plural "%u apps use runtimes without security updates"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:209
+#: src/gui/gaudit-window.c:262
 #, c-format
 msgid "%u unused outdated runtime can be removed"
 msgid_plural "%u unused outdated runtimes can be removed"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:214
+#: src/gui/gaudit-window.c:267
 #, c-format
 msgid "%u outdated runtime is kept but not used by any app"
 msgid_plural "%u outdated runtimes are kept but not used by any app"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:229
+#: src/gui/gaudit-window.c:282
 msgid "Flatpak apps"
 msgstr ""
 
-#: src/gui/gaudit-window.c:281
+#: src/gui/gaudit-window.c:334
 msgid "Debian"
 msgstr ""
 
-#: src/gui/gaudit-window.c:282
+#: src/gui/gaudit-window.c:335
 msgid "generic"
 msgstr ""
 
-#: src/gui/gaudit-window.c:285
+#: src/gui/gaudit-window.c:338
 #, c-format
 msgid "%s – %s"
 msgstr ""
 
 #. Translators: "Status: <host name> (<system>)".
-#: src/gui/gaudit-window.c:288
+#: src/gui/gaudit-window.c:341
 #, c-format
 msgid "Status: %s (%s)"
 msgstr ""
 
-#: src/gui/gaudit-window.c:289
+#: src/gui/gaudit-window.c:342
 msgid "this computer"
 msgstr ""
 
-#: src/gui/gaudit-window.c:303
+#: src/gui/gaudit-window.c:356
 msgid "A quick look that does not need your password."
 msgstr ""
 
-#: src/gui/gaudit-window.c:335
+#: src/gui/gaudit-window.c:388
 msgid "Checks"
 msgstr ""
 
-#: src/gui/gaudit-window.c:339 src/gui/gaudit-task-page.c:190
+#: src/gui/gaudit-window.c:392 src/gui/gaudit-task-page.c:190
 msgid "Not available on this system"
 msgstr ""
 
-#: src/gui/gaudit-window.c:340 src/gui/gaudit-task-page.c:124
+#: src/gui/gaudit-window.c:393 src/gui/gaudit-task-page.c:124
 msgid "Software is missing"
 msgstr ""
 
-#: src/gui/gaudit-window.c:341
+#: src/gui/gaudit-window.c:394
 msgid "Not run yet"
 msgstr ""
 
-#: src/gui/gaudit-window.c:360 src/gui/gaudit-window.c:469
+#: src/gui/gaudit-window.c:413 src/gui/gaudit-window.c:522
 msgid "Home"
 msgstr ""
 
-#: src/gui/gaudit-window.c:429
+#: src/gui/gaudit-window.c:482
 msgid "_Preferences"
 msgstr ""
 
-#: src/gui/gaudit-window.c:430
+#: src/gui/gaudit-window.c:483
 msgid "_Keyboard Shortcuts"
 msgstr ""
 
 #. Translators: %s is the application name, which is not translated.
-#: src/gui/gaudit-window.c:432
+#: src/gui/gaudit-window.c:485
 #, c-format
 msgid "_About %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:443
+#: src/gui/gaudit-window.c:496
 msgid "Main Menu"
 msgstr ""
 
-#: src/gui/gaudit-window.c:469
+#: src/gui/gaudit-window.c:522
 msgid "Overall status"
 msgstr ""
 

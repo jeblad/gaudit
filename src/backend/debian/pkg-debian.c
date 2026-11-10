@@ -5,6 +5,7 @@
 #include "apt-conf.h"
 #include "dpkg.h"
 #include "flatpak-runner.h"
+#include "snap-runner.h"
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -27,6 +28,7 @@ static const char *const firewalld_pkgs[]  = { "firewalld", NULL };
  * collector failing to start, not by a path). */
 static const char *const no_paths[]        = { NULL };
 static const char *const libflatpak_pkgs[] = { "libflatpak0", NULL };
+static const char *const libjson_glib_pkgs[] = { "libjson-glib-1.0-0", NULL };
 
 static const gaudit_capability capabilities[] = {
     { "clamav",    clamav_paths,    clamav_pkgs },
@@ -34,6 +36,7 @@ static const gaudit_capability capabilities[] = {
     { "ufw",       ufw_paths,       ufw_pkgs },
     { "firewalld", firewalld_paths, firewalld_pkgs },
     { "libflatpak", no_paths,       libflatpak_pkgs },
+    { "libjson-glib", no_paths,     libjson_glib_pkgs },
 };
 
 static const char *const fallback_argv[] = {
@@ -131,6 +134,11 @@ static int detect(void)
     return gaudit_deb_present("/var/lib/dpkg/status", "/usr/bin/dpkg");
 }
 
+static gaudit_backend_status snap_state(gaudit_snap_state *out)
+{
+    return gaudit_snap_run_probe("/usr/bin/snap", GAUDIT_SNAP_PROBE_PATH, FLATPAK_TIMEOUT_MS, out);
+}
+
 static const gaudit_pkg_backend debian_pkg = {
     .name = "debian",
     .package_system = "dpkg/apt",
@@ -144,6 +152,7 @@ static const gaudit_pkg_backend debian_pkg = {
     .automatic_updates = automatic_updates,
     .package_state = package_state,
     .flatpak_state = flatpak_state,
+    .snap_state = snap_state,
 };
 
 const gaudit_pkg_backend *gaudit_pkg_backend_debian(void)

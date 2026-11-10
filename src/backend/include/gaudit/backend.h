@@ -28,6 +28,17 @@ typedef struct {
     unsigned eol_pinned;  /* end-of-life runtimes no app uses, kept (pinned) */
 } gaudit_flatpak_state;
 
+/* Snap status from snapd's local API. */
+typedef struct {
+    int running;            /* snapd answered */
+    unsigned snaps;
+    unsigned devmode;       /* developer mode: sandbox violations only logged */
+    unsigned classic;       /* classic confinement: no sandbox, by design */
+    unsigned held;          /* held back from refreshes by the user */
+    long long last_refresh; /* seconds since epoch, 0 if unknown */
+    long long refresh_hold; /* refreshes held system-wide until then, 0 if not */
+} gaudit_snap_state;
+
 /* Package systems gAudit can recognise on disk (not necessarily check). */
 typedef enum {
     GAUDIT_PKGSYS_DPKG = 0,
@@ -91,6 +102,10 @@ typedef struct gaudit_pkg_backend {
      * NOT_IMPLEMENTED: built without the collector. MISSING_DEPENDENCY:
      * the library is missing; capability "libflatpak" names the package. */
     gaudit_backend_status (*flatpak_state)(gaudit_flatpak_state *out);
+
+    /* Snap, if in use; statuses as for flatpak_state. Capability
+     * "libjson-glib" names the package when the library is missing. */
+    gaudit_backend_status (*snap_state)(gaudit_snap_state *out);
 } gaudit_pkg_backend;
 
 /* Debian family (Debian, Ubuntu and derivatives): dpkg/apt. */

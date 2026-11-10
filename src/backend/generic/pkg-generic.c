@@ -6,6 +6,7 @@
 #include "gaudit/backend.h"
 
 #include "flatpak-runner.h"
+#include "snap-runner.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -41,12 +42,18 @@ static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)
     return gaudit_flatpak_run_probe("/usr/bin/flatpak", GAUDIT_FLATPAK_PROBE_PATH, 5000, out);
 }
 
+static gaudit_backend_status snap_state(gaudit_snap_state *out)
+{
+    return gaudit_snap_run_probe("/usr/bin/snap", GAUDIT_SNAP_PROBE_PATH, 5000, out);
+}
+
 static const gaudit_pkg_backend generic_pkg = {
     .name = "generic",
     .own_package_system = -1,
     .package_systems_present = gaudit_package_systems_present_here,
     .capability = capability,
     .flatpak_state = flatpak_state,
+    .snap_state = snap_state,
 };
 
 const gaudit_pkg_backend *gaudit_pkg_backend_generic(void)

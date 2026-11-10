@@ -5,7 +5,9 @@ add_library(gaudit_backend STATIC
   capability.c
   os-release.c
   package-systems.c
+  collector.c
   flatpak-runner.c
+  snap-runner.c
   debian/pkg-debian.c
   debian/apt-conf.c
   debian/dpkg.c

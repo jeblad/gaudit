@@ -27,6 +27,7 @@ The Home page gives a quick status that never asks for a password:
 | Checking for updates | When the package lists were last refreshed |
 | Pending updates | Updates waiting to be installed, following apt's own candidate selection (pinning, backports, phased updates) |
 | Packages without a source | Installed packages that no software source offers any more, so they never get security fixes |
+| Snap apps | Snaps held back or paused from updating, not updated for a week, or running in developer mode; classic snaps are shown for information (shown only if Snap is installed) |
 | Flatpak apps | Apps on runtimes that no longer get security updates, and unused outdated runtimes that can be removed (shown only if Flatpak is installed) |
 
 Deeper checks, such as whether the firewall is actually active or whether virus scans run regularly, will come as plugins with their own options and reports.

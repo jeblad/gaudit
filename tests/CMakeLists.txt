@@ -43,6 +43,13 @@ target_compile_definitions(test_package_systems PRIVATE
 target_link_libraries(test_package_systems PRIVATE gaudit_backend)
 add_test(NAME package-systems COMMAND test_package_systems)
 
+add_executable(test_snap test_snap.c)
+target_include_directories(test_snap PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+target_compile_definitions(test_snap PRIVATE
+  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_link_libraries(test_snap PRIVATE gaudit_backend)
+add_test(NAME snap COMMAND test_snap)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

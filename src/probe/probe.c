@@ -104,6 +104,45 @@ static void flatpak(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
     }
 }
 
+static void snap(const gaudit_pkg_backend *pkg, int64_t now, gaudit_probe_result *r)
+{
+    if (pkg->snap_state == NULL) {
+        r->applicable = 0;
+        return;
+    }
+    gaudit_snap_state st = { 0 };
+    switch (pkg->snap_state(&st)) {
+    case GAUDIT_BACKEND_OK:
+        break;
+    case GAUDIT_BACKEND_UNAVAILABLE:      /* Snap not in use */
+    case GAUDIT_BACKEND_NOT_IMPLEMENTED:  /* built without the collector */
+        r->applicable = 0;
+        return;
+    case GAUDIT_BACKEND_MISSING_DEPENDENCY:
+        r->missing_capability = "libjson-glib";
+        return;
+    case GAUDIT_BACKEND_ERROR:
+    default:
+        return;  /* unknown */
+    }
+
+    if (!st.running) {
+        /* Installed, but nothing keeps the snaps up to date. */
+        r->service_down = 1;
+        r->verdict = GAUDIT_VERDICT_WARNING;
+        return;
+    }
+    r->count = st.devmode;
+    r->extra_count = st.held;
+    r->info_count = st.classic;  /* reviewed and chosen on install: informs only */
+    r->until_epoch = st.refresh_hold > now ? st.refresh_hold : 0;
+    r->age_seconds = st.last_refresh > 0 && st.last_refresh <= now ? now - st.last_refresh : -1;
+
+    int stale = r->age_seconds > GAUDIT_PROBE_SNAP_MAX_AGE;
+    r->verdict = st.devmode > 0 || st.held > 0 || r->until_epoch > 0 || stale
+                     ? GAUDIT_VERDICT_WARNING : GAUDIT_VERDICT_OK;
+}
+
 /* Package systems with installed packages that this backend does not check:
  * their packages are invisible to every other check, so say so. */
 static void other_package_systems(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
@@ -141,6 +180,8 @@ void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_bac
         out[k].unsupported = 0;
         out[k].detail = NULL;
         out[k].mask = 0;
+        out[k].until_epoch = 0;
+        out[k].service_down = 0;
     }
     out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].id = "status.other-package-systems";
     out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable = 0;
@@ -159,6 +200,7 @@ void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_bac
     out[GAUDIT_PROBE_PENDING_UPGRADES].id = "status.pending-upgrades";
     out[GAUDIT_PROBE_OBSOLETE_PACKAGES].id = "status.obsolete-packages";
     out[GAUDIT_PROBE_FLATPAK].id = "status.flatpak";
+    out[GAUDIT_PROBE_SNAP].id = "status.snap";
 
     if (pkg == NULL)
         return;
@@ -170,5 +212,6 @@ void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_bac
     package_state(pkg, &out[GAUDIT_PROBE_PENDING_UPGRADES],
                   &out[GAUDIT_PROBE_OBSOLETE_PACKAGES]);
     flatpak(pkg, &out[GAUDIT_PROBE_FLATPAK]);
+    snap(pkg, now, &out[GAUDIT_PROBE_SNAP]);
     other_package_systems(pkg, &out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS]);
 }

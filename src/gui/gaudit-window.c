@@ -162,12 +162,62 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
                              : _("Could not find out whether automatic updates are switched on"));
         return _("Automatic updates");
 
+    case GAUDIT_PROBE_FLATPAK:
+        if (r->missing_capability != NULL) {
+            *subtitle = g_strdup(_("Software needed to check Flatpak apps is missing"));
+        } else if (r->verdict == GAUDIT_VERDICT_UNKNOWN) {
+            *subtitle = g_strdup(_("Could not check the Flatpak apps"));
+        } else if (r->count == 0 && r->extra_count == 0 && r->info_count == 0) {
+            *subtitle = g_strdup(_("No apps use runtimes without security updates"));
+        } else {
+            /* Apps on end-of-life runtimes are fixed by their developers;
+             * unused runtimes can be removed by the user. */
+            g_autofree char *apps = r->count == 0 ? NULL
+                : g_strdup_printf(ngettext("%u app uses a runtime without security updates",
+                                           "%u apps use runtimes without security updates",
+                                           r->count),
+                                  r->count);
+            g_autofree char *unused = r->extra_count == 0 ? NULL
+                : g_strdup_printf(ngettext("%u unused outdated runtime can be removed",
+                                           "%u unused outdated runtimes can be removed",
+                                           r->extra_count),
+                                  r->extra_count);
+            g_autofree char *kept = r->info_count == 0 ? NULL
+                : g_strdup_printf(ngettext("%u outdated runtime is kept but not used by any app",
+                                           "%u outdated runtimes are kept but not used by any app",
+                                           r->info_count),
+                                  r->info_count);
+            const char *parts[4];
+            int n = 0;
+            if (apps != NULL)
+                parts[n++] = apps;
+            if (unused != NULL)
+                parts[n++] = unused;
+            if (kept != NULL)
+                parts[n++] = kept;
+            parts[n] = NULL;
+            *subtitle = g_strjoinv(" · ", (char **)parts);
+        }
+        return _("Flatpak apps");
+
     case GAUDIT_PROBE_COUNT:
     default:
         break;
     }
     *subtitle = NULL;
     return r->id;
+}
+
+static void on_missing_row_activated(AdwActionRow *row, gpointer user_data)
+{
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    const char *capability = g_object_get_data(G_OBJECT(row), "gaudit-capability");
+    const gaudit_capability *cap = self->pkg->capability ? self->pkg->capability(capability) : NULL;
+    if (cap == NULL)
+        return;
+    adw_navigation_view_push(self->content,
+        gaudit_missing_software_page_new(self->pkg, adw_preferences_row_get_title(ADW_PREFERENCES_ROW(row)),
+                                         cap->packages));
 }
 
 static void on_home_row_activated(AdwActionRow *row, gpointer user_data)
@@ -189,12 +239,22 @@ static AdwNavigationPage *build_home(GauditWindow *self)
         adw_preferences_group_set_description(group,
             _("A quick look that does not need your password."));
         for (int k = 0; k < GAUDIT_PROBE_COUNT; k++) {
+            const gaudit_probe_result *probe = &self->probes[k];
+            if (!probe->applicable)
+                continue;
             g_autofree char *subtitle = NULL;
-            const char *title = probe_text(&self->probes[k], &subtitle);
+            const char *title = probe_text(probe, &subtitle);
             AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
             adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), title);
             adw_action_row_set_subtitle(row, subtitle);
-            adw_action_row_add_prefix(row, verdict_icon(self->probes[k].verdict));
+            adw_action_row_add_prefix(row, verdict_icon(probe->verdict));
+            if (probe->missing_capability != NULL) {
+                adw_action_row_add_suffix(row, gtk_image_new_from_icon_name("go-next-symbolic"));
+                gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), TRUE);
+                g_object_set_data(G_OBJECT(row), "gaudit-capability",
+                                  (gpointer)probe->missing_capability);
+                g_signal_connect(row, "activated", G_CALLBACK(on_missing_row_activated), self);
+            }
             adw_preferences_group_add(group, GTK_WIDGET(row));
         }
         gtk_box_append(GTK_BOX(box), GTK_WIDGET(group));

@@ -48,7 +48,9 @@ This file collects decisions that have been made. Do not reopen them without a c
   - They read the filesystem directly (paths, mtimes, apt configuration), never the output of other tools.
   - When a probe cannot tell, the verdict is *unknown*, never a guess. For example, apt's nested block syntax for `APT::Periodic::Unattended-Upgrade` is not parsed and gives *unknown*.
   - Home probe for deb packages (implemented, `src/backend/ubuntu/dpkg.c`): compare `/var/lib/dpkg/status` with `/var/lib/apt/lists/*_Packages` to find (a) installed packages no software source offers (manually downloaded `.deb`s, disabled PPAs, leftovers from older releases) and (b) pending upgrades. To avoid false alarms: candidates are chosen as apt does, including apt pinning (`/etc/apt/preferences`, `preferences.d`: version, origin and release pins, specific before general, first match wins; default priorities 500, 1 for `NotAutomatic`, 100 with `ButAutomaticUpgrades`, 100 for the installed version); negative priorities are never installed, downgrades are not counted, phased updates below 100 % are held back. "Without a source" matches apt's `local` exactly, except that versioned kernel packages (kept as fallbacks) are left out. Pinning we cannot follow (regex package patterns, unknown pin types) and partly compressed indexes give *unknown*, never a guess. The "package lists" row is worded as *when updates were last checked for*, never as the system being up to date.
-  - Snap and Flatpak get rows only if installed (not implemented yet). Flatpak flags only end-of-life runtimes and long-pending updates, never every change, because it changes constantly.
+  - Flatpak (implemented): one row, shown only when Flatpak is installed. It reads local data only (no network) and counts (a) apps that are, or whose runtime is, end-of-life (fixed by the app developers, not the user) (b) unused end-of-life refs that `flatpak uninstall --unused` removes, and (c) end-of-life runtimes no app uses that `--unused` keeps because they are pinned, e.g. an old SDK left from development (both fixable by the user). All three raise a warning. It never flags ordinary updates, because Flatpak changes constantly; pending updates need the network and belong in a plugin.
+  - The Flatpak data comes from a separate collector, `gaudit-flatpak-probe`, the only part of gAudit linked against libflatpak. It runs with an empty environment except `HOME`, a 5 s timeout and a 4 KiB output limit, and prints one S-expression. If it cannot start (exit 127: `libflatpak0` missing), Home shows the row with a link to the missing-software page. Built without libflatpak, or with no Flatpak installed, there is no row. The `flatpak` package does not depend on `libflatpak0`, so the library really can be missing.
+  - Snap gets a row only if installed (not implemented yet).
   - Software outside any package manager (AppImages, unpacked tarballs in `/opt`, `~/Applications`, `~/.local/bin`) belongs in a separate *mining* plugin, not on Home. It looks only in known locations, never the whole disk, and reports "not managed, last changed …" rather than "outdated".
   - For now they run in the GUI process. They belong in the orchestrator once it exists.
 - **Home has its own page 2 for a missing category.** If no tool in a category is installed, Home shows it as a finding (e.g. "No antivirus program found") with a "Choose one" button. It opens a Home-specific page 2 listing the known plugins in that category, each with an explanation and the install command, and one marked as recommended. This keeps uninstalled tools out of the sidebar. The plugin "software is missing" page is then only for a *partially* installed tool (e.g. ClamAV without `freshclam`).
@@ -220,6 +222,7 @@ src/gui/           GUI in C (controller: gaudit-app, view: gaudit-window, task p
 src/model/         model in C++ behind a C API (include/gaudit/model.h)
 src/backend/       distro interfaces (include/gaudit/backend.h), ubuntu/
 src/probe/         unprivileged status probes for Home (include/gaudit/probe.h), no GTK
+src/collectors/    separate collector programs (flatpak/: the only code linked against libflatpak)
 src/helper/        privileged helper (pkexec)
 src/orchestrator/  orchestrator (user)
 src/engine/        rule engine (Guile)
@@ -230,13 +233,14 @@ tests/             hand-written tests
 ```
 
 - Helper, orchestrator and engine are installed in `libexec/gaudit/`. `Exec` in the desktop file and `exec.path` in the polkit policy are absolute paths.
-- Dependencies to install when first used: `guile-3.0-dev`, `libsodium-dev`, `libcap-dev`. `libseccomp-dev`, GTK4 and libadwaita are already present.
+- Dependencies to install when first used: `guile-3.0-dev`, `libsodium-dev`, `libcap-dev`. `libseccomp-dev`, GTK4 and libadwaita are already present. `libflatpak-dev` is optional at build time; at run time the collector needs `libflatpak0`.
 
 ## Versioning and releases
 
 - The version lives in `VERSION` (one line, e.g. `0.1.0`). `CMakeLists.txt` reads it into `project()`, so it reaches `config.h`, the About dialog and the `.pot` header.
 - Releases use **commit-and-tag-version** (configured in `.versionrc.json`). It bumps `VERSION`, updates `CHANGELOG.md`, commits and tags `vX.Y.Z`. The maintainer runs it, because it writes git history.
 - Commit messages follow **Conventional Commits** (`feat:`, `fix:`, `docs:`, `chore:` …; `!` or `BREAKING CHANGE:` for breaking changes), since the changelog and the version bump are derived from them. Below 1.0.0, breaking changes bump the minor version.
+- The project stays on 0.x until it is reasonably functional. 1.0.0 is a deliberate step (`--release-as 1.0.0`); the tool never reaches it by itself.
 - Run the tool with a pinned version (`npx commit-and-tag-version@<exact version>`), never an unpinned `npx` download.
 
 ## Build and test

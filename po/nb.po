@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 23:47+0100\n"
+"POT-Creation-Date: 2026-11-10 01:25+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -15,36 +15,36 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/gui/gaudit-app.c:65
+#: src/gui/gaudit-app.c:66
 msgid "General"
 msgstr "Generelt"
 
-#: src/gui/gaudit-app.c:68
+#: src/gui/gaudit-app.c:69
 msgid "There is nothing to set yet."
 msgstr "Det er ingenting å stille inn ennå."
 
-#: src/gui/gaudit-app.c:80
+#: src/gui/gaudit-app.c:81
 msgid "Open Main Menu"
 msgstr "Åpne hovedmenyen"
 
-#: src/gui/gaudit-app.c:81
+#: src/gui/gaudit-app.c:82
 msgid "Preferences"
 msgstr "Innstillinger"
 
-#: src/gui/gaudit-app.c:82
+#: src/gui/gaudit-app.c:83
 msgid "Keyboard Shortcuts"
 msgstr "Tastatursnarveier"
 
-#: src/gui/gaudit-app.c:83
+#: src/gui/gaudit-app.c:84
 msgid "Quit"
 msgstr "Avslutt"
 
-#: src/gui/gaudit-app.c:96 data/gaudit.desktop.in:6
+#: src/gui/gaudit-app.c:97 data/gaudit.desktop.in:6
 msgid "Check the security status of this computer"
 msgstr "Sjekk sikkerhetstilstanden på denne datamaskinen"
 
 #. Translators: Replace with your names, one per line.
-#: src/gui/gaudit-app.c:103
+#: src/gui/gaudit-app.c:104
 msgid "translator-credits"
 msgstr ""
 
@@ -190,53 +190,90 @@ msgstr "Fant ikke ut om automatiske oppdateringer er slått på"
 msgid "Automatic updates"
 msgstr "Automatiske oppdateringer"
 
-#: src/gui/gaudit-window.c:188
+#: src/gui/gaudit-window.c:167
+msgid "Software needed to check Flatpak apps is missing"
+msgstr "Programvare som trengs for å sjekke Flatpak-apper, mangler"
+
+#: src/gui/gaudit-window.c:169
+msgid "Could not check the Flatpak apps"
+msgstr "Kunne ikke sjekke Flatpak-appene"
+
+#: src/gui/gaudit-window.c:171
+msgid "No apps use runtimes without security updates"
+msgstr "Ingen apper bruker runtimes uten sikkerhetsoppdateringer"
+
+#: src/gui/gaudit-window.c:176
+#, c-format
+msgid "%u app uses a runtime without security updates"
+msgid_plural "%u apps use runtimes without security updates"
+msgstr[0] "%u app bruker en runtime uten sikkerhetsoppdateringer"
+msgstr[1] "%u apper bruker runtimes uten sikkerhetsoppdateringer"
+
+#: src/gui/gaudit-window.c:181
+#, c-format
+msgid "%u unused outdated runtime can be removed"
+msgid_plural "%u unused outdated runtimes can be removed"
+msgstr[0] "%u ubrukt, utdatert runtime kan fjernes"
+msgstr[1] "%u ubrukte, utdaterte runtimes kan fjernes"
+
+#: src/gui/gaudit-window.c:186
+#, c-format
+msgid "%u outdated runtime is kept but not used by any app"
+msgid_plural "%u outdated runtimes are kept but not used by any app"
+msgstr[0] "%u utdatert runtime er beholdt, men brukes ikke av noen app"
+msgstr[1] "%u utdaterte runtimes er beholdt, men brukes ikke av noen app"
+
+#: src/gui/gaudit-window.c:201
+msgid "Flatpak apps"
+msgstr "Flatpak-apper"
+
+#: src/gui/gaudit-window.c:238
 msgid "Status"
 msgstr "Status"
 
-#: src/gui/gaudit-window.c:190
+#: src/gui/gaudit-window.c:240
 msgid "A quick look that does not need your password."
 msgstr "En rask titt som ikke krever passordet ditt."
 
-#: src/gui/gaudit-window.c:207
+#: src/gui/gaudit-window.c:267
 msgid "Checks"
 msgstr "Sjekker"
 
-#: src/gui/gaudit-window.c:211 src/gui/gaudit-task-page.c:190
+#: src/gui/gaudit-window.c:271 src/gui/gaudit-task-page.c:190
 msgid "Not available on this system"
 msgstr "Ikke tilgjengelig på dette systemet"
 
-#: src/gui/gaudit-window.c:212 src/gui/gaudit-task-page.c:124
+#: src/gui/gaudit-window.c:272 src/gui/gaudit-task-page.c:124
 msgid "Software is missing"
 msgstr "Programvare mangler"
 
-#: src/gui/gaudit-window.c:213
+#: src/gui/gaudit-window.c:273
 msgid "Not run yet"
 msgstr "Ikke kjørt ennå"
 
-#: src/gui/gaudit-window.c:232 src/gui/gaudit-window.c:341
+#: src/gui/gaudit-window.c:292 src/gui/gaudit-window.c:401
 msgid "Home"
 msgstr "Hjem"
 
-#: src/gui/gaudit-window.c:301
+#: src/gui/gaudit-window.c:361
 msgid "_Preferences"
 msgstr "_Innstillinger"
 
-#: src/gui/gaudit-window.c:302
+#: src/gui/gaudit-window.c:362
 msgid "_Keyboard Shortcuts"
 msgstr "_Tastatursnarveier"
 
 #. Translators: %s is the application name, which is not translated.
-#: src/gui/gaudit-window.c:304
+#: src/gui/gaudit-window.c:364
 #, c-format
 msgid "_About %s"
 msgstr "_Om %s"
 
-#: src/gui/gaudit-window.c:315
+#: src/gui/gaudit-window.c:375
 msgid "Main Menu"
 msgstr "Hovedmeny"
 
-#: src/gui/gaudit-window.c:341
+#: src/gui/gaudit-window.c:401
 msgid "Overall status"
 msgstr "Samlet status"
 

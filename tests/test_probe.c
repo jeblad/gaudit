@@ -38,6 +38,8 @@ static struct {
     gaudit_backend_status packages_status;
     unsigned obsolete;
     unsigned upgradable;
+    gaudit_backend_status flatpak_status;
+    gaudit_flatpak_state flatpak;
 } fake;
 
 static const gaudit_capability *fake_capability(const char *id)
@@ -68,12 +70,19 @@ static gaudit_backend_status fake_packages(unsigned *out_obsolete, unsigned *out
     return fake.packages_status;
 }
 
+static gaudit_backend_status fake_flatpak(gaudit_flatpak_state *out)
+{
+    *out = fake.flatpak;
+    return fake.flatpak_status;
+}
+
 static const gaudit_pkg_backend fake_pkg = {
     .name = "fake",
     .capability = fake_capability,
     .last_index_update = fake_index,
     .automatic_updates = fake_updates,
     .package_state = fake_packages,
+    .flatpak_state = fake_flatpak,
 };
 
 static void all_good(void)
@@ -87,6 +96,8 @@ static void all_good(void)
     fake.packages_status = GAUDIT_BACKEND_OK;
     fake.obsolete = 0;
     fake.upgradable = 0;
+    fake.flatpak_status = GAUDIT_BACKEND_OK;
+    fake.flatpak = (gaudit_flatpak_state){ .apps = 5 };
 }
 
 static gaudit_verdict run(gaudit_probe_kind kind)
@@ -143,6 +154,31 @@ int main(void)
     all_good(); fake.packages_status = GAUDIT_BACKEND_UNAVAILABLE;
     CHECK(run(GAUDIT_PROBE_PENDING_UPGRADES) == GAUDIT_VERDICT_UNKNOWN);
     CHECK(run(GAUDIT_PROBE_OBSOLETE_PACKAGES) == GAUDIT_VERDICT_UNKNOWN);
+
+    /* Flatpak: counts, and when the row does not apply. */
+    all_good(); fake.flatpak.eol_apps = 2; fake.flatpak.eol_unused = 3;
+    gaudit_probe_collect(&fake_pkg, NOW, r);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].verdict == GAUDIT_VERDICT_WARNING);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].count == 2 && r[GAUDIT_PROBE_FLATPAK].extra_count == 3);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].applicable && r[GAUDIT_PROBE_FLATPAK].missing_capability == NULL);
+    all_good(); fake.flatpak.eol_pinned = 2;  /* kept but unused: also a warning */
+    gaudit_probe_collect(&fake_pkg, NOW, r);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].verdict == GAUDIT_VERDICT_WARNING);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].info_count == 2);
+    all_good(); fake.flatpak_status = GAUDIT_BACKEND_UNAVAILABLE;      /* no Flatpak */
+    gaudit_probe_collect(&fake_pkg, NOW, r);
+    CHECK(!r[GAUDIT_PROBE_FLATPAK].applicable);
+    all_good(); fake.flatpak_status = GAUDIT_BACKEND_NOT_IMPLEMENTED;  /* built without it */
+    gaudit_probe_collect(&fake_pkg, NOW, r);
+    CHECK(!r[GAUDIT_PROBE_FLATPAK].applicable);
+    all_good(); fake.flatpak_status = GAUDIT_BACKEND_MISSING_DEPENDENCY;
+    gaudit_probe_collect(&fake_pkg, NOW, r);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].applicable);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].verdict == GAUDIT_VERDICT_UNKNOWN);
+    CHECK(r[GAUDIT_PROBE_FLATPAK].missing_capability != NULL
+          && strcmp(r[GAUDIT_PROBE_FLATPAK].missing_capability, "libflatpak") == 0);
+    all_good(); fake.flatpak_status = GAUDIT_BACKEND_ERROR;
+    CHECK(run(GAUDIT_PROBE_FLATPAK) == GAUDIT_VERDICT_UNKNOWN);
 
     /* No backend: everything unknown, ids still set. */
     gaudit_probe_collect(NULL, NOW, r);

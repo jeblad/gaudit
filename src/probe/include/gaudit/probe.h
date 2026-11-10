@@ -21,6 +21,7 @@ typedef enum {
     GAUDIT_PROBE_PACKAGE_INDEX,     /* when updates were last checked for */
     GAUDIT_PROBE_PENDING_UPGRADES,  /* updates waiting to be installed */
     GAUDIT_PROBE_OBSOLETE_PACKAGES, /* packages no software source offers */
+    GAUDIT_PROBE_FLATPAK,           /* Flatpak apps on end-of-life runtimes */
     GAUDIT_PROBE_COUNT
 } gaudit_probe_kind;
 
@@ -32,7 +33,11 @@ typedef struct {
     const char *id;           /* stable key, e.g. "status.firewall" */
     gaudit_verdict verdict;
     int64_t age_seconds;      /* GAUDIT_PROBE_PACKAGE_INDEX */
-    unsigned count;           /* GAUDIT_PROBE_PENDING_UPGRADES, _OBSOLETE_PACKAGES */
+    unsigned count;           /* _PENDING_UPGRADES, _OBSOLETE_PACKAGES; _FLATPAK: eol apps */
+    unsigned extra_count;     /* _FLATPAK: unused end-of-life refs */
+    unsigned info_count;      /* _FLATPAK: end-of-life runtimes kept (pinned) but unused */
+    int applicable;           /* 0: does not apply here (e.g. no Flatpak), not shown */
+    const char *missing_capability;  /* set when software for the check is missing */
 } gaudit_probe_result;
 
 /* Fills out[kind] for every kind. now: seconds since epoch. */

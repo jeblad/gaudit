@@ -23,6 +23,13 @@ target_compile_definitions(test_dpkg PRIVATE
 target_link_libraries(test_dpkg PRIVATE gaudit_backend)
 add_test(NAME dpkg COMMAND test_dpkg)
 
+add_executable(test_flatpak test_flatpak.c)
+target_include_directories(test_flatpak PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+target_compile_definitions(test_flatpak PRIVATE _GNU_SOURCE
+  GAUDIT_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+target_link_libraries(test_flatpak PRIVATE gaudit_backend)
+add_test(NAME flatpak COMMAND test_flatpak)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

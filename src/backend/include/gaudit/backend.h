@@ -16,7 +16,16 @@ typedef enum {
     GAUDIT_BACKEND_NOT_IMPLEMENTED,
     GAUDIT_BACKEND_UNAVAILABLE,  /* the facility does not exist on this system */
     GAUDIT_BACKEND_ERROR,        /* exists, but the state could not be determined */
+    GAUDIT_BACKEND_MISSING_DEPENDENCY,  /* software needed for the check is not installed */
 } gaudit_backend_status;
+
+/* Flatpak status from local data only. */
+typedef struct {
+    unsigned apps;        /* installed apps */
+    unsigned eol_apps;    /* apps that are, or use a runtime that is, end-of-life */
+    unsigned eol_unused;  /* unused end-of-life refs that can be removed */
+    unsigned eol_pinned;  /* end-of-life runtimes no app uses, kept (pinned) */
+} gaudit_flatpak_state;
 
 /* An abstract capability a task depends on (e.g. "clamav"), mapped by the
  * backend to concrete programs and the packages that provide them. */
@@ -48,6 +57,11 @@ typedef struct gaudit_pkg_backend {
     /* Installed packages no software source offers any more, and packages
      * an upgrade would update. */
     gaudit_backend_status (*package_state)(unsigned *out_obsolete, unsigned *out_upgradable);
+
+    /* Flatpak, if in use. UNAVAILABLE: Flatpak is not installed.
+     * NOT_IMPLEMENTED: built without the collector. MISSING_DEPENDENCY:
+     * the library is missing; capability "libflatpak" names the package. */
+    gaudit_backend_status (*flatpak_state)(gaudit_flatpak_state *out);
 } gaudit_pkg_backend;
 
 const gaudit_pkg_backend *gaudit_pkg_backend_ubuntu(void);

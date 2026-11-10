@@ -27,6 +27,7 @@ The Home page gives a quick status that never asks for a password:
 | Checking for updates | When the package lists were last refreshed |
 | Pending updates | Updates waiting to be installed, following apt's own candidate selection (pinning, backports, phased updates) |
 | Packages without a source | Installed packages that no software source offers any more, so they never get security fixes |
+| Flatpak apps | Apps on runtimes that no longer get security updates, and unused outdated runtimes that can be removed (shown only if Flatpak is installed) |
 
 Deeper checks, such as whether the firewall is actually active or whether virus scans run regularly, will come as plugins with their own options and reports.
 
@@ -45,6 +46,8 @@ Deeper checks, such as whether the firewall is actually active or whether virus 
 ```sh
 sudo apt install build-essential cmake pkg-config libgtk-4-dev libadwaita-1-dev gettext desktop-file-utils
 ```
+
+The Flatpak check is optional. Install `libflatpak-dev` to build it.
 
 ### Build and run
 
@@ -83,6 +86,7 @@ GUI (user)  ──>  orchestrator (user)
 | `src/gui/` | GTK4/libadwaita interface in C |
 | `src/model/` | Model in C++ behind a plain C API |
 | `src/probe/` | Unprivileged status probes for Home |
+| `src/collectors/` | Separate collector programs, such as the Flatpak collector |
 | `src/backend/` | Distro backend interface and the Ubuntu implementation |
 | `src/helper/`, `src/orchestrator/`, `src/engine/` | Privileged helper, orchestrator and rule engine (stubs) |
 | `data/` | Desktop file and polkit policy |

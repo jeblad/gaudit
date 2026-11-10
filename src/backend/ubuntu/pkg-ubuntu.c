@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+#include "config.h"
 #include "gaudit/backend.h"
 
 #include "apt-conf.h"
 #include "dpkg.h"
+#include "flatpak-runner.h"
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -21,12 +23,17 @@ static const char *const ufw_paths[]       = { "/usr/sbin/ufw", NULL };
 static const char *const ufw_pkgs[]        = { "ufw", NULL };
 static const char *const firewalld_paths[] = { "/usr/sbin/firewalld", NULL };
 static const char *const firewalld_pkgs[]  = { "firewalld", NULL };
+/* Shared library: only the package name is used (it is detected by the
+ * collector failing to start, not by a path). */
+static const char *const no_paths[]        = { NULL };
+static const char *const libflatpak_pkgs[] = { "libflatpak0", NULL };
 
 static const gaudit_capability capabilities[] = {
     { "clamav",    clamav_paths,    clamav_pkgs },
     { "freshclam", freshclam_paths, freshclam_pkgs },
     { "ufw",       ufw_paths,       ufw_pkgs },
     { "firewalld", firewalld_paths, firewalld_pkgs },
+    { "libflatpak", no_paths,       libflatpak_pkgs },
 };
 
 static const char *const fallback_argv[] = {
@@ -111,6 +118,14 @@ static gaudit_backend_status package_state(unsigned *out_obsolete, unsigned *out
     return status;
 }
 
+#define FLATPAK_TIMEOUT_MS 5000
+
+static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)
+{
+    return gaudit_flatpak_run_probe("/usr/bin/flatpak", GAUDIT_FLATPAK_PROBE_PATH,
+                                    FLATPAK_TIMEOUT_MS, out);
+}
+
 static const gaudit_pkg_backend ubuntu_pkg = {
     .name = "ubuntu",
     .manual_install_command = "sudo apt install",
@@ -119,6 +134,7 @@ static const gaudit_pkg_backend ubuntu_pkg = {
     .last_index_update = last_index_update,
     .automatic_updates = automatic_updates,
     .package_state = package_state,
+    .flatpak_state = flatpak_state,
 };
 
 const gaudit_pkg_backend *gaudit_pkg_backend_ubuntu(void)

@@ -193,6 +193,16 @@ static GtkWidget *build_unsupported(void)
     return GTK_WIDGET(status);
 }
 
+AdwNavigationPage *gaudit_missing_software_page_new(const gaudit_pkg_backend *pkg,
+                                                    const char *title,
+                                                    const char *const *packages)
+{
+    g_autoptr(GPtrArray) missing = g_ptr_array_new();
+    for (const char *const *p = packages; p != NULL && *p != NULL; p++)
+        g_ptr_array_add(missing, (gpointer)*p);
+    return gaudit_page_wrap(build_missing(pkg, missing), title, "missing-software");
+}
+
 AdwNavigationPage *gaudit_task_page_new(const GauditTaskInfo *task,
                                        const gaudit_pkg_backend *pkg)
 {

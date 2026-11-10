@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: gaudit 0.1.0\n"
+"Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-09 23:49+0100\n"
+"POT-Creation-Date: 2026-11-10 01:25+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,36 +18,36 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: src/gui/gaudit-app.c:65
+#: src/gui/gaudit-app.c:66
 msgid "General"
 msgstr ""
 
-#: src/gui/gaudit-app.c:68
+#: src/gui/gaudit-app.c:69
 msgid "There is nothing to set yet."
 msgstr ""
 
-#: src/gui/gaudit-app.c:80
+#: src/gui/gaudit-app.c:81
 msgid "Open Main Menu"
 msgstr ""
 
-#: src/gui/gaudit-app.c:81
+#: src/gui/gaudit-app.c:82
 msgid "Preferences"
 msgstr ""
 
-#: src/gui/gaudit-app.c:82
+#: src/gui/gaudit-app.c:83
 msgid "Keyboard Shortcuts"
 msgstr ""
 
-#: src/gui/gaudit-app.c:83
+#: src/gui/gaudit-app.c:84
 msgid "Quit"
 msgstr ""
 
-#: src/gui/gaudit-app.c:96 data/gaudit.desktop.in:6
+#: src/gui/gaudit-app.c:97 data/gaudit.desktop.in:6
 msgid "Check the security status of this computer"
 msgstr ""
 
 #. Translators: Replace with your names, one per line.
-#: src/gui/gaudit-app.c:103
+#: src/gui/gaudit-app.c:104
 msgid "translator-credits"
 msgstr ""
 
@@ -191,53 +191,90 @@ msgstr ""
 msgid "Automatic updates"
 msgstr ""
 
-#: src/gui/gaudit-window.c:188
+#: src/gui/gaudit-window.c:167
+msgid "Software needed to check Flatpak apps is missing"
+msgstr ""
+
+#: src/gui/gaudit-window.c:169
+msgid "Could not check the Flatpak apps"
+msgstr ""
+
+#: src/gui/gaudit-window.c:171
+msgid "No apps use runtimes without security updates"
+msgstr ""
+
+#: src/gui/gaudit-window.c:176
+#, c-format
+msgid "%u app uses a runtime without security updates"
+msgid_plural "%u apps use runtimes without security updates"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:181
+#, c-format
+msgid "%u unused outdated runtime can be removed"
+msgid_plural "%u unused outdated runtimes can be removed"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:186
+#, c-format
+msgid "%u outdated runtime is kept but not used by any app"
+msgid_plural "%u outdated runtimes are kept but not used by any app"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/gui/gaudit-window.c:201
+msgid "Flatpak apps"
+msgstr ""
+
+#: src/gui/gaudit-window.c:238
 msgid "Status"
 msgstr ""
 
-#: src/gui/gaudit-window.c:190
+#: src/gui/gaudit-window.c:240
 msgid "A quick look that does not need your password."
 msgstr ""
 
-#: src/gui/gaudit-window.c:207
+#: src/gui/gaudit-window.c:267
 msgid "Checks"
 msgstr ""
 
-#: src/gui/gaudit-window.c:211 src/gui/gaudit-task-page.c:190
+#: src/gui/gaudit-window.c:271 src/gui/gaudit-task-page.c:190
 msgid "Not available on this system"
 msgstr ""
 
-#: src/gui/gaudit-window.c:212 src/gui/gaudit-task-page.c:124
+#: src/gui/gaudit-window.c:272 src/gui/gaudit-task-page.c:124
 msgid "Software is missing"
 msgstr ""
 
-#: src/gui/gaudit-window.c:213
+#: src/gui/gaudit-window.c:273
 msgid "Not run yet"
 msgstr ""
 
-#: src/gui/gaudit-window.c:232 src/gui/gaudit-window.c:341
+#: src/gui/gaudit-window.c:292 src/gui/gaudit-window.c:401
 msgid "Home"
 msgstr ""
 
-#: src/gui/gaudit-window.c:301
+#: src/gui/gaudit-window.c:361
 msgid "_Preferences"
 msgstr ""
 
-#: src/gui/gaudit-window.c:302
+#: src/gui/gaudit-window.c:362
 msgid "_Keyboard Shortcuts"
 msgstr ""
 
 #. Translators: %s is the application name, which is not translated.
-#: src/gui/gaudit-window.c:304
+#: src/gui/gaudit-window.c:364
 #, c-format
 msgid "_About %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:315
+#: src/gui/gaudit-window.c:375
 msgid "Main Menu"
 msgstr ""
 
-#: src/gui/gaudit-window.c:341
+#: src/gui/gaudit-window.c:401
 msgid "Overall status"
 msgstr ""
 

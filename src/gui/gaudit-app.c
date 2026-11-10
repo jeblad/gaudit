@@ -24,7 +24,8 @@ static void refresh_status(GauditApp *self, GauditWindow *view)
                          g_get_real_time() / G_USEC_PER_SEC, results);
 
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
-        if (gaudit_model_add_finding(self->model, results[k].id, results[k].verdict) != GAUDIT_OK)
+        if (results[k].applicable
+            && gaudit_model_add_finding(self->model, results[k].id, results[k].verdict) != GAUDIT_OK)
             g_warning("gaudit: could not record finding %s", results[k].id);
 
     gaudit_window_show_status(view, results, gaudit_model_worst(self->model));

@@ -17,7 +17,7 @@ This file collects decisions that have been made. Do not reopen them without a c
 - In the desktop file, `Name=gAudit`, while `GenericName` ("Security Audit") is translated.
 - Contributions to gAudit itself are accepted under its license (GPL-3.0-only) only. Plugins are separate and may use any license (see *Plugins*).
 - Every code and build file starts with a single `SPDX-License-Identifier: GPL-3.0-only` line, and nothing more. The full text is in `LICENSE`. Translations and test fixtures have no header.
-- Developer: John Erling Blad. License: **GPL-3.0-only**. Expected repository: <https://github.com/jeblad/gaudit> (not created yet). These are set as plain variables in `CMakeLists.txt` and shown in the About dialog.
+- Developer: John Erling Blad. License: **GPL-3.0-only**. Repository: <https://github.com/jeblad/gaudit>. These are set as plain variables in `CMakeLists.txt` and shown in the About dialog.
 
 ## Goals and platform
 

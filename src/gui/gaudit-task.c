@@ -24,6 +24,8 @@ static const GauditTaskInfo tasks[] = {
         .params = NULL,
         .n_params = 0,
         .run_command = "run firewall",
+        .home_probe = "status.firewall",
+        .home_tooltip = N_("Thorough check of the firewall"),
     },
 };
 

@@ -117,6 +117,11 @@ typedef struct gaudit_pkg_backend {
      * and the first one ("~/...") copied to first. The same on every
      * distribution: backends point it at gaudit_private_files_here. */
     gaudit_backend_status (*private_files)(unsigned *out_count, char *first, size_t first_len);
+
+    /* Services listening for connections from the network (distinct TCP
+     * ports, loopback left out), and how many of them run under the
+     * user's own account. Backends point it at gaudit_listening_here. */
+    gaudit_backend_status (*listening)(unsigned *out_services, unsigned *out_own);
 } gaudit_pkg_backend;
 
 /* Debian family (Debian, Ubuntu and derivatives): dpkg/apt. */
@@ -157,6 +162,9 @@ unsigned gaudit_package_systems_present_here(void);
 
 /* The private-files check for the user running it. */
 gaudit_backend_status gaudit_private_files_here(unsigned *out_count, char *first, size_t first_len);
+
+/* The listening check for the user running it (/proc/net/tcp, tcp6). */
+gaudit_backend_status gaudit_listening_here(unsigned *out_services, unsigned *out_own);
 
 /* 1 if every path of the capability exists and is executable, else 0.
  * Presentation only: the helper re-checks anything that matters. */

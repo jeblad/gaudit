@@ -19,6 +19,7 @@ typedef enum {
     GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS, /* package systems present that are not checked */
     GAUDIT_PROBE_ANTIVIRUS,         /* some known antivirus program is installed */
     GAUDIT_PROBE_FIREWALL,          /* some known firewall is installed */
+    GAUDIT_PROBE_LISTENING,         /* services listening for the network (informs only) */
     GAUDIT_PROBE_AUTO_UPDATES,      /* updates are installed automatically */
     GAUDIT_PROBE_SECURITY_SOURCE,   /* security updates come from the distribution itself */
     GAUDIT_PROBE_PRIVATE_FILES,     /* private files in the home directory are protected */
@@ -41,7 +42,8 @@ typedef struct {
     const char *id;           /* stable key, e.g. "status.firewall" (static; from the kind) */
     gaudit_verdict verdict;
     int64_t age_seconds;      /* GAUDIT_PROBE_PACKAGE_INDEX */
-    unsigned count;           /* _PENDING_UPGRADES, _OBSOLETE_PACKAGES; _FLATPAK: eol apps */
+    unsigned count;           /* _PENDING_UPGRADES, _OBSOLETE_PACKAGES; _FLATPAK: eol apps;
+                                 _LISTENING: services, extra_count: of those the user's own */
     unsigned extra_count;     /* _FLATPAK: unused end-of-life refs */
     unsigned info_count;      /* _FLATPAK: end-of-life runtimes kept (pinned) but unused */
     int applicable;           /* 0: does not apply here (e.g. no Flatpak), not shown */
@@ -75,7 +77,7 @@ void gaudit_probe_init(gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
 /* The probes in independent tasks, so they can run side by side (the
  * orchestrator runs each in its own process) and a slow one does not hold
  * up the rest. A task may fill several kinds. */
-#define GAUDIT_PROBE_TASK_COUNT 9
+#define GAUDIT_PROBE_TASK_COUNT 10
 
 /* The kinds a task fills, as 1 << kind; 0 for an unknown task. */
 unsigned gaudit_probe_task_kinds(int task);

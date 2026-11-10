@@ -5,6 +5,7 @@
 
 #include "gaudit-run-page.h"
 #include "gaudit-session.h"
+#include "gaudit/backend.h"
 #include "gaudit-task-page.h"
 #include "gaudit/run.h"
 
@@ -21,6 +22,61 @@ static void show(RunJob *job, const char *icon, const char *title, const char *d
     adw_status_page_set_icon_name(job->status, icon);
     adw_status_page_set_title(job->status, title);
     adw_status_page_set_description(job->status, description);
+}
+
+/* How to switch on each known firewall program: fixed commands, never
+ * built from anything the system says. Which one applies is decided from
+ * what the backend sees installed (presentation only; gAudit does not run
+ * it, the user does). */
+static const struct {
+    const char *capability;
+    const char *enable;
+} firewall_tools[] = {
+    { "ufw",       "sudo ufw enable" },
+    { "firewalld", "sudo systemctl enable --now firewalld" },
+};
+
+static GtkWidget *small_note(const char *text)
+{
+    GtkWidget *label = gtk_label_new(text);
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    gtk_widget_add_css_class(label, "dim-label");
+    gtk_widget_add_css_class(label, "caption");
+    return label;
+}
+
+/* The manual way to switch the firewall on, under the warning. */
+static void show_enable(RunJob *job)
+{
+    if (job->status == NULL)
+        return;
+    const gaudit_pkg_backend *pkg = gaudit_pkg_backend_default();
+    const char *command = NULL;
+    for (size_t i = 0; i < G_N_ELEMENTS(firewall_tools) && command == NULL; i++) {
+        const gaudit_capability *cap = pkg->capability != NULL
+            ? pkg->capability(firewall_tools[i].capability) : NULL;
+        if (gaudit_capability_present(cap))
+            command = firewall_tools[i].enable;
+    }
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    if (command != NULL) {
+        GtkWidget *intro = gtk_label_new(_("To switch it on, run this command in a terminal:"));
+        gtk_label_set_wrap(GTK_LABEL(intro), TRUE);
+        gtk_label_set_xalign(GTK_LABEL(intro), 0.0f);
+        gtk_box_append(GTK_BOX(box), intro);
+        gtk_box_append(GTK_BOX(box), gaudit_command_field_new(command));
+        gtk_box_append(GTK_BOX(box), small_note(
+            _("If you use this computer from another one, for example over SSH, allow that "
+              "in the firewall first, or you will be shut out.")));
+    } else {
+        gtk_box_append(GTK_BOX(box), small_note(
+            _("No known firewall program is installed. Install one first, for example ufw.")));
+    }
+    GtkWidget *clamp = adw_clamp_new();
+    adw_clamp_set_child(ADW_CLAMP(clamp), box);
+    adw_status_page_set_child(job->status, clamp);
 }
 
 static void show_firewall(RunJob *job)
@@ -43,11 +99,21 @@ static void show_firewall(RunJob *job)
         show(job, "dialog-question-symbolic", _("The firewall could not be checked fully"),
              _("This system uses the older iptables, whose rules gAudit cannot read yet."));
         break;
-    default:
-        show(job, "security-low-symbolic", _("No firewall is filtering incoming traffic"),
-             _("Other computers on the network can reach every service running on this one. "
-               "Switch the firewall on in the settings of your firewall program."));
+    default: {
+        /* What the missing firewall leaves open, counted by the
+         * orchestrator when the check ran. */
+        g_autofree char *exposed = f->listening == 0
+            ? g_strdup(_("Nothing listens for connections from the network right now, so nothing "
+                         "is exposed yet. A firewall still protects against services started later."))
+            : g_strdup_printf(ngettext("%u service listens for connections from the network, and "
+                                       "other computers can reach it.",
+                                       "%u services listen for connections from the network, and "
+                                       "other computers can reach them.", f->listening),
+                              f->listening);
+        show(job, "security-low-symbolic", _("No firewall is filtering incoming traffic"), exposed);
+        show_enable(job);
         break;
+    }
     }
 }
 

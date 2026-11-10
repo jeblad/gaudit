@@ -10,6 +10,7 @@ static const char *const probe_ids[GAUDIT_PROBE_COUNT] = {
     [GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS] = "status.other-package-systems",
     [GAUDIT_PROBE_ANTIVIRUS]            = "status.antivirus",
     [GAUDIT_PROBE_FIREWALL]             = "status.firewall",
+    [GAUDIT_PROBE_LISTENING]            = "status.listening",
     [GAUDIT_PROBE_AUTO_UPDATES]         = "status.auto-updates",
     [GAUDIT_PROBE_SECURITY_SOURCE]      = "status.security-source",
     [GAUDIT_PROBE_PRIVATE_FILES]        = "status.private-files",
@@ -93,6 +94,22 @@ static void private_files(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
 }
 
 /* A mirror may lag behind, and security updates must not wait for it. */
+/* Informs only: without root, Home cannot tell whether a firewall stands
+ * in front of these services (the firewall check on page 2 can). */
+static void listening(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
+{
+    if (pkg->listening == NULL) {
+        r->applicable = 0;
+        return;
+    }
+    unsigned services = 0, own = 0;
+    if (pkg->listening(&services, &own) != GAUDIT_BACKEND_OK)
+        return;
+    r->count = services;
+    r->extra_count = own;
+    r->verdict = GAUDIT_VERDICT_OK;
+}
+
 static void security_source(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
 {
     if (pkg->security_sources == NULL) {
@@ -245,6 +262,7 @@ static const unsigned task_kinds[GAUDIT_PROBE_TASK_COUNT] = {
     BIT(GAUDIT_PROBE_PENDING_UPGRADES) | BIT(GAUDIT_PROBE_OBSOLETE_PACKAGES),
     BIT(GAUDIT_PROBE_FLATPAK),
     BIT(GAUDIT_PROBE_SNAP),
+    BIT(GAUDIT_PROBE_LISTENING),
 };
 
 unsigned gaudit_probe_task_kinds(int task)
@@ -294,6 +312,9 @@ void gaudit_probe_run_task(int task, const gaudit_pkg_backend *pkg,
         break;
     case 8:
         snap(pkg, now, &out[GAUDIT_PROBE_SNAP]);
+        break;
+    case 9:
+        listening(pkg, &out[GAUDIT_PROBE_LISTENING]);
         break;
     default:
         break;

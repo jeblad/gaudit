@@ -30,6 +30,7 @@ typedef struct {
     unsigned input_rules;   /* rules in those chains */
     unsigned rules;         /* rules in every chain */
     unsigned legacy;        /* legacy iptables tables loaded (not visible in nftables) */
+    unsigned listening;     /* services listening for the network (the orchestrator's count) */
 } gaudit_firewall_report;
 
 typedef enum {

@@ -147,7 +147,8 @@ int main(void)
     gaudit_run_event evs[] = {
         { .type = GAUDIT_RUN_EVENT_ELEVATED, .elevated = 1 },
         { .type = GAUDIT_RUN_EVENT_FIREWALL, .firewall = { .verdict = GAUDIT_VERDICT_OK,
-          .tables = 3, .input_chains = 2, .input_drop = 1, .input_rules = 7, .rules = 40, .legacy = 0 } },
+          .tables = 3, .input_chains = 2, .input_drop = 1, .input_rules = 7, .rules = 40, .legacy = 0,
+          .listening = 2 } },
         { .type = GAUDIT_RUN_EVENT_ELEVATED, .elevated = 0 },
         { .type = GAUDIT_RUN_EVENT_END, .status = GAUDIT_RUN_CANCELLED },
     };

@@ -212,6 +212,27 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
                              : _("No firewall found"));
         return _("Firewall");
 
+    case GAUDIT_PROBE_LISTENING:
+        if (r->verdict == GAUDIT_VERDICT_UNKNOWN) {
+            *subtitle = g_strdup(_("Could not find out which services listen on the network"));
+        } else if (r->count == 0) {
+            *subtitle = g_strdup(_("No services listen for connections from the network"));
+        } else {
+            g_autofree char *how_many = g_strdup_printf(
+                ngettext("%u service listens for connections from the network.",
+                         "%u services listen for connections from the network.", r->count),
+                r->count);
+            g_autofree char *whose = r->extra_count == 0
+                ? g_strdup(_("None of them run under your account."))
+                : g_strdup_printf(ngettext("%u of them runs under your account.",
+                                           "%u of them run under your account.", r->extra_count),
+                                  r->extra_count);
+            /* Translators: Home cannot see the firewall; page 2 can. */
+            *subtitle = g_strdup_printf("%s %s %s", how_many, whose,
+                _("The firewall check shows whether they can be reached."));
+        }
+        return _("Network services");
+
     case GAUDIT_PROBE_SECURITY_SOURCE:
         if (r->verdict == GAUDIT_VERDICT_UNKNOWN)
             *subtitle = g_strdup(_("Could not find out where security updates come from"));
@@ -384,6 +405,24 @@ static GtkWidget *row_spinner(void)
 #endif
 }
 
+/* The task a Home row stands for, as its index in the task list; -1 for
+ * none. */
+static int task_for_probe(const char *probe_id)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    for (gsize i = 0; probe_id != NULL && i < n_tasks; i++)
+        if (g_strcmp0(tasks[i].home_probe, probe_id) == 0)
+            return (int)i;
+    return -1;
+}
+
+static void on_task_button_clicked(GtkButton *button, gpointer user_data)
+{
+    int index = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "gaudit-index"));
+    navigate(GAUDIT_WINDOW(user_data), index, TRUE);
+}
+
 /* Shows row k as the state is now: a spinner while its answer is on its
  * way, then the result; hidden when the check does not apply here. */
 static void fill_row(GauditWindow *self, int k)
@@ -400,6 +439,10 @@ static void fill_row(GauditWindow *self, int k)
     if (old != NULL)
         adw_action_row_remove(row, old);
     g_object_set_data(G_OBJECT(row), "gaudit-suffix", NULL);
+    old = g_object_get_data(G_OBJECT(row), "gaudit-task-button");
+    if (old != NULL)
+        adw_action_row_remove(row, old);
+    g_object_set_data(G_OBJECT(row), "gaudit-task-button", NULL);
     g_object_set_data(G_OBJECT(row), "gaudit-capability", NULL);
     gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), FALSE);
 
@@ -425,6 +468,24 @@ static void fill_row(GauditWindow *self, int k)
     GtkWidget *icon = verdict_icon(probe->verdict);
     adw_action_row_add_prefix(row, icon);
     g_object_set_data(G_OBJECT(row), "gaudit-prefix", icon);
+
+    /* A task that goes deeper than this row: a button to it. */
+    int task_index = task_for_probe(probe->id);
+    if (task_index >= 0) {
+        gsize n_tasks;
+        const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+        GtkWidget *button = gtk_button_new_from_icon_name("go-next-symbolic");
+        gtk_widget_add_css_class(button, "flat");
+        gtk_widget_set_valign(button, GTK_ALIGN_CENTER);
+        const char *tip = _(tasks[task_index].home_tooltip != NULL
+                            ? tasks[task_index].home_tooltip : tasks[task_index].title);
+        gtk_widget_set_tooltip_text(button, tip);
+        gtk_accessible_update_property(GTK_ACCESSIBLE(button), GTK_ACCESSIBLE_PROPERTY_LABEL, tip, -1);
+        g_object_set_data(G_OBJECT(button), "gaudit-index", GINT_TO_POINTER(task_index + 1));
+        g_signal_connect(button, "clicked", G_CALLBACK(on_task_button_clicked), self);
+        adw_action_row_add_suffix(row, button);
+        g_object_set_data(G_OBJECT(row), "gaudit-task-button", button);
+    }
 
     const gaudit_capability *missing = probe->missing_capability[0] == '\0' || self->pkg->capability == NULL
         ? NULL : self->pkg->capability(probe->missing_capability);
@@ -493,11 +554,19 @@ static AdwNavigationPage *build_home(GauditWindow *self)
 
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
-    if (n_tasks > 0) {
+    /* Tasks without a Home row of their own; the others are reached from
+     * their row, so they are not listed twice. */
+    gsize n_listed = 0;
+    for (gsize i = 0; i < n_tasks; i++)
+        if (tasks[i].home_probe == NULL)
+            n_listed++;
+    if (n_listed > 0) {
         AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
         adw_preferences_group_set_title(group, _("Checks"));
         for (gsize i = 0; i < n_tasks; i++) {
             const GauditTaskInfo *task = &tasks[i];
+            if (task->home_probe != NULL)
+                continue;
             g_autoptr(GPtrArray) missing = gaudit_task_missing_packages(task, self->pkg);
             const char *state = missing == NULL ? _("Not available on this system")
                               : missing->len > 0 ? _("Software is missing")

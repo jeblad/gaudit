@@ -269,6 +269,11 @@ static int on_helper_line(char *line, void *ctx)
             .rules = (unsigned)rules, .legacy = (unsigned)legacy,
         };
         st->fw.verdict = gaudit_firewall_verdict(&st->fw);
+        /* Read here, as the user: what the firewall stands in front of. */
+        unsigned services = 0, own = 0;
+        const gaudit_pkg_backend *pkg = gaudit_pkg_backend_default();
+        if (pkg->listening != NULL && pkg->listening(&services, &own) == GAUDIT_BACKEND_OK)
+            st->fw.listening = services;
         return 0;
     }
     if (gaudit_sexpr_parse(line, "helper", summary, 4) == 0) {

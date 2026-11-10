@@ -112,6 +112,13 @@ target_compile_definitions(test_secret_scan PRIVATE _GNU_SOURCE
 target_link_libraries(test_secret_scan PRIVATE gaudit_backend)
 add_test(NAME secret-scan COMMAND test_secret_scan)
 
+add_executable(test_listening test_listening.c)
+target_include_directories(test_listening PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+target_compile_definitions(test_listening PRIVATE _GNU_SOURCE
+  GAUDIT_TEST_TMP_DIR="${CMAKE_CURRENT_BINARY_DIR}/tmp")
+target_link_libraries(test_listening PRIVATE gaudit_backend)
+add_test(NAME listening COMMAND test_listening)
+
 find_program(DESKTOP_FILE_VALIDATE desktop-file-validate)
 if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file

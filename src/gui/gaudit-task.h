@@ -26,6 +26,9 @@ typedef struct {
     const GauditTaskParam *params;
     gsize n_params;
     const char *run_command;  /* the orchestrator session's command for a run */
+    const char *home_probe;   /* id of the Home row that leads here (e.g. "status.firewall"),
+                                 which then stands for the task on Home; NULL for none */
+    const char *home_tooltip; /* for the button on that row, N_()-marked */
 } GauditTaskInfo;
 
 const GauditTaskInfo *gaudit_tasks_get(gsize *n_tasks);

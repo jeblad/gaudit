@@ -102,35 +102,9 @@ static void on_copy_clicked(GtkButton *button, gpointer user_data)
     show_toast(GTK_WIDGET(button), _("Command copied"));
 }
 
-static void on_install_clicked(GtkButton *button, gpointer user_data)
+GtkWidget *gaudit_command_field_new(const char *command_text)
 {
-    (void)user_data;
-    /* TODO: install via PackageKit (D-Bus). Fallback: pkexec with the
-     * backend's fixed argv, and say clearly in the UI that it is a fallback. */
-    show_toast(GTK_WIDGET(button), _("Installing is not implemented yet."));
-}
-
-static GtkWidget *build_missing(const gaudit_pkg_backend *pkg, GPtrArray *missing)
-{
-    g_ptr_array_add(missing, NULL);  /* NULL-terminate for g_strjoinv */
-    g_autofree char *list = g_strjoinv(", ", (char **)missing->pdata);
-    g_autofree char *names = g_strjoinv(" ", (char **)missing->pdata);
-    char *command = g_strjoin(" ", pkg->manual_install_command, names, NULL);
-
-    AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
-    adw_status_page_set_icon_name(status, "system-software-install-symbolic");
-    adw_status_page_set_title(status, _("Software is missing"));
-    /* Translators: %s is a comma-separated list of package names. */
-    g_autofree char *description =
-        g_strdup_printf(_("This check needs software that is not installed: %s."), list);
-    adw_status_page_set_description(status, description);
-
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
-
-    gtk_box_append(GTK_BOX(box),
-                   wrapped_label(_("You can install it with the button below, or copy "
-                                   "this command and run it in a terminal yourself:")));
-
+    char *command = g_strdup(command_text);
     /* The command field: read-only, selectable, always left-to-right. */
     GtkWidget *field = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(field, "card");
@@ -157,7 +131,40 @@ static GtkWidget *build_missing(const gaudit_pkg_backend *pkg, GPtrArray *missin
     g_object_set_data_full(G_OBJECT(copy), "gaudit-command", command, g_free);
     g_signal_connect(copy, "clicked", G_CALLBACK(on_copy_clicked), NULL);
     gtk_box_append(GTK_BOX(field), copy);
-    gtk_box_append(GTK_BOX(box), field);
+    return field;
+}
+
+
+static void on_install_clicked(GtkButton *button, gpointer user_data)
+{
+    (void)user_data;
+    /* TODO: install via PackageKit (D-Bus). Fallback: pkexec with the
+     * backend's fixed argv, and say clearly in the UI that it is a fallback. */
+    show_toast(GTK_WIDGET(button), _("Installing is not implemented yet."));
+}
+
+static GtkWidget *build_missing(const gaudit_pkg_backend *pkg, GPtrArray *missing)
+{
+    g_ptr_array_add(missing, NULL);  /* NULL-terminate for g_strjoinv */
+    g_autofree char *list = g_strjoinv(", ", (char **)missing->pdata);
+    g_autofree char *names = g_strjoinv(" ", (char **)missing->pdata);
+    g_autofree char *command = g_strjoin(" ", pkg->manual_install_command, names, NULL);
+
+    AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
+    adw_status_page_set_icon_name(status, "system-software-install-symbolic");
+    adw_status_page_set_title(status, _("Software is missing"));
+    /* Translators: %s is a comma-separated list of package names. */
+    g_autofree char *description =
+        g_strdup_printf(_("This check needs software that is not installed: %s."), list);
+    adw_status_page_set_description(status, description);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+
+    gtk_box_append(GTK_BOX(box),
+                   wrapped_label(_("You can install it with the button below, or copy "
+                                   "this command and run it in a terminal yourself:")));
+
+    gtk_box_append(GTK_BOX(box), gaudit_command_field_new(command));
 
     GtkWidget *install = gtk_button_new_with_label(_("Install"));
     gtk_widget_add_css_class(install, "pill");

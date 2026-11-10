@@ -33,9 +33,9 @@ int gaudit_run_format(const gaudit_run_event *ev, char *buf, size_t len)
     case GAUDIT_RUN_EVENT_FIREWALL:
         n = snprintf(buf, len,
                      "(firewall (verdict %d) (tables %u) (input-chains %u) (input-drop %u)"
-                     " (input-rules %u) (rules %u) (legacy %u))\n",
+                     " (input-rules %u) (rules %u) (legacy %u) (listening %u))\n",
                      (int)f->verdict, f->tables, f->input_chains, f->input_drop,
-                     f->input_rules, f->rules, f->legacy);
+                     f->input_rules, f->rules, f->legacy, f->listening);
         break;
     case GAUDIT_RUN_EVENT_END:
         n = snprintf(buf, len, "(end (status %d))\n", (int)ev->status);
@@ -61,7 +61,7 @@ int gaudit_run_parse_line(const char *line, gaudit_run_event *out)
 
     gaudit_run_event ev;
     memset(&ev, 0, sizeof ev);
-    long long a, b, c, d, e, f, g;
+    long long a, b, c, d, e, f, g, h;
 
     const gaudit_sexpr_field elevated[] = { { .key = "on", .value = &a, .max = 1 } };
     if (gaudit_sexpr_parse(copy, "elevated", elevated, 1) == 0) {
@@ -85,13 +85,14 @@ int gaudit_run_parse_line(const char *line, gaudit_run_event *out)
         { .key = "input-rules",  .value = &e, .max = MAX_COUNT },
         { .key = "rules",        .value = &f, .max = MAX_COUNT },
         { .key = "legacy",       .value = &g, .max = MAX_COUNT },
+        { .key = "listening",    .value = &h, .max = 65536 },
     };
     if (gaudit_sexpr_parse(copy, "firewall", fw, sizeof fw / sizeof fw[0]) == 0) {
         ev.type = GAUDIT_RUN_EVENT_FIREWALL;
         ev.firewall = (gaudit_firewall_report){
             .verdict = (gaudit_verdict)a, .tables = (unsigned)b, .input_chains = (unsigned)c,
             .input_drop = (unsigned)d, .input_rules = (unsigned)e, .rules = (unsigned)f,
-            .legacy = (unsigned)g,
+            .legacy = (unsigned)g, .listening = (unsigned)h,
         };
         *out = ev;
         return 0;

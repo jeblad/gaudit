@@ -17,6 +17,10 @@ AdwNavigationPage *gaudit_missing_software_page_new(const gaudit_pkg_backend *pk
                                                     const char *title,
                                                     const char *const *packages);
 
+/* A command to copy: read-only, selectable, always left-to-right, with a
+ * copy button. The text is copied. */
+GtkWidget *gaudit_command_field_new(const char *command);
+
 /* Page 1 for a task: settings, or an explanation if software is missing. */
 AdwNavigationPage *gaudit_task_page_new(const GauditTaskInfo *task,
                                        const gaudit_pkg_backend *pkg);

@@ -29,7 +29,7 @@ case "$distro" in
         image=registry.fedoraproject.org/fedora:latest
         install='dnf -y install gcc gcc-c++ cmake pkgconf-pkg-config gettext desktop-file-utils
                  gtk4-devel libadwaita-devel flatpak-devel json-glib-devel libdnf5-devel util-linux
-                 zlib-devel lz4-devel xz-devel libzstd-devel'
+                 zlib-devel lz4-devel xz-devel libzstd-devel libcap-devel libseccomp-devel'
         # Both package rows get something to count:
         #  - upgradable: downgrade one harmless package that came from
         #    "updates" to its version in "fedora", so an upgrade exists;
@@ -48,38 +48,55 @@ case "$distro" in
                  mkdir -p /etc/dnf/repos.override.d
                  && printf "[fedora-cisco-openh264]\\nenabled=0\\n" > /etc/dnf/repos.override.d/99-gaudit-test.repo
                  && echo "== prepared: openh264 repository disabled; enabled repositories now:"
-                 && dnf -q repo list | sed 1d'
+                 && dnf -q repo list | sed 1d;
+                 raise=$(dnf -q --enablerepo=updates-testing check-upgrade 2>/dev/null
+                   | awk "NF==3 && \$3 == \"updates-testing\" {print \$1; exit}");
+                 if [ -n "$raise" ] && dnf -y -q --enablerepo=updates-testing upgrade "$raise" >/dev/null 2>&1;
+                 then echo "== prepared: $raise from updates-testing, above the enabled sources";
+                 else echo "== prepared: nothing raised from updates-testing"; fi'
         # dnf's own view, for comparison with the collector (test only; the
         # product never parses tool output).
         compare='echo "== dnf: upgradable / extras (as root, cache only)"
                  dnf -q --cacheonly check-upgrade | grep -c "\." || true
-                 dnf -q --cacheonly list --extras | grep -c "\." || true'
+                 dnf -q --cacheonly list --extras | grep -c "\." || true
+                 echo "== collector list (nobody): packages per group (0 above, 1 leftover, 2 other)"
+                 runuser -u nobody -- /build/src/collectors/dnf/gaudit-dnf-probe list > /tmp/list || echo "exit $?"
+                 sed -n "s/.*(group \([0-9]\)).*/\1/p" /tmp/list | sort | uniq -c
+                 tail -n 1 /tmp/list; head -n 5 /tmp/list'
         ;;
     arch)
         image=docker.io/library/archlinux:latest
         install='pacman -Syu --noconfirm base-devel cmake gettext desktop-file-utils
-                 gtk4 libadwaita flatpak json-glib zlib lz4 xz zstd'
+                 gtk4 libadwaita flatpak json-glib zlib lz4 xz zstd libcap libseccomp'
         # Foreign packages: disable [extra] after everything is installed, so
         # packages from there are offered by no configured repository.
         prepare='sed -i "/^\\[extra\\]/,/^Include/ s/^/#/" /etc/pacman.conf
                  && echo "== prepared: [extra] disabled; repositories now:"
-                 && grep "^\\[" /etc/pacman.conf'
+                 && grep "^\\[" /etc/pacman.conf;
+                 d=$(ls -d /var/lib/pacman/local/xz-[0-9]* | head -n 1);
+                 sed -i "/^%VERSION%\$/{n;s/^/99:/}" "$d/desc"
+                 && mv "$d" "/var/lib/pacman/local/xz-99:${d#/var/lib/pacman/local/xz-}"
+                 && echo "== prepared: xz marked as a higher version than its repository has"'
         # pacman's own view, for comparison (test only).
         compare='echo "== pacman: upgradable / foreign"
                  pacman -Qu 2>/dev/null | grep -vc "\\[ignored\\]" || true
-                 pacman -Qm 2>/dev/null | grep -c . || true'
+                 pacman -Qm 2>/dev/null | grep -c . || true
+                 echo "== collector list (nobody): packages per group (0 above, 1 leftover, 2 other)"
+                 runuser -u nobody -- /build/src/collectors/pacman/gaudit-pacman-probe list > /tmp/list || echo "exit $?"
+                 sed -n "s/.*(group \([0-9]\)).*/\1/p" /tmp/list | sort | uniq -c
+                 tail -n 1 /tmp/list; head -n 5 /tmp/list'
         ;;
     opensuse)
         image=registry.opensuse.org/opensuse/tumbleweed:latest
         install='zypper --non-interactive install gcc gcc-c++ cmake pkgconf gettext-tools
                  desktop-file-utils gtk4-devel libadwaita-devel flatpak-devel json-glib-devel util-linux
-                 zlib-devel liblz4-devel xz-devel libzstd-devel'
+                 zlib-devel liblz4-devel xz-devel libzstd-devel libcap-devel libseccomp-devel'
         ;;
     debian)
         image=docker.io/library/debian:stable
         install='apt-get update && apt-get -y install build-essential cmake pkg-config gettext
                  desktop-file-utils libgtk-4-dev libadwaita-1-dev libflatpak-dev libjson-glib-dev
-                 zlib1g-dev liblz4-dev liblzma-dev libzstd-dev'
+                 zlib1g-dev liblz4-dev liblzma-dev libzstd-dev libcap-dev libseccomp-dev'
         ;;
     *)
         usage

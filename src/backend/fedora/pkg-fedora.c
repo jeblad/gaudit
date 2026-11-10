@@ -80,10 +80,15 @@ static gaudit_backend_status package_state(unsigned *out_obsolete, unsigned *out
     gaudit_backend_status status =
         gaudit_dnf_run_probe("/usr/bin/dnf5", GAUDIT_DNF_PROBE_PATH, DNF_TIMEOUT_MS, &st);
     if (status == GAUDIT_BACKEND_OK) {
-        *out_obsolete = st.extras;
+        *out_obsolete = st.extras + st.above;  /* as many as the list holds */
         *out_upgradable = st.upgradable;
     }
     return status;
+}
+
+static gaudit_backend_status sourceless_packages(gaudit_sourceless_fn fn, void *ctx)
+{
+    return gaudit_dnf_run_list("/usr/bin/dnf5", GAUDIT_DNF_PROBE_PATH, DNF_TIMEOUT_MS, fn, ctx);
 }
 
 static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)
@@ -113,6 +118,7 @@ static const gaudit_pkg_backend fedora_pkg = {
     .last_index_update = last_index_update,
     .automatic_updates = automatic_updates,
     .package_state = package_state,
+    .sourceless_packages = sourceless_packages,
     .flatpak_state = flatpak_state,
     .snap_state = snap_state,
 };

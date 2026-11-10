@@ -19,6 +19,23 @@
 gaudit_backend_status gaudit_collector_run(const char *probe_path, int timeout_ms,
                                            char *buf, size_t buf_len);
 
+/* As gaudit_collector_run, with one argument (NULL for none), e.g. "list". */
+gaudit_backend_status gaudit_collector_run_arg(const char *probe_path, const char *arg,
+                                               int timeout_ms, char *buf, size_t buf_len);
+
+/* A collector's list of packages without a source, one line each, then
+ * the count, strictly:
+ *
+ *   (package (name "...") (arch "...") (version "...") (group G) (offered "..."))
+ *   (end (count N))
+ *
+ * offered is "" unless G is GAUDIT_SOURCELESS_ABOVE_SOURCE. fn is called
+ * per package as it is parsed, so on an error some calls have been made:
+ * the caller must then drop them. GAUDIT_BACKEND_OK only if every line is
+ * valid and the count matches. */
+gaudit_backend_status gaudit_collector_sourceless(const char *text, gaudit_sourceless_fn fn,
+                                                  void *ctx);
+
 typedef struct {
     const char *key;
     long long *value;  /* integer field (NULL for a text field) */

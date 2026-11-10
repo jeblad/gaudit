@@ -76,7 +76,7 @@ static gaudit_backend_status package_state(unsigned *out_obsolete, unsigned *out
     gaudit_backend_status status =
         gaudit_pacman_run_probe("/usr/bin/pacman", GAUDIT_PACMAN_PROBE_PATH, PACMAN_TIMEOUT_MS, &st);
     if (status == GAUDIT_BACKEND_OK) {
-        *out_obsolete = st.foreign;
+        *out_obsolete = st.foreign + st.above;  /* as many as the list holds */
         *out_upgradable = st.upgradable;
     }
     return status;
@@ -94,6 +94,12 @@ static gaudit_backend_status snap_state(gaudit_snap_state *out)
                                  COLLECTOR_TIMEOUT_MS, out);
 }
 
+static gaudit_backend_status sourceless_packages(gaudit_sourceless_fn fn, void *ctx)
+{
+    return gaudit_pacman_run_list("/usr/bin/pacman", GAUDIT_PACMAN_PROBE_PATH, PACMAN_TIMEOUT_MS,
+                                  fn, ctx);
+}
+
 static const gaudit_pkg_backend arch_pkg = {
     .name = "arch",
     .package_system = "pacman",
@@ -108,6 +114,7 @@ static const gaudit_pkg_backend arch_pkg = {
     .capability = capability,
     .last_index_update = last_index_update,
     .package_state = package_state,
+    .sourceless_packages = sourceless_packages,
     .flatpak_state = flatpak_state,
     .snap_state = snap_state,
 };

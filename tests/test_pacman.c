@@ -92,6 +92,13 @@ static int find(const char *list, const char *word, int *n)
     return at;
 }
 
+static void on_package(const char *name, const char *arch, const char *version,
+                       gaudit_sourceless_group group, const char *offered, void *ctx)
+{
+    (void)name; (void)arch; (void)version; (void)offered;
+    ((unsigned *)ctx)[group]++;
+}
+
 int main(void)
 {
     snprintf(base, sizeof base, "%s/pacman-XXXXXX", GAUDIT_TEST_TMP_DIR);
@@ -147,11 +154,19 @@ int main(void)
 
     /* Collector protocol. */
     gaudit_pacman_state st;
-    CHECK(gaudit_pacman_parse("(pacman (installed 10) (upgradable 2) (foreign 1))", &st) == 0);
-    CHECK(st.installed == 10 && st.upgradable == 2 && st.foreign == 1);
-    CHECK(gaudit_pacman_parse("(pacman (installed 10) (upgradable 2))", &st) != 0);
+    CHECK(gaudit_pacman_parse("(pacman (installed 10) (upgradable 2) (foreign 1) (above 1))", &st) == 0);
+    CHECK(st.installed == 10 && st.upgradable == 2 && st.foreign == 1 && st.above == 1);
+    CHECK(gaudit_pacman_parse("(pacman (installed 10) (upgradable 2) (foreign 1))", &st) != 0);
+    CHECK(gaudit_pacman_parse("(pacman (installed 3) (upgradable 1) (foreign 1) (above 2))", &st) != 0);
     CHECK(gaudit_pacman_run_probe(PRESENT, DATA "/ok.sh", 2000, &st) == GAUDIT_BACKEND_OK);
-    CHECK(st.installed == 900 && st.upgradable == 14 && st.foreign == 6);
+    CHECK(st.installed == 900 && st.upgradable == 14 && st.foreign == 6 && st.above == 1);
+
+    /* The list: groups kept; above the source needs an offered version. */
+    unsigned groups[GAUDIT_SOURCELESS_GROUPS] = { 0 };
+    CHECK(gaudit_pacman_run_list(PRESENT, DATA "/ok.sh", 2000, on_package, groups) == GAUDIT_BACKEND_OK);
+    CHECK(groups[0] == 1 && groups[1] == 1 && groups[2] == 1);
+    CHECK(gaudit_pacman_run_list(PRESENT, DATA "/inconsistent.sh", 2000, on_package, groups)
+          == GAUDIT_BACKEND_ERROR);
     CHECK(gaudit_pacman_run_probe("/nonexistent/pacman", DATA "/ok.sh", 2000, &st)
           == GAUDIT_BACKEND_UNAVAILABLE);
     CHECK(gaudit_pacman_run_probe(PRESENT, DATA "/no-such-collector", 2000, &st)

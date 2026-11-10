@@ -157,6 +157,12 @@ static long elapsed_ms(const struct timespec *start)
 gaudit_backend_status gaudit_collector_run(const char *probe_path, int timeout_ms,
                                            char *buf, size_t buf_len)
 {
+    return gaudit_collector_run_arg(probe_path, NULL, timeout_ms, buf, buf_len);
+}
+
+gaudit_backend_status gaudit_collector_run_arg(const char *probe_path, const char *arg,
+                                               int timeout_ms, char *buf, size_t buf_len)
+{
     if (probe_path == NULL || buf == NULL || buf_len < 2 || timeout_ms <= 0)
         return GAUDIT_BACKEND_ERROR;
     buf[0] = '\0';
@@ -171,7 +177,7 @@ gaudit_backend_status gaudit_collector_run(const char *probe_path, int timeout_m
     if (hn < 0 || (size_t)hn >= sizeof home)
         return GAUDIT_BACKEND_ERROR;
     char *const envp[] = { home, NULL };
-    char *const argv[] = { (char *)probe_path, NULL };
+    char *const argv[] = { (char *)probe_path, (char *)arg, NULL };
 
     int fds[2];
     if (pipe2(fds, O_CLOEXEC) != 0)
@@ -259,4 +265,57 @@ gaudit_backend_status gaudit_collector_run(const char *probe_path, int timeout_m
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
         return GAUDIT_BACKEND_ERROR;
     return GAUDIT_BACKEND_OK;
+}
+
+/* --- Lists of packages without a source ------------------------------------- */
+
+#define MAX_LIST_LINE 512
+
+gaudit_backend_status gaudit_collector_sourceless(const char *text, gaudit_sourceless_fn fn,
+                                                  void *ctx)
+{
+    if (text == NULL)
+        return GAUDIT_BACKEND_ERROR;
+    unsigned seen = 0;
+    int ended = 0;
+    const char *p = text;
+    while (*p != '\0') {
+        const char *nl = strchr(p, '\n');
+        if (nl == NULL || ended)
+            return GAUDIT_BACKEND_ERROR;  /* output ending mid-line, or after the end line */
+        size_t len = (size_t)(nl - p);
+        if (len == 0 || len >= MAX_LIST_LINE)
+            return GAUDIT_BACKEND_ERROR;
+        char line[MAX_LIST_LINE];
+        memcpy(line, p, len);
+        line[len] = '\0';
+        p = nl + 1;
+
+        long long count;
+        const gaudit_sexpr_field end[] = { { .key = "count", .value = &count, .max = 10000000LL } };
+        if (gaudit_sexpr_parse(line, "end", end, 1) == 0) {
+            if ((unsigned long long)count != seen)
+                return GAUDIT_BACKEND_ERROR;
+            ended = 1;
+            continue;
+        }
+        char name[128], arch[32], version[96], offered[96];
+        long long group;
+        const gaudit_sexpr_field pkg[] = {
+            { .key = "name",    .text = name,    .text_len = sizeof name },
+            { .key = "arch",    .text = arch,    .text_len = sizeof arch },
+            { .key = "version", .text = version, .text_len = sizeof version },
+            { .key = "group",   .value = &group, .max = GAUDIT_SOURCELESS_GROUPS - 1 },
+            { .key = "offered", .text = offered, .text_len = sizeof offered },
+        };
+        if (gaudit_sexpr_parse(line, "package", pkg, sizeof pkg / sizeof pkg[0]) != 0
+            || name[0] == '\0' || version[0] == '\0'
+            || (group == GAUDIT_SOURCELESS_ABOVE_SOURCE) != (offered[0] != '\0'))
+            return GAUDIT_BACKEND_ERROR;
+        seen++;
+        if (fn != NULL)
+            fn(name, arch, version, (gaudit_sourceless_group)group,
+               group == GAUDIT_SOURCELESS_ABOVE_SOURCE ? offered : NULL, ctx);
+    }
+    return ended ? GAUDIT_BACKEND_OK : GAUDIT_BACKEND_ERROR;
 }

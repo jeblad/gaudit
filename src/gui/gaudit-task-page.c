@@ -2,6 +2,7 @@
 #include "config.h"
 
 #include <glib/gi18n.h>
+#include <string.h>
 
 #include "gaudit-run-page.h"
 #include "gaudit-task-page.h"
@@ -33,6 +34,62 @@ static GtkWidget *wrapped_label(const char *text)
     return label;
 }
 
+/* --- Shared pieces --------------------------------------------------------- */
+
+static void on_teaser_expanded(GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+    (void)pspec; (void)user_data;
+    AdwExpanderRow *row = ADW_EXPANDER_ROW(object);
+    gboolean open = adw_expander_row_get_expanded(row);
+    /* The row centres its arrow, so it moves down as the text grows.
+     * Accepted: pinning it reached into libadwaita and looked odd. */
+    /* Closed: one line of the first paragraph, ending in "…". Open: the
+     * whole text in place, so the reader goes on from where it was cut. */
+    const char *text = g_object_get_data(object, "gaudit-text");
+    if (open) {
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), text);
+    } else {
+        const char *nl = strchr(text, '\n');
+        g_autofree char *first = nl != NULL ? g_strndup(text, (gsize)(nl - text)) : g_strdup(text);
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), first);
+    }
+    adw_expander_row_set_title_lines(row, open ? 0 : 1);
+}
+
+GtkWidget *gaudit_teaser_row_new(const char *text)
+{
+    AdwExpanderRow *row = ADW_EXPANDER_ROW(adw_expander_row_new());
+    adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
+    g_object_set_data_full(G_OBJECT(row), "gaudit-text", g_strdup(text), g_free);
+    g_signal_connect(row, "notify::expanded", G_CALLBACK(on_teaser_expanded), NULL);
+    on_teaser_expanded(G_OBJECT(row), NULL, NULL);
+    return GTK_WIDGET(row);
+}
+
+GtkWidget *gaudit_action_button_new(const char *label, gboolean opens_page, gboolean is_default)
+{
+    GtkWidget *button = gtk_button_new();
+    /* Label, then the chevron, in reading order: the box and the icon
+     * (go-next has an -rtl variant) mirror themselves in right-to-left. */
+    GtkWidget *content = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_widget_set_halign(content, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(content), gtk_label_new(label));
+    if (opens_page) {
+        GtkWidget *chevron = gtk_image_new_from_icon_name("go-next-symbolic");
+        gtk_accessible_update_property(GTK_ACCESSIBLE(chevron),
+                                       GTK_ACCESSIBLE_PROPERTY_LABEL, _("Opens a new page"), -1);
+        gtk_box_append(GTK_BOX(content), chevron);
+    }
+    gtk_button_set_child(GTK_BUTTON(button), content);
+    gtk_widget_add_css_class(button, "pill");
+    if (is_default)
+        gtk_widget_add_css_class(button, "suggested-action");
+    /* At the end, where "forward" is (right in left-to-right, left in
+     * right-to-left); Undo, going back, will sit at the start. */
+    gtk_widget_set_halign(button, GTK_ALIGN_END);
+    return button;
+}
+
 /* --- Page 2: run ---------------------------------------------------------- */
 
 static void on_start_clicked(GtkButton *button, gpointer user_data)
@@ -53,15 +110,7 @@ static GtkWidget *build_settings(const GauditTaskInfo *task)
 
     AdwPreferencesGroup *about = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
     adw_preferences_group_set_description(about, _(task->summary));
-    AdwExpanderRow *more = ADW_EXPANDER_ROW(adw_expander_row_new());
-    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(more), _("More about this"));
-    GtkWidget *details = wrapped_label(_(task->details));
-    gtk_widget_set_margin_top(details, 12);
-    gtk_widget_set_margin_bottom(details, 12);
-    gtk_widget_set_margin_start(details, 12);
-    gtk_widget_set_margin_end(details, 12);
-    adw_expander_row_add_row(more, details);
-    adw_preferences_group_add(about, GTK_WIDGET(more));
+    adw_preferences_group_add(about, gaudit_teaser_row_new(_(task->details)));
     adw_preferences_page_add(page, about);
 
     AdwPreferencesGroup *params = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
@@ -81,10 +130,8 @@ static GtkWidget *build_settings(const GauditTaskInfo *task)
         g_object_unref(g_object_ref_sink(params));  /* nothing to set */
 
     AdwPreferencesGroup *actions = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
-    GtkWidget *start = gtk_button_new_with_label(_("Start"));
-    gtk_widget_add_css_class(start, "pill");
-    gtk_widget_add_css_class(start, "suggested-action");
-    gtk_widget_set_halign(start, GTK_ALIGN_CENTER);
+    /* Opens page 2; the page's one action, so the default. */
+    GtkWidget *start = gaudit_action_button_new(_("Start"), TRUE, TRUE);
     g_signal_connect(start, "clicked", G_CALLBACK(on_start_clicked), (gpointer)task);
     adw_preferences_group_add(actions, start);
     adw_preferences_page_add(page, actions);

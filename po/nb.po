@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 17:06+0100\n"
+"POT-Creation-Date: 2026-11-10 18:07+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -48,21 +48,21 @@ msgstr "Sjekk sikkerhetstilstanden på denne datamaskinen"
 msgid "translator-credits"
 msgstr ""
 
-#: src/gui/gaudit-window.c:93 src/gui/gaudit-window.c:515
-#: src/gui/gaudit-window.c:624
+#: src/gui/gaudit-window.c:94 src/gui/gaudit-window.c:516
+#: src/gui/gaudit-window.c:625
 msgid "Checking…"
 msgstr "Sjekker …"
 
-#: src/gui/gaudit-window.c:94
+#: src/gui/gaudit-window.c:95
 msgid "Looking at the status of this computer."
 msgstr "Ser på tilstanden til denne datamaskinen."
 
-#: src/gui/gaudit-window.c:99
+#: src/gui/gaudit-window.c:100
 msgid "No signs of problems found"
 msgstr "Fant ingen tegn til problemer"
 
 #. Translators: Keep the meaning: a clean result is not a guarantee.
-#: src/gui/gaudit-window.c:101
+#: src/gui/gaudit-window.c:102
 msgid ""
 "This does not prove the computer is safe, only that the checks found nothing "
 "wrong."
@@ -70,442 +70,457 @@ msgstr ""
 "Dette beviser ikke at datamaskinen er trygg, bare at sjekkene ikke fant noe "
 "galt."
 
-#: src/gui/gaudit-window.c:106
+#: src/gui/gaudit-window.c:107
 msgid "Some things need attention"
 msgstr "Noe trenger oppmerksomhet"
 
-#: src/gui/gaudit-window.c:111
+#: src/gui/gaudit-window.c:112
 msgid "Serious problems found"
 msgstr "Fant alvorlige problemer"
 
-#: src/gui/gaudit-window.c:117
+#: src/gui/gaudit-window.c:118
 msgid "Some checks could not be completed"
 msgstr "Noen sjekker kunne ikke fullføres"
 
-#: src/gui/gaudit-window.c:148
+#: src/gui/gaudit-window.c:149
 msgid "OK"
 msgstr "OK"
 
-#: src/gui/gaudit-window.c:151
+#: src/gui/gaudit-window.c:152
 msgid "Needs attention"
 msgstr "Trenger oppmerksomhet"
 
-#: src/gui/gaudit-window.c:154
+#: src/gui/gaudit-window.c:155
 msgid "Serious"
 msgstr "Alvorlig"
 
-#: src/gui/gaudit-window.c:158
+#: src/gui/gaudit-window.c:159
 msgid "Unknown"
 msgstr "Ukjent"
 
-#: src/gui/gaudit-window.c:176 src/gui/gaudit-sourceless-page.c:129
+#: src/gui/gaudit-window.c:177 src/gui/gaudit-sourceless-page.c:129
 msgid "Not supported on this system yet"
 msgstr "Støttes ikke på dette systemet ennå"
 
 #. Translators: "This looks like Ubuntu, but its package system (dpkg/apt) was not found".
-#: src/gui/gaudit-window.c:184
+#: src/gui/gaudit-window.c:185
 #, c-format
 msgid "This looks like %s, but its package system (%s) was not found"
 msgstr "Dette ser ut som %s, men pakkesystemet (%s) ble ikke funnet"
 
-#: src/gui/gaudit-window.c:185
+#: src/gui/gaudit-window.c:186
 msgid "a known distribution"
 msgstr "en kjent distribusjon"
 
-#: src/gui/gaudit-window.c:187
+#: src/gui/gaudit-window.c:188
 msgid "Package system"
 msgstr "Pakkesystem"
 
-#: src/gui/gaudit-window.c:192
+#: src/gui/gaudit-window.c:193
 msgid "Software needed to check snaps is missing"
 msgstr "Programvare som trengs for å sjekke snaps, mangler"
 
-#: src/gui/gaudit-window.c:194
+#: src/gui/gaudit-window.c:195
 msgid "The snap service is not running, so snaps are not updated"
 msgstr "Snap-tjenesten kjører ikke, så snaps blir ikke oppdatert"
 
-#: src/gui/gaudit-window.c:196
+#: src/gui/gaudit-window.c:197
 msgid "Could not check the snaps"
 msgstr "Kunne ikke sjekke snapene"
 
 #. Translators: %s is a date.
-#: src/gui/gaudit-window.c:205
+#: src/gui/gaudit-window.c:206
 #, c-format
 msgid "Automatic updates are paused until %s"
 msgstr "Automatiske oppdateringer er satt på pause til %s"
 
-#: src/gui/gaudit-window.c:210
+#: src/gui/gaudit-window.c:211
 #, c-format
 msgid "Last updated %d day ago"
 msgid_plural "Last updated %d days ago"
 msgstr[0] "Sist oppdatert for %d dag siden"
 msgstr[1] "Sist oppdatert for %d dager siden"
 
-#: src/gui/gaudit-window.c:216
+#: src/gui/gaudit-window.c:217
 #, c-format
 msgid "%u snap is held back from updates"
 msgid_plural "%u snaps are held back from updates"
 msgstr[0] "%u snap holdes tilbake fra oppdateringer"
 msgstr[1] "%u snaps holdes tilbake fra oppdateringer"
 
-#: src/gui/gaudit-window.c:223
+#: src/gui/gaudit-window.c:224
 #, c-format
 msgid "%u snap runs in developer mode, without a working sandbox"
 msgid_plural "%u snaps run in developer mode, without a working sandbox"
 msgstr[0] "%u snap kjører i utviklermodus, uten en fungerende sandkasse"
 msgstr[1] "%u snaps kjører i utviklermodus, uten en fungerende sandkasse"
 
-#: src/gui/gaudit-window.c:230
+#: src/gui/gaudit-window.c:231
 msgid "Snaps are updated automatically"
 msgstr "Snaps oppdateres automatisk"
 
-#: src/gui/gaudit-window.c:232
+#: src/gui/gaudit-window.c:233
 #, c-format
 msgid "%u snap runs without a sandbox by design (classic)"
 msgid_plural "%u snaps run without a sandbox by design (classic)"
 msgstr[0] "%u snap kjører uten sandkasse med vilje (classic)"
 msgstr[1] "%u snaps kjører uten sandkasse med vilje (classic)"
 
-#: src/gui/gaudit-window.c:241
+#: src/gui/gaudit-window.c:242
 msgid "Snap apps"
 msgstr "Snap-apper"
 
 #. Translators: %s is a list of package systems, e.g. "rpm, Nix".
-#: src/gui/gaudit-window.c:251
+#: src/gui/gaudit-window.c:252
 #, c-format
 msgid "Packages managed by %s are not checked"
 msgstr "Pakker som styres av %s, blir ikke sjekket"
 
-#: src/gui/gaudit-window.c:252
+#: src/gui/gaudit-window.c:253
 msgid "Other package systems"
 msgstr "Andre pakkesystemer"
 
-#: src/gui/gaudit-window.c:257
+#: src/gui/gaudit-window.c:258
 msgid "An antivirus program is installed"
 msgstr "Et antivirusprogram er installert"
 
-#: src/gui/gaudit-window.c:258
+#: src/gui/gaudit-window.c:259
 msgid "No antivirus program found"
 msgstr "Fant ikke noe antivirusprogram"
 
-#: src/gui/gaudit-window.c:259
+#: src/gui/gaudit-window.c:260
 msgid "Antivirus"
 msgstr "Antivirus"
 
-#: src/gui/gaudit-window.c:263
+#: src/gui/gaudit-window.c:264
 msgid "A firewall is installed"
 msgstr "En brannmur er installert"
 
-#: src/gui/gaudit-window.c:264
+#: src/gui/gaudit-window.c:265
 msgid "No firewall found"
 msgstr "Fant ingen brannmur"
 
-#: src/gui/gaudit-window.c:265 src/gui/gaudit-task.c:13
+#: src/gui/gaudit-window.c:266 src/gui/gaudit-task.c:13
 msgid "Firewall"
 msgstr "Brannmur"
 
-#: src/gui/gaudit-window.c:269
+#: src/gui/gaudit-window.c:270
 msgid "Could not find out which services listen on the network"
 msgstr "Kunne ikke finne ut hvilke tjenester som lytter på nettverket"
 
-#: src/gui/gaudit-window.c:271
+#: src/gui/gaudit-window.c:272
 msgid "No services listen for connections from the network"
 msgstr "Ingen tjenester lytter etter tilkoblinger fra nettverket"
 
-#: src/gui/gaudit-window.c:274
+#: src/gui/gaudit-window.c:275
 #, c-format
 msgid "%u service listens for connections from the network."
 msgid_plural "%u services listen for connections from the network."
 msgstr[0] "%u tjeneste lytter etter tilkoblinger fra nettverket."
 msgstr[1] "%u tjenester lytter etter tilkoblinger fra nettverket."
 
-#: src/gui/gaudit-window.c:278
+#: src/gui/gaudit-window.c:279
 msgid "None of them run under your account."
 msgstr "Ingen av dem kjører under kontoen din."
 
-#: src/gui/gaudit-window.c:279
+#: src/gui/gaudit-window.c:280
 #, c-format
 msgid "%u of them runs under your account."
 msgid_plural "%u of them run under your account."
 msgstr[0] "%u av dem kjører under kontoen din."
 msgstr[1] "%u av dem kjører under kontoen din."
 
-#: src/gui/gaudit-window.c:284
+#: src/gui/gaudit-window.c:285
 msgid "The firewall check shows whether they can be reached."
 msgstr "Brannmursjekken viser om de kan nås."
 
-#: src/gui/gaudit-window.c:286
+#: src/gui/gaudit-window.c:287
 msgid "Network services"
 msgstr "Nettverkstjenester"
 
-#: src/gui/gaudit-window.c:290
+#: src/gui/gaudit-window.c:291
 msgid "Could not find out where security updates come from"
 msgstr "Fant ikke ut hvor sikkerhetsoppdateringene kommer fra"
 
-#: src/gui/gaudit-window.c:292
+#: src/gui/gaudit-window.c:293
 msgid "Security updates come directly from the distribution"
 msgstr "Sikkerhetsoppdateringene kommer direkte fra distribusjonen"
 
 #. Translators: %s is a host name, e.g. no.archive.ubuntu.com.
-#: src/gui/gaudit-window.c:295
+#: src/gui/gaudit-window.c:296
 #, c-format
 msgid "Security updates come from %s, a mirror that may lag behind"
 msgstr "Sikkerhetsoppdateringene kommer fra %s, et speil som kan ligge etter"
 
-#: src/gui/gaudit-window.c:297
+#: src/gui/gaudit-window.c:298
 msgid "Source of security updates"
 msgstr "Kilde for sikkerhetsoppdateringer"
 
-#: src/gui/gaudit-window.c:301
+#: src/gui/gaudit-window.c:302
 msgid "Could not check the private files"
 msgstr "Kunne ikke sjekke de private filene"
 
-#: src/gui/gaudit-window.c:303
+#: src/gui/gaudit-window.c:304
 msgid "Private files and folders are protected"
 msgstr "Private filer og mapper er beskyttet"
 
 #. Translators: %s is the first file or folder, e.g. ~/.ssh/id_ed25519.
-#: src/gui/gaudit-window.c:306
+#: src/gui/gaudit-window.c:307
 #, c-format
 msgid "%u private file or folder can be reached by others: %s"
 msgid_plural "%u private files or folders can be reached by others, e.g. %s"
 msgstr[0] "%u privat fil eller mappe kan nås av andre: %s"
 msgstr[1] "%u private filer eller mapper kan nås av andre, f.eks. %s"
 
-#: src/gui/gaudit-window.c:310
+#: src/gui/gaudit-window.c:311
 msgid "Private files"
 msgstr "Private filer"
 
-#: src/gui/gaudit-window.c:316
+#: src/gui/gaudit-window.c:317
 msgid "Could not find out when updates were last checked for"
 msgstr "Fant ikke ut når det sist ble sett etter oppdateringer"
 
-#: src/gui/gaudit-window.c:320
+#: src/gui/gaudit-window.c:321
 msgid "Last checked today"
 msgstr "Sist sjekket i dag"
 
-#: src/gui/gaudit-window.c:322
+#: src/gui/gaudit-window.c:323
 #, c-format
 msgid "Last checked %d day ago"
 msgid_plural "Last checked %d days ago"
 msgstr[0] "Sist sjekket for %d dag siden"
 msgstr[1] "Sist sjekket for %d dager siden"
 
-#: src/gui/gaudit-window.c:327
+#: src/gui/gaudit-window.c:328
 msgid "Checking for updates"
 msgstr "Se etter oppdateringer"
 
-#: src/gui/gaudit-window.c:331
+#: src/gui/gaudit-window.c:332
 msgid "Could not find out whether updates are waiting"
 msgstr "Fant ikke ut om det venter oppdateringer"
 
-#: src/gui/gaudit-window.c:333
+#: src/gui/gaudit-window.c:334
 msgid "No updates are waiting"
 msgstr "Ingen oppdateringer venter"
 
-#: src/gui/gaudit-window.c:335
+#: src/gui/gaudit-window.c:336
 #, c-format
 msgid "%u update is waiting to be installed"
 msgid_plural "%u updates are waiting to be installed"
 msgstr[0] "%u oppdatering venter på å bli installert"
 msgstr[1] "%u oppdateringer venter på å bli installert"
 
-#: src/gui/gaudit-window.c:339
+#: src/gui/gaudit-window.c:340
 msgid "Pending updates"
 msgstr "Ventende oppdateringer"
 
-#: src/gui/gaudit-window.c:343
+#: src/gui/gaudit-window.c:344
 msgid "Could not find out where the installed packages come from"
 msgstr "Fant ikke ut hvor de installerte pakkene kommer fra"
 
-#: src/gui/gaudit-window.c:345
+#: src/gui/gaudit-window.c:346
 msgid "All packages come from a software source"
 msgstr "Alle pakker kommer fra en programvarekilde"
 
-#: src/gui/gaudit-window.c:347
+#: src/gui/gaudit-window.c:348
 #, c-format
 msgid "%u package is no longer offered by any software source"
 msgid_plural "%u packages are no longer offered by any software source"
 msgstr[0] "%u pakke tilbys ikke lenger av noen programvarekilde"
 msgstr[1] "%u pakker tilbys ikke lenger av noen programvarekilde"
 
-#: src/gui/gaudit-window.c:351
+#: src/gui/gaudit-window.c:352
 msgid "Packages without a source"
 msgstr "Pakker uten kilde"
 
-#: src/gui/gaudit-window.c:355
+#: src/gui/gaudit-window.c:356
 msgid "Updates are installed automatically"
 msgstr "Oppdateringer installeres automatisk"
 
-#: src/gui/gaudit-window.c:357
+#: src/gui/gaudit-window.c:358
 msgid "Automatic updates are switched off"
 msgstr "Automatiske oppdateringer er slått av"
 
-#: src/gui/gaudit-window.c:358
+#: src/gui/gaudit-window.c:359
 msgid "Could not find out whether automatic updates are switched on"
 msgstr "Fant ikke ut om automatiske oppdateringer er slått på"
 
-#: src/gui/gaudit-window.c:359
+#: src/gui/gaudit-window.c:360
 msgid "Automatic updates"
 msgstr "Automatiske oppdateringer"
 
-#: src/gui/gaudit-window.c:363
+#: src/gui/gaudit-window.c:364
 msgid "Software needed to check Flatpak apps is missing"
 msgstr "Programvare som trengs for å sjekke Flatpak-apper, mangler"
 
-#: src/gui/gaudit-window.c:365
+#: src/gui/gaudit-window.c:366
 msgid "Could not check the Flatpak apps"
 msgstr "Kunne ikke sjekke Flatpak-appene"
 
-#: src/gui/gaudit-window.c:367
+#: src/gui/gaudit-window.c:368
 msgid "No apps use runtimes without security updates"
 msgstr "Ingen apper bruker runtimes uten sikkerhetsoppdateringer"
 
-#: src/gui/gaudit-window.c:372
+#: src/gui/gaudit-window.c:373
 #, c-format
 msgid "%u app uses a runtime without security updates"
 msgid_plural "%u apps use runtimes without security updates"
 msgstr[0] "%u app bruker en runtime uten sikkerhetsoppdateringer"
 msgstr[1] "%u apper bruker runtimes uten sikkerhetsoppdateringer"
 
-#: src/gui/gaudit-window.c:377
+#: src/gui/gaudit-window.c:378
 #, c-format
 msgid "%u unused outdated runtime can be removed"
 msgid_plural "%u unused outdated runtimes can be removed"
 msgstr[0] "%u ubrukt, utdatert runtime kan fjernes"
 msgstr[1] "%u ubrukte, utdaterte runtimes kan fjernes"
 
-#: src/gui/gaudit-window.c:382
+#: src/gui/gaudit-window.c:383
 #, c-format
 msgid "%u outdated runtime is kept but not used by any app"
 msgid_plural "%u outdated runtimes are kept but not used by any app"
 msgstr[0] "%u utdatert runtime er beholdt, men brukes ikke av noen app"
 msgstr[1] "%u utdaterte runtimes er beholdt, men brukes ikke av noen app"
 
-#: src/gui/gaudit-window.c:397
+#: src/gui/gaudit-window.c:398
 msgid "Flatpak apps"
 msgstr "Flatpak-apper"
 
-#: src/gui/gaudit-window.c:649
+#: src/gui/gaudit-window.c:653
 msgid "Run Again"
 msgstr "Kjør igjen"
 
-#: src/gui/gaudit-window.c:649 src/gui/gaudit-window.c:679
+#: src/gui/gaudit-window.c:653 src/gui/gaudit-window.c:693
 msgid "Run These Checks"
 msgstr "Kjør disse sjekkene"
 
 #. Translators: "<why nothing new> The results shown are from <time>."
-#: src/gui/gaudit-window.c:656
+#: src/gui/gaudit-window.c:660
 #, c-format
 msgid "%s The results shown are from %s."
 msgstr "%s Resultatene som vises er fra kl. %s."
 
 #. Translators: %s is a time, e.g. 14:32.
-#: src/gui/gaudit-window.c:662
+#: src/gui/gaudit-window.c:666
 #, c-format
 msgid "Checked at %s."
 msgstr "Sjekket kl. %s."
 
-#: src/gui/gaudit-window.c:664
+#: src/gui/gaudit-window.c:668
 msgid "A closer look with administrator rights. Asks for your password."
 msgstr ""
 "En grundigere sjekk med administratorrettigheter. Ber om passordet ditt."
 
-#: src/gui/gaudit-window.c:678
+#: src/gui/gaudit-window.c:682
 msgid "Checks that need your password"
 msgstr "Sjekker som krever passord"
 
-#: src/gui/gaudit-window.c:705
+#: src/gui/gaudit-window.c:684
+msgid ""
+"Some things only the system itself may read, such as the firewall's rules. "
+"gAudit then asks for your password once and runs these checks together. They "
+"only read: nothing on the computer is changed. The administrator rights end "
+"two minutes after the last check, and never later than thirty minutes after "
+"you gave the password. While gAudit holds them, a red dot is shown in front "
+"of Audit Center."
+msgstr ""
+"Noe kan bare systemet selv lese, som brannmurens regler. gAudit ber da om "
+"passordet ditt én gang og kjører disse sjekkene sammen. De bare leser: "
+"ingenting på datamaskinen endres. Administratorrettighetene slutter to "
+"minutter etter siste sjekk, og aldri senere enn tretti minutter etter at du "
+"ga passordet. Mens gAudit har dem, vises en rød prikk foran Auditsenter."
+
+#: src/gui/gaudit-window.c:718
 msgid "checked as Debian"
 msgstr "sjekkes som Debian"
 
-#: src/gui/gaudit-window.c:706
+#: src/gui/gaudit-window.c:719
 msgid "checked as Fedora"
 msgstr "sjekkes som Fedora"
 
-#: src/gui/gaudit-window.c:707
+#: src/gui/gaudit-window.c:720
 msgid "checked as Arch"
 msgstr "sjekkes som Arch"
 
-#: src/gui/gaudit-window.c:708
+#: src/gui/gaudit-window.c:721
 msgid "general checks only"
 msgstr "bare generelle sjekker"
 
-#: src/gui/gaudit-window.c:711
+#: src/gui/gaudit-window.c:724
 msgid "Unknown system"
 msgstr "Ukjent system"
 
 #. Translators: "<system> · <how gAudit checks it>",
 #. * e.g. "Ubuntu 26.04 LTS · checked as Debian".
-#: src/gui/gaudit-window.c:714
+#: src/gui/gaudit-window.c:727
 #, c-format
 msgid "%s · %s"
 msgstr "%s · %s"
 
-#: src/gui/gaudit-window.c:717
+#: src/gui/gaudit-window.c:730
 msgid "This computer"
 msgstr "Denne maskinen"
 
-#: src/gui/gaudit-window.c:721
+#: src/gui/gaudit-window.c:734
 msgid "Unknown host name"
 msgstr "Ukjent vertsnavn"
 
-#: src/gui/gaudit-window.c:727
+#: src/gui/gaudit-window.c:740
 msgid "Checks without a password"
 msgstr "Sjekker uten passord"
 
-#: src/gui/gaudit-window.c:752
+#: src/gui/gaudit-window.c:765
 msgid "Checks"
 msgstr "Sjekker"
 
-#: src/gui/gaudit-window.c:758 src/gui/gaudit-task-page.c:213
+#: src/gui/gaudit-window.c:771 src/gui/gaudit-task-page.c:246
 msgid "Not available on this system"
 msgstr "Ikke tilgjengelig på dette systemet"
 
-#: src/gui/gaudit-window.c:759 src/gui/gaudit-task-page.c:173
+#: src/gui/gaudit-window.c:772 src/gui/gaudit-task-page.c:206
 msgid "Software is missing"
 msgstr "Programvare mangler"
 
-#: src/gui/gaudit-window.c:760
+#: src/gui/gaudit-window.c:773
 msgid "Not run yet"
 msgstr "Ikke kjørt ennå"
 
-#: src/gui/gaudit-window.c:779 src/gui/gaudit-window.c:966
+#: src/gui/gaudit-window.c:792 src/gui/gaudit-window.c:980
 msgid "Home"
 msgstr "Hjem"
 
-#: src/gui/gaudit-window.c:848
+#: src/gui/gaudit-window.c:861
 msgid "_Preferences"
 msgstr "_Innstillinger"
 
-#: src/gui/gaudit-window.c:849
+#: src/gui/gaudit-window.c:862
 msgid "_Keyboard Shortcuts"
 msgstr "_Tastatursnarveier"
 
 #. Translators: %s is the application name, which is not translated.
-#: src/gui/gaudit-window.c:851
+#: src/gui/gaudit-window.c:864
 #, c-format
 msgid "_About %s"
 msgstr "_Om %s"
 
-#: src/gui/gaudit-window.c:862
+#: src/gui/gaudit-window.c:875
 msgid "Main Menu"
 msgstr "Hovedmeny"
 
 #. Translators: Title of the main window and its sidebar.
-#: src/gui/gaudit-window.c:956 src/gui/gaudit-window.c:1014
+#: src/gui/gaudit-window.c:970 src/gui/gaudit-window.c:1028
 msgid "Audit Center"
 msgstr "Auditsenter"
 
-#: src/gui/gaudit-window.c:966
+#: src/gui/gaudit-window.c:980
 msgid "Overall status"
 msgstr "Samlet status"
 
-#: src/gui/gaudit-window.c:988 src/gui/gaudit-window.c:991
+#: src/gui/gaudit-window.c:1002 src/gui/gaudit-window.c:1005
 msgid "Running with administrator rights"
 msgstr "Kjører med administratorrettigheter"
 
-#: src/gui/gaudit-window.c:999
+#: src/gui/gaudit-window.c:1013
 msgid ""
 "gAudit holds administrator rights. They end 2 minutes after the last check "
 "that needs them, and at the latest 30 minutes after you gave the password."
@@ -513,60 +528,60 @@ msgstr ""
 "gAudit har administratorrettigheter. De slutter 2 minutter etter siste sjekk "
 "som trenger dem, og senest 30 minutter etter at du ga passordet."
 
-#: src/gui/gaudit-window.c:1005
+#: src/gui/gaudit-window.c:1019
 msgid "Drop Administrator Rights"
 msgstr "Slipp administratorrettigheter"
 
-#: src/gui/gaudit-window.c:1125
+#: src/gui/gaudit-window.c:1139
 msgid "Not checked: no password was given."
 msgstr "Ikke sjekket: det ble ikke oppgitt noe passord."
 
-#: src/gui/gaudit-window.c:1126
+#: src/gui/gaudit-window.c:1140
 msgid "Not checked: the password was not accepted."
 msgstr "Ikke sjekket: passordet ble ikke godtatt."
 
-#: src/gui/gaudit-window.c:1127
+#: src/gui/gaudit-window.c:1141
 msgid "A check could not be completed."
 msgstr "En sjekk kunne ikke fullføres."
 
-#: src/gui/gaudit-window.c:1135
+#: src/gui/gaudit-window.c:1149
 msgid "Another check is running. Try again when it has finished."
 msgstr "En annen sjekk kjører. Prøv igjen når den er ferdig."
 
-#: src/gui/gaudit-task-page.c:57
-msgid "More about this"
-msgstr "Mer om dette"
-
 #: src/gui/gaudit-task-page.c:68
+msgid "Opens a new page"
+msgstr "Åpner en ny side"
+
+#: src/gui/gaudit-task-page.c:103
 msgid "What to check"
 msgstr "Hva som skal sjekkes"
 
-#: src/gui/gaudit-task-page.c:84
+#: src/gui/gaudit-task-page.c:120
 msgid "Start"
 msgstr "Start"
 
-#: src/gui/gaudit-task-page.c:109
+#: src/gui/gaudit-task-page.c:142
 msgid "The command shown has changed, so it was not copied"
 msgstr "Kommandoen som vises er endret, så den ble ikke kopiert"
 
-#: src/gui/gaudit-task-page.c:113
+#: src/gui/gaudit-task-page.c:146
 msgid "Command copied"
 msgstr "Kommandoen er kopiert"
 
-#: src/gui/gaudit-task-page.c:142 src/gui/gaudit-task-page.c:144
+#: src/gui/gaudit-task-page.c:175 src/gui/gaudit-task-page.c:177
 msgid "Copy command"
 msgstr "Kopier kommandoen"
 
-#: src/gui/gaudit-task-page.c:161
+#: src/gui/gaudit-task-page.c:194
 msgid "Installing is not implemented yet."
 msgstr "Installering er ikke implementert ennå."
 
-#: src/gui/gaudit-task-page.c:176
+#: src/gui/gaudit-task-page.c:209
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr "Denne sjekken trenger programvare som ikke er installert: %s."
 
-#: src/gui/gaudit-task-page.c:182
+#: src/gui/gaudit-task-page.c:215
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
@@ -574,17 +589,17 @@ msgstr ""
 "Du kan installere den med knappen nedenfor, eller kopiere denne kommandoen "
 "og kjøre den i en terminal selv:"
 
-#: src/gui/gaudit-task-page.c:187
+#: src/gui/gaudit-task-page.c:220
 msgid "Install"
 msgstr "Installer"
 
-#: src/gui/gaudit-task-page.c:195
+#: src/gui/gaudit-task-page.c:228
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 "Installeringen bruker systemets programvaretjeneste og ber om passordet ditt."
 
-#: src/gui/gaudit-task-page.c:215
+#: src/gui/gaudit-task-page.c:248
 msgid "This check is not supported on this operating system yet."
 msgstr "Denne sjekken støttes ikke på dette operativsystemet ennå."
 
@@ -795,19 +810,19 @@ msgstr "Velg et antivirusprogram"
 msgid "An antivirus program looks for known malware in files."
 msgstr "Et antivirusprogram leter etter kjent skadevare i filer."
 
-#: src/gui/gaudit-category.c:101
+#: src/gui/gaudit-category.c:108
 msgid "Recommended"
 msgstr "Anbefalt"
 
-#: src/gui/gaudit-category.c:111
+#: src/gui/gaudit-category.c:118
 msgid "Install it with this command in a terminal:"
 msgstr "Installer det med denne kommandoen i en terminal:"
 
-#: src/gui/gaudit-category.c:114
+#: src/gui/gaudit-category.c:121
 msgid "Then switch it on:"
 msgstr "Slå det så på:"
 
-#: src/gui/gaudit-category.c:125
+#: src/gui/gaudit-category.c:132
 msgid "gAudit does not know how to install these on this system yet."
 msgstr "gAudit vet ikke ennå hvordan disse installeres på dette systemet."
 
@@ -919,6 +934,9 @@ msgid ""
 "Authentication is required to check the security status of this computer"
 msgstr ""
 "Autentisering kreves for å sjekke sikkerhetstilstanden på denne datamaskinen"
+
+#~ msgid "More about this"
+#~ msgstr "Mer om dette"
 
 #~ msgid "Debian"
 #~ msgstr "Debian"

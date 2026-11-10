@@ -21,6 +21,9 @@
     <file preprocess="xml-stripblanks" alias="edit-copy-symbolic.svg">icons/scalable/actions/edit-copy-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="gaudit-home-symbolic.svg">icons/scalable/actions/gaudit-home-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="go-next-symbolic.svg">icons/scalable/actions/go-next-symbolic.svg</file>
+    <!-- Mirrored for right-to-left, under both names GTK has looked for. -->
+    <file preprocess="xml-stripblanks" alias="go-next-rtl-symbolic.svg">icons/scalable/actions/go-next-rtl-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="go-next-symbolic-rtl.svg">icons/scalable/actions/go-next-rtl-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="open-menu-symbolic.svg">icons/scalable/actions/open-menu-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="preferences-system-symbolic.svg">icons/scalable/actions/preferences-system-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="system-software-install-symbolic.svg">icons/scalable/actions/system-software-install-symbolic.svg</file>

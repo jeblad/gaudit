@@ -45,6 +45,7 @@ struct _GauditWindow {
     gboolean elevated_running;
     const char *elevated_note;  /* static, translated: why the last run gave nothing */
     AdwPreferencesGroup *elevated_group;  /* weak */
+    GtkWidget *elevated_run;              /* weak: its run button */
     GPtrArray *elevated_rows;   /* the rows now in elevated_group */
 };
 
@@ -644,9 +645,12 @@ static void fill_elevated(GauditWindow *self)
         g_ptr_array_add(self->elevated_rows, row);
     }
 
-    GtkWidget *run = adw_preferences_group_get_header_suffix(group);
+    GtkWidget *run = self->elevated_run;
     if (run != NULL) {
-        gtk_button_set_label(GTK_BUTTON(run), any_done ? _("Run Again") : _("Run These Checks"));
+        /* The label is the first child of the button's box. */
+        GtkWidget *content = gtk_button_get_child(GTK_BUTTON(run));
+        gtk_label_set_label(GTK_LABEL(gtk_widget_get_first_child(content)),
+                            any_done ? _("Run Again") : _("Run These Checks"));
         gtk_widget_set_sensitive(run, !self->elevated_running);
     }
     /* One time for the group, never per row. */
@@ -676,15 +680,28 @@ static void build_elevated(GauditWindow *self, GtkWidget *box)
         return;
     AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
     adw_preferences_group_set_title(group, _("Checks that need your password"));
-    GtkWidget *run = gtk_button_new_with_label(_("Run These Checks"));
-    gtk_widget_add_css_class(run, "flat");
-    gtk_widget_set_valign(run, GTK_ALIGN_CENTER);
+    adw_preferences_group_add(group, gaudit_teaser_row_new(
+        _("Some things only the system itself may read, such as the firewall's rules. "
+          "gAudit then asks for your password once and runs these checks together. "
+          "They only read: nothing on the computer is changed. The administrator "
+          "rights end two minutes after the last check, and never later than "
+          "thirty minutes after you gave the password. While gAudit holds them, "
+          "a red dot is shown in front of Audit Center.")));
+    /* Opens the password dialog, not a page: no chevron. Not the default
+     * either: Home shows status first, and which group a coloured button
+     * belongs to would not be obvious. */
+    GtkWidget *run = gaudit_action_button_new(_("Run These Checks"), FALSE, FALSE);
     g_signal_connect(run, "clicked", G_CALLBACK(on_run_elevated_clicked), NULL);
-    adw_preferences_group_set_header_suffix(group, run);
     g_ptr_array_set_size(self->elevated_rows, 0);  /* rows of an earlier page are gone */
     set_weak(&self->elevated_group, group);
+    set_weak(&self->elevated_run, run);
     fill_elevated(self);
-    gtk_box_append(GTK_BOX(box), GTK_WIDGET(group));
+    /* Close under its group, so it reads as that group's button, not the
+     * page's: the page's own spacing between groups is wider. */
+    GtkWidget *section = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_box_append(GTK_BOX(section), GTK_WIDGET(group));
+    gtk_box_append(GTK_BOX(section), run);
+    gtk_box_append(GTK_BOX(box), section);
 }
 
 static AdwNavigationPage *build_home(GauditWindow *self)
@@ -930,6 +947,7 @@ static void gaudit_window_dispose(GObject *object)
     GauditWindow *win = GAUDIT_WINDOW(object);
     set_weak(&win->home_status, NULL);
     set_weak(&win->elevated_group, NULL);
+    set_weak(&win->elevated_run, NULL);
     g_clear_pointer(&win->elevated_rows, g_ptr_array_unref);
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
         set_weak(&win->rows[k], NULL);

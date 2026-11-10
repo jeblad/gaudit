@@ -553,6 +553,15 @@ int main(int argc, char *argv[])
         return run_session();
     if (argc == 2 && strcmp(argv[1], "packages") == 0)
         return list_packages();
+#if GAUDIT_DEVELOPER_BUILD
+    /* Developer builds only: see the pages for missing software. */
+    static const char pretend[] = "--pretend-missing=";
+    if (argc == 2 && strncmp(argv[1], pretend, sizeof pretend - 1) == 0) {
+        if (gaudit_capability_pretend_missing(argv[1] + sizeof pretend - 1) != 0)
+            return 2;
+        return status_refresh();
+    }
+#endif
     fputs("usage: gaudit-orchestrator [session | packages]\n", stderr);
     return 2;
 }

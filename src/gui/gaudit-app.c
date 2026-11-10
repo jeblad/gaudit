@@ -82,7 +82,17 @@ static void refresh_status(GauditApp *self, GauditWindow *view)
     job->app = g_object_ref(self);
     job->view = g_object_ref(view);
     gaudit_window_begin_status(view);
-    gaudit_orchestrator_start(NULL, ORCHESTRATOR_TIMEOUT_S, FALSE, on_status_line, on_status_done, job);
+    const char *const *args = NULL;
+#if GAUDIT_DEVELOPER_BUILD
+    g_autofree char *pretend = NULL;
+    const char *dev_args[2] = { NULL, NULL };
+    if (gaudit_capability_pretended()[0] != '\0') {
+        pretend = g_strconcat("--pretend-missing=", gaudit_capability_pretended(), NULL);
+        dev_args[0] = pretend;
+        args = dev_args;
+    }
+#endif
+    gaudit_orchestrator_start(args, ORCHESTRATOR_TIMEOUT_S, FALSE, on_status_line, on_status_done, job);
 }
 
 /* Sidebar icons sit on a filled circle. It is grey, like the row
@@ -101,6 +111,17 @@ static const char app_css[] =
     "}\n"
     ".elevated-marker {\n"
     "  color: var(--destructive-color);\n"
+    "}\n"
+    /* The tool to choose on a category page: a filled badge with icon and
+     * text, so it does not rest on colour alone. */
+    ".recommended-badge {\n"
+    "  padding: 2px 10px 2px 6px;\n"
+    "  border-radius: 9999px;\n"
+    "  background-color: var(--accent-bg-color);\n"
+    "  color: var(--accent-fg-color);\n"
+    "}\n"
+    ".recommended-badge:dir(rtl) {\n"
+    "  padding: 2px 6px 2px 10px;\n"
     "}\n"
     ".navigation-sidebar row:selected .sidebar-icon {\n"
     "  background-color: var(--accent-bg-color);\n"
@@ -377,8 +398,30 @@ static void gaudit_app_class_init(GauditAppClass *klass)
     G_APPLICATION_CLASS(klass)->activate = gaudit_app_activate;
 }
 
+#if GAUDIT_DEVELOPER_BUILD
+static int on_local_options(GApplication *app, GVariantDict *options, gpointer data)
+{
+    (void)app; (void)data;
+    const char *ids = NULL;
+    if (g_variant_dict_lookup(options, "pretend-missing", "&s", &ids)
+        && gaudit_capability_pretend_missing(ids) != 0) {
+        g_printerr("gaudit: --pretend-missing takes ids like ufw,clamav\n");
+        return 2;
+    }
+    return -1;  /* go on */
+}
+#endif
+
 static void gaudit_app_init(GauditApp *self)
 {
+#if GAUDIT_DEVELOPER_BUILD
+    /* Developer builds only: see the pages for missing software. */
+    g_application_add_main_option(G_APPLICATION(self), "pretend-missing", 0, G_OPTION_FLAG_NONE,
+                                  G_OPTION_ARG_STRING,
+                                  "Pretend these tools are not installed (developer builds)",
+                                  "ufw,clamav");
+    g_signal_connect(self, "handle-local-options", G_CALLBACK(on_local_options), NULL);
+#endif
     /* Only fails on out-of-memory, which GLib treats as fatal anyway. */
     if (gaudit_model_new(&self->model) != GAUDIT_OK)
         g_error("gaudit: could not allocate model");

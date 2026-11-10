@@ -194,6 +194,14 @@ gaudit_backend_status gaudit_listening_here(unsigned *out_services, unsigned *ou
  * Presentation only: the helper re-checks anything that matters. */
 int gaudit_capability_present(const gaudit_capability *cap);
 
+/* Developer builds only (not defined otherwise, so a call fails to link):
+ * pretend the capabilities with these ids are not installed, to see the
+ * pages for missing software. `ids` is comma-separated, e.g. "ufw,clamav";
+ * only [a-z0-9-] and commas, at most 255 bytes. 0 on success, -1 if
+ * rejected. pretended() gives the list in force ("" for none). */
+int gaudit_capability_pretend_missing(const char *ids);
+const char *gaudit_capability_pretended(void);
+
 #ifdef __cplusplus
 }
 #endif

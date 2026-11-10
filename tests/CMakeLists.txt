@@ -126,3 +126,7 @@ if(DESKTOP_FILE_VALIDATE)
   add_test(NAME desktop-file
            COMMAND ${DESKTOP_FILE_VALIDATE} ${PROJECT_BINARY_DIR}/data/${GAUDIT_APP_ID}.desktop)
 endif()
+
+add_executable(test_capability test_capability.c)
+target_link_libraries(test_capability PRIVATE gaudit_backend gaudit_config)
+add_test(NAME capability COMMAND test_capability)

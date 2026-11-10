@@ -98,9 +98,15 @@ AdwNavigationPage *gaudit_category_page_new(const GauditCategory *category,
             AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
             adw_preferences_group_set_title(group, _(tool->name));
             if (pass == 0) {
-                GtkWidget *tag = gtk_label_new(_("Recommended"));
-                gtk_widget_add_css_class(tag, "accent");
-                gtk_widget_add_css_class(tag, "caption-heading");
+                /* Icon then text in reading order; the box mirrors itself
+                 * in right-to-left languages. */
+                GtkWidget *tag = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+                gtk_widget_add_css_class(tag, "recommended-badge");
+                gtk_widget_set_valign(tag, GTK_ALIGN_CENTER);
+                gtk_box_append(GTK_BOX(tag), gtk_image_new_from_icon_name("dialog-information-symbolic"));
+                GtkWidget *text = gtk_label_new(_("Recommended"));
+                gtk_widget_add_css_class(text, "caption-heading");
+                gtk_box_append(GTK_BOX(tag), text);
                 adw_preferences_group_set_header_suffix(group, tag);
             }
             GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);

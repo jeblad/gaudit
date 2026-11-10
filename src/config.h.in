@@ -9,6 +9,9 @@
 #define GAUDIT_WEBSITE       "@GAUDIT_WEBSITE@"
 #define GETTEXT_PACKAGE      "@GETTEXT_PACKAGE@"
 
+/* 1 in developer builds (build-tree paths, developer-only switches). */
+#cmakedefine01 GAUDIT_DEVELOPER_BUILD
+
 /* Absolute, compiled-in paths. Deliberately not overridable at runtime. */
 #define GAUDIT_LOCALEDIR     "@GAUDIT_LOCALEDIR@"
 #define GAUDIT_PKGLIBEXECDIR "@GAUDIT_PKGLIBEXECDIR@"

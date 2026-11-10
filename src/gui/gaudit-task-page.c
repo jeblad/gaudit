@@ -94,22 +94,36 @@ static GtkWidget *build_settings(const GauditTaskInfo *task)
 
 /* --- Missing software ----------------------------------------------------- */
 
+/* What is copied is the text in the field, as the user sees it, never
+ * data kept beside it: changing what gets copied then means changing what
+ * is shown. It is also compared with the command the field was made from,
+ * and a difference means something has changed the field: nothing is
+ * copied then. */
 static void on_copy_clicked(GtkButton *button, gpointer user_data)
 {
-    (void)user_data;
-    const char *command = g_object_get_data(G_OBJECT(button), "gaudit-command");
-    gdk_clipboard_set_text(gtk_widget_get_clipboard(GTK_WIDGET(button)), command);
+    GtkLabel *label = GTK_LABEL(user_data);
+    const char *shown = gtk_label_get_text(label);
+    const char *expected = g_object_get_data(G_OBJECT(button), "gaudit-command");
+    if (shown == NULL || g_strcmp0(shown, expected) != 0) {
+        g_warning("gaudit: the command field no longer shows its command; not copied");
+        show_toast(GTK_WIDGET(button), _("The command shown has changed, so it was not copied"));
+        return;
+    }
+    gdk_clipboard_set_text(gtk_widget_get_clipboard(GTK_WIDGET(button)), shown);
     show_toast(GTK_WIDGET(button), _("Command copied"));
 }
 
 GtkWidget *gaudit_command_field_new(const char *command_text)
 {
     char *command = g_strdup(command_text);
-    /* The command field: read-only, selectable, always left-to-right. */
+    /* The command field: read-only, selectable, always left-to-right.
+     * Plain text: never markup, so what is shown is the command itself. */
     GtkWidget *field = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
     gtk_widget_add_css_class(field, "card");
     gtk_widget_set_direction(field, GTK_TEXT_DIR_LTR);
     GtkWidget *cmd_label = gtk_label_new(command);
+    gtk_label_set_use_markup(GTK_LABEL(cmd_label), FALSE);
+    gtk_label_set_use_underline(GTK_LABEL(cmd_label), FALSE);
     gtk_label_set_selectable(GTK_LABEL(cmd_label), TRUE);
     gtk_label_set_wrap(GTK_LABEL(cmd_label), TRUE);
     gtk_label_set_wrap_mode(GTK_LABEL(cmd_label), PANGO_WRAP_WORD_CHAR);
@@ -129,7 +143,8 @@ GtkWidget *gaudit_command_field_new(const char *command_text)
     gtk_accessible_update_property(GTK_ACCESSIBLE(copy),
                                    GTK_ACCESSIBLE_PROPERTY_LABEL, _("Copy command"), -1);
     g_object_set_data_full(G_OBJECT(copy), "gaudit-command", command, g_free);
-    g_signal_connect(copy, "clicked", G_CALLBACK(on_copy_clicked), NULL);
+    /* The label lives as long as the button: both are children of field. */
+    g_signal_connect(copy, "clicked", G_CALLBACK(on_copy_clicked), cmd_label);
     gtk_box_append(GTK_BOX(field), copy);
     return field;
 }
@@ -139,7 +154,10 @@ static void on_install_clicked(GtkButton *button, gpointer user_data)
 {
     (void)user_data;
     /* TODO: install via PackageKit (D-Bus). Fallback: pkexec with the
-     * backend's fixed argv, and say clearly in the UI that it is a fallback. */
+     * backend's fixed argv, and say clearly in the UI that it is a fallback.
+     * As with copying: before installing, the field's shown text must equal
+     * the command built from the backend's fixed table; if not, install
+     * nothing. The packages come from the table, never parsed from the field. */
     show_toast(GTK_WIDGET(button), _("Installing is not implemented yet."));
 }
 

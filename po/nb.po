@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 16:51+0100\n"
+"POT-Creation-Date: 2026-11-10 17:06+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -15,36 +15,36 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/gui/gaudit-app.c:193
+#: src/gui/gaudit-app.c:203
 msgid "General"
 msgstr "Generelt"
 
-#: src/gui/gaudit-app.c:196
+#: src/gui/gaudit-app.c:206
 msgid "There is nothing to set yet."
 msgstr "Det er ingenting å stille inn ennå."
 
-#: src/gui/gaudit-app.c:206
+#: src/gui/gaudit-app.c:216
 msgid "Open Main Menu"
 msgstr "Åpne hovedmenyen"
 
-#: src/gui/gaudit-app.c:207
+#: src/gui/gaudit-app.c:217
 msgid "Preferences"
 msgstr "Innstillinger"
 
-#: src/gui/gaudit-app.c:208 src/gui/gaudit-app.c:228
+#: src/gui/gaudit-app.c:218 src/gui/gaudit-app.c:238
 msgid "Keyboard Shortcuts"
 msgstr "Tastatursnarveier"
 
-#: src/gui/gaudit-app.c:209
+#: src/gui/gaudit-app.c:219
 msgid "Quit"
 msgstr "Avslutt"
 
-#: src/gui/gaudit-app.c:253 data/gaudit.desktop.in:6
+#: src/gui/gaudit-app.c:263 data/gaudit.desktop.in:6
 msgid "Check the security status of this computer"
 msgstr "Sjekk sikkerhetstilstanden på denne datamaskinen"
 
 #. Translators: Replace with your names, one per line.
-#: src/gui/gaudit-app.c:260
+#: src/gui/gaudit-app.c:270
 msgid "translator-credits"
 msgstr ""
 
@@ -458,11 +458,11 @@ msgstr "Sjekker uten passord"
 msgid "Checks"
 msgstr "Sjekker"
 
-#: src/gui/gaudit-window.c:758 src/gui/gaudit-task-page.c:195
+#: src/gui/gaudit-window.c:758 src/gui/gaudit-task-page.c:213
 msgid "Not available on this system"
 msgstr "Ikke tilgjengelig på dette systemet"
 
-#: src/gui/gaudit-window.c:759 src/gui/gaudit-task-page.c:155
+#: src/gui/gaudit-window.c:759 src/gui/gaudit-task-page.c:173
 msgid "Software is missing"
 msgstr "Programvare mangler"
 
@@ -545,24 +545,28 @@ msgstr "Hva som skal sjekkes"
 msgid "Start"
 msgstr "Start"
 
-#: src/gui/gaudit-task-page.c:102
+#: src/gui/gaudit-task-page.c:109
+msgid "The command shown has changed, so it was not copied"
+msgstr "Kommandoen som vises er endret, så den ble ikke kopiert"
+
+#: src/gui/gaudit-task-page.c:113
 msgid "Command copied"
 msgstr "Kommandoen er kopiert"
 
-#: src/gui/gaudit-task-page.c:128 src/gui/gaudit-task-page.c:130
+#: src/gui/gaudit-task-page.c:142 src/gui/gaudit-task-page.c:144
 msgid "Copy command"
 msgstr "Kopier kommandoen"
 
-#: src/gui/gaudit-task-page.c:143
+#: src/gui/gaudit-task-page.c:161
 msgid "Installing is not implemented yet."
 msgstr "Installering er ikke implementert ennå."
 
-#: src/gui/gaudit-task-page.c:158
+#: src/gui/gaudit-task-page.c:176
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr "Denne sjekken trenger programvare som ikke er installert: %s."
 
-#: src/gui/gaudit-task-page.c:164
+#: src/gui/gaudit-task-page.c:182
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
@@ -570,17 +574,17 @@ msgstr ""
 "Du kan installere den med knappen nedenfor, eller kopiere denne kommandoen "
 "og kjøre den i en terminal selv:"
 
-#: src/gui/gaudit-task-page.c:169
+#: src/gui/gaudit-task-page.c:187
 msgid "Install"
 msgstr "Installer"
 
-#: src/gui/gaudit-task-page.c:177
+#: src/gui/gaudit-task-page.c:195
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 "Installeringen bruker systemets programvaretjeneste og ber om passordet ditt."
 
-#: src/gui/gaudit-task-page.c:197
+#: src/gui/gaudit-task-page.c:215
 msgid "This check is not supported on this operating system yet."
 msgstr "Denne sjekken støttes ikke på dette operativsystemet ennå."
 

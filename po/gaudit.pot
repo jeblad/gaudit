@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-10 16:51+0100\n"
+"POT-Creation-Date: 2026-11-10 17:06+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,36 +18,36 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: src/gui/gaudit-app.c:193
+#: src/gui/gaudit-app.c:203
 msgid "General"
 msgstr ""
 
-#: src/gui/gaudit-app.c:196
+#: src/gui/gaudit-app.c:206
 msgid "There is nothing to set yet."
 msgstr ""
 
-#: src/gui/gaudit-app.c:206
+#: src/gui/gaudit-app.c:216
 msgid "Open Main Menu"
 msgstr ""
 
-#: src/gui/gaudit-app.c:207
+#: src/gui/gaudit-app.c:217
 msgid "Preferences"
 msgstr ""
 
-#: src/gui/gaudit-app.c:208 src/gui/gaudit-app.c:228
+#: src/gui/gaudit-app.c:218 src/gui/gaudit-app.c:238
 msgid "Keyboard Shortcuts"
 msgstr ""
 
-#: src/gui/gaudit-app.c:209
+#: src/gui/gaudit-app.c:219
 msgid "Quit"
 msgstr ""
 
-#: src/gui/gaudit-app.c:253 data/gaudit.desktop.in:6
+#: src/gui/gaudit-app.c:263 data/gaudit.desktop.in:6
 msgid "Check the security status of this computer"
 msgstr ""
 
 #. Translators: Replace with your names, one per line.
-#: src/gui/gaudit-app.c:260
+#: src/gui/gaudit-app.c:270
 msgid "translator-credits"
 msgstr ""
 
@@ -458,11 +458,11 @@ msgstr ""
 msgid "Checks"
 msgstr ""
 
-#: src/gui/gaudit-window.c:758 src/gui/gaudit-task-page.c:195
+#: src/gui/gaudit-window.c:758 src/gui/gaudit-task-page.c:213
 msgid "Not available on this system"
 msgstr ""
 
-#: src/gui/gaudit-window.c:759 src/gui/gaudit-task-page.c:155
+#: src/gui/gaudit-window.c:759 src/gui/gaudit-task-page.c:173
 msgid "Software is missing"
 msgstr ""
 
@@ -543,39 +543,43 @@ msgstr ""
 msgid "Start"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:102
+#: src/gui/gaudit-task-page.c:109
+msgid "The command shown has changed, so it was not copied"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:113
 msgid "Command copied"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:128 src/gui/gaudit-task-page.c:130
+#: src/gui/gaudit-task-page.c:142 src/gui/gaudit-task-page.c:144
 msgid "Copy command"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:143
+#: src/gui/gaudit-task-page.c:161
 msgid "Installing is not implemented yet."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:158
+#: src/gui/gaudit-task-page.c:176
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:164
+#: src/gui/gaudit-task-page.c:182
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:169
+#: src/gui/gaudit-task-page.c:187
 msgid "Install"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:177
+#: src/gui/gaudit-task-page.c:195
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:197
+#: src/gui/gaudit-task-page.c:215
 msgid "This check is not supported on this operating system yet."
 msgstr ""
 

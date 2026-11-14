@@ -33,7 +33,7 @@ static const struct {
      * into a finding. */
     { N_("Firewall"), "core.firewall", { GAUDIT_PROBE_FIREWALL, GAUDIT_PROBE_LISTENING }, 2 },
     { N_("Antivirus"), NULL, { GAUDIT_PROBE_ANTIVIRUS }, 1 },
-    { N_("Private Files"), NULL, { GAUDIT_PROBE_PRIVATE_FILES }, 1 },
+    { N_("Private Files"), "core.private-files", { GAUDIT_PROBE_PRIVATE_FILES }, 1 },
 };
 #define N_HOME_GROUPS (sizeof home_groups / sizeof home_groups[0])
 
@@ -175,30 +175,7 @@ static void set_summary(AdwStatusPage *status, gboolean have_status, gboolean st
  * so it never depends on colour alone. */
 static GtkWidget *verdict_icon(gaudit_verdict verdict)
 {
-    const char *icon, *css, *label;
-
-    switch (verdict) {
-    case GAUDIT_VERDICT_OK:
-        icon = "emblem-ok-symbolic";      css = "success";   label = _("OK");
-        break;
-    case GAUDIT_VERDICT_WARNING:
-        icon = "dialog-warning-symbolic"; css = "warning";   label = _("Needs attention");
-        break;
-    case GAUDIT_VERDICT_CRITICAL:
-        icon = "dialog-error-symbolic";   css = "error";     label = _("Serious");
-        break;
-    case GAUDIT_VERDICT_UNKNOWN:
-    default:
-        icon = "dialog-question-symbolic"; css = "dim-label"; label = _("Unknown");
-        break;
-    }
-
-    GtkWidget *image = gtk_image_new_from_icon_name(icon);
-    gtk_widget_add_css_class(image, css);
-    gtk_widget_set_tooltip_text(image, label);
-    gtk_accessible_update_property(GTK_ACCESSIBLE(image),
-                                   GTK_ACCESSIBLE_PROPERTY_LABEL, label, -1);
-    return image;
+    return gaudit_verdict_icon_new(verdict);
 }
 
 /* Title and subtitle for a probe result. The subtitle is newly allocated. */
@@ -290,13 +267,13 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
         *subtitle = g_strdup(r->verdict == GAUDIT_VERDICT_OK
                              ? _("An antivirus program is installed")
                              : _("No antivirus program found"));
-        return _("Antivirus");
+        return _("Antivirus program");
 
     case GAUDIT_PROBE_FIREWALL:
         *subtitle = g_strdup(r->verdict == GAUDIT_VERDICT_OK
                              ? _("A firewall is installed")
                              : _("No firewall found"));
-        return _("Firewall");
+        return _("Firewall program");
 
     case GAUDIT_PROBE_LISTENING:
         if (r->verdict == GAUDIT_VERDICT_UNKNOWN) {
@@ -341,7 +318,7 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
                                                  "%u private files or folders can be reached by others, e.g. %s",
                                                  r->count),
                                         r->count, r->text);
-        return _("Private files");
+        return _("Usual places for secrets");
 
     case GAUDIT_PROBE_PACKAGE_INDEX:
         /* When the package lists were refreshed, which is not the same as
@@ -793,8 +770,8 @@ static void fill_check_row(GauditWindow *self, gsize i)
     adw_action_row_set_subtitle(row, missing == NULL ? _("Not available on this system")
                                    : missing->len > 0 ? _("Software is missing")
                                    : self->results[i].note != NULL ? self->results[i].note
-                                   : gaudit_session_elevated() ? _("Not run yet")
-                                   : _("Needs administrator rights"));
+                                   : !task->needs_admin || gaudit_session_elevated() ? _("Not run yet")
+                                   : _("Switch to administrator to run this check"));
 }
 
 static void fill_check_rows(GauditWindow *self)

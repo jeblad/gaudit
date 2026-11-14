@@ -7,16 +7,26 @@
 #include <glib.h>
 
 #include "gaudit/run.h"
+#include "secrets.h"
 
 G_BEGIN_DECLS
 
+typedef enum {
+    GAUDIT_RESULT_FIREWALL,
+    GAUDIT_RESULT_INTEGRITY,
+    GAUDIT_RESULT_SECRETS,
+} GauditResultKind;
+
 /* What a run found: one kind of result, with its findings. */
 typedef struct {
-    gaudit_run_event_type kind;  /* GAUDIT_RUN_EVENT_FIREWALL or _INTEGRITY */
+    GauditResultKind kind;
     gaudit_firewall_report firewall;
     gaudit_integrity_report integrity;
     gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
     unsigned n_files;
+    gaudit_secrets_summary secrets;
+    gaudit_secret_finding secret[GAUDIT_SECRETS_MAX_SHOWN];
+    unsigned n_secrets;
 } GauditRunResult;
 
 /* The verdict of a result. */
@@ -33,8 +43,10 @@ typedef void (*GauditRunProgressFn)(gpointer user_data);
 
 /* Starts the run command (e.g. "run firewall"). "elevate" only gets the
  * elevated rights (the password, unless the lease still runs) and ends
- * GAUDIT_RUN_OK without a result. FALSE if another run is under way; then
- * nothing is called. */
+ * GAUDIT_RUN_OK without a result. "user <mode>" (e.g. "user secrets") runs
+ * as the user, in an orchestrator of its own, without the helper and
+ * without a password. FALSE if another run is under way; then nothing is
+ * called. */
 gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress,
                             GauditRunDoneFn on_done, gpointer user_data);
 

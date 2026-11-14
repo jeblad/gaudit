@@ -125,6 +125,7 @@ typedef struct {
     GauditApp *app;
     GauditWindow *view;
     guint level;
+    gboolean with_admin;  /* also the tasks that need the password */
     gsize next;      /* the task index to look at next */
     gsize current;
 } LevelJob;
@@ -163,7 +164,8 @@ static void level_next(LevelJob *job)
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
     while (job->next < n_tasks
-           && (tasks[job->next].home_level == 0 || tasks[job->next].home_level > job->level))
+           && (tasks[job->next].home_level == 0 || tasks[job->next].home_level > job->level
+               || (tasks[job->next].needs_admin && !job->with_admin)))
         job->next++;
     if (job->next >= n_tasks) {
         level_finish(job);
@@ -178,23 +180,33 @@ static void level_next(LevelJob *job)
     }
 }
 
-/* The checks of the level chosen on Home, in the active window. */
+/* The checks of the level chosen on Home. with_admin: also those that
+ * need the password, which is asked for only after an explicit act
+ * (picking a level, the administrator switch); when the app opens, only
+ * the others run. */
+static void start_level_job(GauditApp *app, GauditWindow *view, gboolean with_admin)
+{
+    if (level_job != NULL)
+        return;
+    guint level = gaudit_window_home_level(view);
+    if (level == GAUDIT_LEVEL_QUICK)
+        return;  /* Home's own probes cover it */
+    LevelJob *job = g_new0(LevelJob, 1);
+    job->app = g_object_ref(app);
+    job->view = g_object_ref(view);
+    job->level = level;
+    job->with_admin = with_admin || gaudit_session_elevated();
+    level_job = job;
+    level_next(job);
+}
+
 static void on_run_level(GSimpleAction *action, GVariant *param, gpointer app)
 {
     (void)action;
     (void)param;
     GtkWindow *win = gtk_application_get_active_window(GTK_APPLICATION(app));
-    if (!GAUDIT_IS_WINDOW(win) || level_job != NULL)
-        return;
-    guint level = gaudit_window_home_level(GAUDIT_WINDOW(win));
-    if (level == GAUDIT_LEVEL_QUICK)
-        return;  /* Home's own probes cover it */
-    LevelJob *job = g_new0(LevelJob, 1);
-    job->app = g_object_ref(GAUDIT_APP(app));
-    job->view = g_object_ref(GAUDIT_WINDOW(win));
-    job->level = level;
-    level_job = job;
-    level_next(job);
+    if (GAUDIT_IS_WINDOW(win))
+        start_level_job(GAUDIT_APP(app), GAUDIT_WINDOW(win), TRUE);
 }
 
 /* The switch in the header bar: administrator rights before any check. The
@@ -407,6 +419,7 @@ static void gaudit_app_activate(GApplication *app)
     if (win == NULL) {
         GauditWindow *view = gaudit_window_new(GTK_APPLICATION(app));
         refresh_status(self, view);
+        start_level_job(self, view, FALSE);  /* never the password when the app opens */
         win = GTK_WINDOW(view);
     }
     gtk_window_present(win);

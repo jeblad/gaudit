@@ -36,6 +36,62 @@ static GtkWidget *wrapped_label(const char *text)
 
 /* --- Shared pieces --------------------------------------------------------- */
 
+GtkWidget *gaudit_verdict_icon_new(gaudit_verdict verdict)
+{
+    const char *icon, *css, *label;
+
+    switch (verdict) {
+    case GAUDIT_VERDICT_OK:
+        icon = "emblem-ok-symbolic";      css = "success";   label = _("OK");
+        break;
+    case GAUDIT_VERDICT_WARNING:
+        icon = "dialog-warning-symbolic"; css = "warning";   label = _("Needs attention");
+        break;
+    case GAUDIT_VERDICT_CRITICAL:
+        icon = "dialog-error-symbolic";   css = "error";     label = _("Serious");
+        break;
+    case GAUDIT_VERDICT_UNKNOWN:
+    default:
+        icon = "dialog-question-symbolic"; css = "dim-label"; label = _("Unknown");
+        break;
+    }
+
+    GtkWidget *image = gtk_image_new_from_icon_name(icon);
+    gtk_widget_add_css_class(image, css);
+    gtk_widget_set_tooltip_text(image, label);
+    gtk_accessible_update_property(GTK_ACCESSIBLE(image),
+                                   GTK_ACCESSIBLE_PROPERTY_LABEL, label, -1);
+    return image;
+}
+
+AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, const char *how,
+                                       const char *command, const char *note)
+{
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_set_margin_top(box, 24);
+    gtk_widget_set_margin_bottom(box, 24);
+    gtk_widget_set_margin_start(box, 12);
+    gtk_widget_set_margin_end(box, 12);
+    GtkWidget *what = wrapped_label(problem);
+    gtk_widget_add_css_class(what, "title-4");
+    gtk_box_append(GTK_BOX(box), what);
+    gtk_box_append(GTK_BOX(box), wrapped_label(how));
+    if (command != NULL)
+        gtk_box_append(GTK_BOX(box), gaudit_command_field_new(command));
+    if (note != NULL) {
+        GtkWidget *small = wrapped_label(note);
+        gtk_widget_add_css_class(small, "dim-label");
+        gtk_widget_add_css_class(small, "caption");
+        gtk_box_append(GTK_BOX(box), small);
+    }
+    GtkWidget *clamp = adw_clamp_new();
+    adw_clamp_set_child(ADW_CLAMP(clamp), box);
+    GtkWidget *scroller = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), clamp);
+    return gaudit_page_wrap(scroller, title, "fix");
+}
+
 static void on_teaser_expanded(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     (void)pspec; (void)user_data;

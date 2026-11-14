@@ -43,6 +43,9 @@
     <!-- The Updates plugin's sidebar icon: adwaita-icon-theme's
          package-x-generic-symbolic (LGPL-3.0, as above), renamed. -->
     <file preprocess="xml-stripblanks" alias="gaudit-packages-symbolic.svg">icons/scalable/actions/gaudit-packages-symbolic.svg</file>
+    <!-- The Private Files plugin's sidebar icon: adwaita-icon-theme's
+         dialog-password-symbolic (LGPL-3.0, as above), renamed. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-private-files-symbolic.svg">icons/scalable/actions/gaudit-private-files-symbolic.svg</file>
     <!-- The user/administrator switch: from the GNOME icon library, Jakub
          Steiner, CC0 (one person, and two, the front one in the accent
          colour), under own names so no theme can change or hide them. -->

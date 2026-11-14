@@ -7,6 +7,7 @@
 #include "gaudit-category.h"
 #include "gaudit-firewall-text.h"
 #include "gaudit-run-page.h"
+#include "gaudit-secrets-page.h"
 #include "gaudit-session.h"
 #include "gaudit/backend.h"
 #include "gaudit-task-page.h"
@@ -140,7 +141,9 @@ char *gaudit_run_result_title(const GauditRunResult *r)
 {
     if (r == NULL)
         return g_strdup(_("Unknown"));
-    if (r->kind == GAUDIT_RUN_EVENT_FIREWALL) {
+    if (r->kind == GAUDIT_RESULT_SECRETS)
+        return gaudit_secrets_title(r);
+    if (r->kind == GAUDIT_RESULT_FIREWALL) {
         const char *icon;
         char *title = NULL, *description = NULL;
         gaudit_firewall_text(&r->firewall, &icon, &title, &description);
@@ -247,11 +250,14 @@ static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
                         gpointer user_data)
 {
     RunJob *job = user_data;
-    if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RUN_EVENT_FIREWALL) {
+    if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_SECRETS) {
+        if (job->status != NULL)
+            gaudit_secrets_show(job->status, result);
+    } else if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_FIREWALL) {
         job->firewall = result->firewall;
         show_firewall(job);
     } else if (status == GAUDIT_RUN_OK && result != NULL
-               && result->kind == GAUDIT_RUN_EVENT_INTEGRITY) {
+               && result->kind == GAUDIT_RESULT_INTEGRITY) {
         show_integrity(job, result);
     } else if (status == GAUDIT_RUN_CANCELLED) {
         show(job, "dialog-information-symbolic", _("The check was cancelled"),
@@ -277,8 +283,12 @@ AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)
 #else
     adw_status_page_set_icon_name(status, "content-loading-symbolic");
 #endif
-    adw_status_page_set_title(status, _("Waiting for the password"));
-    adw_status_page_set_description(status, _(task->run_waiting));
+    if (task->needs_admin) {
+        adw_status_page_set_title(status, _("Waiting for the password"));
+        adw_status_page_set_description(status, _(task->run_waiting));
+    } else {
+        adw_status_page_set_title(status, _(task->run_running));
+    }
     AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status), _(task->title), "run");
 
     RunJob *job = g_new0(RunJob, 1);

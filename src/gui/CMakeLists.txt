@@ -25,7 +25,6 @@ add_executable(gaudit
   gaudit-app.c
   gaudit-orchestrator.c
   gaudit-run-page.c
-  gaudit-firewall-text.c
   gaudit-category.c
   gaudit-crossfade.c
   gaudit-sourceless-page.c
@@ -34,5 +33,6 @@ add_executable(gaudit
   gaudit-task.c
   gaudit-task-page.c
 )
+target_include_directories(gaudit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(gaudit PRIVATE PkgConfig::ADWAITA gaudit_model gaudit_backend gaudit_probe gaudit_config)
 install(TARGETS gaudit RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

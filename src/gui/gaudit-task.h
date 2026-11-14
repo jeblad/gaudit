@@ -35,6 +35,7 @@ typedef struct {
     guint home_level;         /* the Home report level it runs at (GAUDIT_LEVEL_NORMAL,
                                  _THOROUGH), as a row in its group; 0: not on Home */
     const char *home_title;   /* that row's title, N_()-marked */
+    gboolean needs_admin;     /* its run needs administrator rights (the password) */
     const char *backend;      /* only with this package backend (e.g. "debian"); NULL: any */
     const char *run_waiting;  /* page 2 while the password is asked for, N_()-marked */
     const char *run_running;  /* page 2 while the check runs, N_()-marked */

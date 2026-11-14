@@ -6,5 +6,5 @@ target_link_libraries(gaudit-probe-dump PRIVATE gaudit_probe)
 
 add_executable(gaudit-secret-scan gaudit-secret-scan.c)
 target_compile_definitions(gaudit-secret-scan PRIVATE _GNU_SOURCE)
-target_include_directories(gaudit-secret-scan PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+target_include_directories(gaudit-secret-scan PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/private-files/backend)
 target_link_libraries(gaudit-secret-scan PRIVATE gaudit_backend)

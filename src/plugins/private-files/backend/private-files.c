@@ -25,16 +25,22 @@ typedef struct {
     const char *home;
     uid_t uid;
     gid_t own_gid;  /* the user's private group, or (gid_t)-1 */
-    char *first;
-    size_t first_len;
+    gaudit_private_fn fn;
+    void *ctx;
     int problems;
 } state;
 
+static void report_rule(state *st, const char *rel, gaudit_private_rule rule)
+{
+    if (st->fn != NULL)
+        st->fn(rel, rule, st->ctx);
+    st->problems++;
+}
+
+/* check() is only used for the tools' own rules (and nothing else). */
 static void report(state *st, const char *rel)
 {
-    if (st->problems == 0 && st->first != NULL && st->first_len > 0)
-        snprintf(st->first, st->first_len, "~/%s", rel);
-    st->problems++;
+    report_rule(st, rel, GAUDIT_PRIVATE_TOOL_MODE);
 }
 
 /* rel under home must, if it exists, be owned by uid and have none of the
@@ -214,7 +220,7 @@ static void check_reach(state *st, const char *rule)
 {
     if (strchr(rule, '*') == NULL) {
         if (reachable_by_others(st, rule) == 1)
-            report(st, rule);
+            report_rule(st, rule, GAUDIT_PRIVATE_REACH);
         return;
     }
     char pattern[PATH_MAX];
@@ -231,27 +237,25 @@ static void check_reach(state *st, const char *rule)
     for (size_t i = 0; i < g.gl_pathc && i < MAX_MATCHES; i++) {
         const char *rel = g.gl_pathv[i] + home_len + 1;
         if (strlen(g.gl_pathv[i]) > home_len && reachable_by_others(st, rel) == 1)
-            report(st, rel);
+            report_rule(st, rel, GAUDIT_PRIVATE_REACH);
     }
     globfree(&g);
 }
 
-int gaudit_private_files_check(const char *home, uid_t uid, gid_t own_gid,
-                               char *first, size_t first_len)
+int gaudit_private_files_each(const char *home, uid_t uid, gid_t own_gid,
+                              gaudit_private_fn fn, void *ctx)
 {
     struct stat sb;
     if (home == NULL || home[0] != '/' || stat(home, &sb) != 0 || !S_ISDIR(sb.st_mode)
         || strlen(home) >= PATH_MAX / 2)
         return -1;
-    if (first != NULL && first_len > 0)
-        first[0] = '\0';
 
-    state st = { home, uid, own_gid, first, first_len, 0 };
+    state st = { home, uid, own_gid, fn, ctx, 0 };
 
     /* The home directory itself: writable by others undoes everything below
      * (and sshd refuses it with StrictModes). */
     if (sb.st_uid != uid || (sb.st_mode & NO_WRITE) != 0)
-        report(&st, "");
+        report_rule(&st, "", GAUDIT_PRIVATE_HOME_WRITABLE);
 
     check(&st, ".ssh", NO_ACCESS, 1);
     check_ssh_keys(&st);
@@ -266,6 +270,29 @@ int gaudit_private_files_check(const char *home, uid_t uid, gid_t own_gid,
         check_reach(&st, reach_rules[i]);
 
     return st.problems;
+}
+
+typedef struct {
+    char *first;
+    size_t len;
+    int seen;
+} first_state;
+
+static void keep_first(const char *rel, gaudit_private_rule rule, void *ctx)
+{
+    (void)rule;
+    first_state *f = ctx;
+    if (f->seen++ == 0 && f->first != NULL && f->len > 0)
+        snprintf(f->first, f->len, "~/%s", rel);
+}
+
+int gaudit_private_files_check(const char *home, uid_t uid, gid_t own_gid,
+                               char *first, size_t first_len)
+{
+    if (first != NULL && first_len > 0)
+        first[0] = '\0';
+    first_state f = { first, first_len, 0 };
+    return gaudit_private_files_each(home, uid, own_gid, keep_first, &f);
 }
 
 gaudit_backend_status gaudit_private_files_here(unsigned *out_count, char *first, size_t first_len)

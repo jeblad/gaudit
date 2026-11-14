@@ -5,6 +5,7 @@
 #include <adwaita.h>
 
 #include "gaudit-task.h"
+#include "gaudit/model.h"
 
 G_BEGIN_DECLS
 
@@ -31,6 +32,19 @@ GtkWidget *gaudit_teaser_row_new(const char *text);
  * at once), none when it acts in place (e.g. opens a dialog). Accent
  * colour only when it is the page's one obvious default. */
 GtkWidget *gaudit_action_button_new(const char *label, gboolean opens_page, gboolean is_default);
+
+/* A verdict as an icon with its own shape (check mark, warning, error,
+ * question mark), a tooltip and an accessible label, so it never depends
+ * on colour alone. */
+GtkWidget *gaudit_verdict_icon_new(gaudit_verdict verdict);
+
+/* A page that fixes one problem a report found, reached through the
+ * chevron on the row where the problem is, so the report itself stays a
+ * report. problem says what is wrong, how what to do; command (may be
+ * NULL) is the manual way, to copy and run; note (may be NULL) comes
+ * last, small. All plain text. */
+AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, const char *how,
+                                       const char *command, const char *note);
 
 /* Page 1 for a task: settings, or an explanation if software is missing. */
 AdwNavigationPage *gaudit_task_page_new(const GauditTaskInfo *task,

@@ -11,11 +11,22 @@
  * others less); this is the GUI's own limit on top. */
 #define RUN_WATCHDOG_S (21 * 60)
 
+/* Someone else waiting for the same run (gaudit_session_attach). */
 typedef struct {
-    char *command;
     GauditRunProgressFn on_progress;
     GauditRunDoneFn on_done;
     gpointer user_data;
+} Observer;
+
+typedef struct {
+    char *command;
+    GStrv args;             /* the run's parameters, for runs as the user */
+    GauditRunProgressFn on_progress;
+    GauditRunDoneFn on_done;
+    gpointer user_data;
+    GArray *observers;      /* Observer */
+    GauditOrchestrator *user_orch;  /* a user run's own orchestrator */
+    gboolean cancelled;     /* the user stopped it */
     gboolean wants_result;  /* FALSE for "elevate", which only starts the helper */
     gboolean user;          /* runs as the user, not through the session */
     gboolean (*collection_line)(const char *line, gboolean *last);  /* user runs */
@@ -58,10 +69,18 @@ static void end_run(gaudit_run_status status)
         status == GAUDIT_RUN_OK && run->have_result ? &run->result : NULL;
     if (result != NULL && S.result_listener != NULL)
         S.result_listener(run->command, result, S.result_listener_data);
+    if (run->cancelled && status != GAUDIT_RUN_OK)
+        status = GAUDIT_RUN_CANCELLED;
     run->on_done(status, result, run->user_data);
+    for (guint i = 0; i < run->observers->len; i++) {
+        Observer *o = &g_array_index(run->observers, Observer, i);
+        o->on_done(status, result, o->user_data);
+    }
+    g_array_unref(run->observers);
     if (run->result.lines != NULL)
         g_ptr_array_unref(run->result.lines);
     g_free(run->command);
+    g_strfreev(run->args);
     g_free(run);
 }
 
@@ -80,6 +99,11 @@ static gboolean on_line(const char *line, gpointer user_data)
         set_elevated(ev.elevated);
         if (ev.elevated && R != NULL && R->on_progress != NULL)
             R->on_progress(R->user_data);
+        for (guint i = 0; ev.elevated && R != NULL && i < R->observers->len; i++) {
+            Observer *o = &g_array_index(R->observers, Observer, i);
+            if (o->on_progress != NULL)
+                o->on_progress(o->user_data);
+        }
         return TRUE;
     case GAUDIT_RUN_EVENT_FIREWALL:
         if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0)
@@ -174,16 +198,25 @@ static gboolean on_watchdog(gpointer user_data)
 gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress,
                             GauditRunDoneFn on_done_fn, gpointer user_data)
 {
+    return gaudit_session_run_args(command, NULL, on_progress, on_done_fn, user_data);
+}
+
+gboolean gaudit_session_run_args(const char *command, const char *const *extra,
+                                 GauditRunProgressFn on_progress, GauditRunDoneFn on_done_fn,
+                                 gpointer user_data)
+{
     g_return_val_if_fail(command != NULL && on_done_fn != NULL, FALSE);
     if (S.run != NULL)
         return FALSE;
 
     Run *run = g_new0(Run, 1);
     run->command = g_strdup(command);
+    run->args = extra != NULL ? g_strdupv((char **)extra) : g_new0(char *, 1);
     run->on_progress = on_progress;
     run->on_done = on_done_fn;
     run->user_data = user_data;
     run->wants_result = g_strcmp0(command, "elevate") != 0;
+    run->observers = g_array_new(FALSE, FALSE, sizeof(Observer));
     S.run = run;
 
     if (g_str_has_prefix(command, "user ")) {
@@ -197,16 +230,24 @@ gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress
             return TRUE;
         }
         run->result.lines = g_ptr_array_new_with_free_func(g_free);
-        /* The mode and its argument, from the plugin's fixed table. */
-        g_auto(GStrv) args = g_strsplit(mode, " ", 3);
-        if (g_strv_length(args) > 2) {
+        /* The mode and its argument, from the plugin's fixed table, then
+         * the run's parameters, each one argument as it is. */
+        g_auto(GStrv) fixed = g_strsplit(mode, " ", 3);
+        if (g_strv_length(fixed) > 2) {
             end_run(GAUDIT_RUN_FAILED);
             return TRUE;
         }
+        g_autoptr(GStrvBuilder) b = g_strv_builder_new();
+        g_strv_builder_addv(b, (const char **)fixed);
+        g_strv_builder_addv(b, (const char **)run->args);
+        g_auto(GStrv) args = g_strv_builder_end(b);
         if (on_progress != NULL)
             on_progress(user_data);  /* no password to wait for */
-        gaudit_orchestrator_start((const char *const *)args, USER_RUN_TIMEOUT_S, FALSE,
-                                  on_user_line, on_user_done, run);
+        GauditOrchestrator *orch = gaudit_orchestrator_start((const char *const *)args,
+                                                             USER_RUN_TIMEOUT_S, FALSE,
+                                                             on_user_line, on_user_done, run);
+        if (S.run == run)  /* it may already have ended, if it could not start */
+            run->user_orch = orch;
         return TRUE;
     }
     S.watchdog_id = g_timeout_add_seconds(RUN_WATCHDOG_S, on_watchdog, NULL);
@@ -225,6 +266,52 @@ gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress
     if (S.elevated && on_progress != NULL)
         on_progress(user_data);  /* the lease is still running: no password */
     return TRUE;
+}
+
+const char *gaudit_session_running(void)
+{
+    return S.run != NULL ? S.run->command : NULL;
+}
+
+gboolean gaudit_session_running_is(const char *command, const char *const *args)
+{
+    if (S.run == NULL || g_strcmp0(S.run->command, command) != 0)
+        return FALSE;
+    static const char *const none[] = { NULL };
+    return g_strv_equal((const char *const *)S.run->args, args != NULL ? args : none);
+}
+
+gboolean gaudit_session_attach(GauditRunProgressFn on_progress, GauditRunDoneFn done,
+                               gpointer user_data)
+{
+    g_return_val_if_fail(done != NULL, FALSE);
+    if (S.run == NULL)
+        return FALSE;
+    Observer o = { on_progress, done, user_data };
+    g_array_append_val(S.run->observers, o);
+    /* Already past the password: tell it at once, as the run itself was. */
+    if (on_progress != NULL && (S.run->user || S.elevated))
+        on_progress(user_data);
+    return TRUE;
+}
+
+void gaudit_session_cancel(void)
+{
+    Run *run = S.run;
+    if (run == NULL)
+        return;
+    run->cancelled = TRUE;
+    if (run->user) {
+        if (run->user_orch != NULL)
+            gaudit_orchestrator_stop(run->user_orch);  /* our own: ends at once */
+        return;
+    }
+    /* Through the session: while pkexec waits for the password it is ours
+     * to stop; once the helper is root it can only be asked to end, and
+     * finishes the check under way first (each has its own limit). Either
+     * way the session ends, and with it the run. */
+    if (S.orch != NULL)
+        gaudit_orchestrator_stop(S.orch);
 }
 
 gboolean gaudit_session_elevated(void)

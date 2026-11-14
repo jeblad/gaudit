@@ -39,18 +39,45 @@ static void test_round_trip(void)
     CHECK(s.count == 3 && s.shown == 3 && s.others == 1 && s.groups == 1 && !s.truncated);
 }
 
+static void test_area(void)
+{
+    gaudit_secret_area a = { .index = 2, .status = GAUDIT_AREA_SEARCHED, .remote = 1, .exact = 1 };
+    snprintf(a.path, sizeof a.path, "/mnt/my \"data\"");
+    char line[1024];
+    CHECK(gaudit_secrets_format_area(&a, line, sizeof line) == 0);
+    gaudit_secret_area b;
+    gaudit_secret_finding f;
+    gaudit_secrets_summary s;
+    CHECK(gaudit_secrets_parse_area(line, &b) == 0);
+    CHECK(b.index == 2 && strcmp(b.path, a.path) == 0 && b.remote == 1 && b.exact == 1);
+    CHECK(gaudit_secrets_parse_line(line, &f, &s) == 3);
+    static const char *const bad[] = {
+        "(area (index 16) (path \"/x\") (status 0) (remote 0) (exact 1))",
+        "(area (index 1) (path \"x\") (status 0) (remote 0) (exact 1))",
+        "(area (index 1) (path \"/x\") (status 3) (remote 0) (exact 1))",
+        "(area (index 1) (path \"/x\") (status 0) (exact 1))",
+        "(secret (path \"k\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1))",
+        "(secret (area 16) (path \"k\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1))",
+    };
+    for (size_t i = 0; i < sizeof bad / sizeof bad[0]; i++)
+        if (gaudit_secrets_parse_area(bad[i], &b) == 0 || gaudit_secrets_parse_line(bad[i], &f, &s) > 0) {
+            fprintf(stderr, "accepted: %s\n", bad[i]);
+            failures++;
+        }
+}
+
 static void test_reject(void)
 {
     static const char *const bad[] = {
         "",
-        "(secret (path \"/etc/shadow\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1))",
-        "(secret (path \"../other/key\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1))",
-        "(secret (path \"a/../../key\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1))",
-        "(secret (path \"k\") (reason \"\") (mode 384) (reach 0) (owned 1) (exact 1))",
-        "(secret (path \"k\") (reason \"x\") (mode 99999) (reach 0) (owned 1) (exact 1))",
-        "(secret (path \"k\") (reason \"x\") (mode 384) (reach 4) (owned 1) (exact 1))",
-        "(secret (path \"k\") (reason \"x\") (mode 384) (reach 0) (owned 1))",
-        "(secret (path \"k\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1) (exact 1))",
+        "(secret (area 0) (path \"/etc/shadow\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1))",
+        "(secret (area 0) (path \"../other/key\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1))",
+        "(secret (area 0) (path \"a/../../key\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1))",
+        "(secret (area 0) (path \"k\") (reason \"\") (mode 384) (reach 0) (owned 1) (exact 1))",
+        "(secret (area 0) (path \"k\") (reason \"x\") (mode 99999) (reach 0) (owned 1) (exact 1))",
+        "(secret (area 0) (path \"k\") (reason \"x\") (mode 384) (reach 4) (owned 1) (exact 1))",
+        "(secret (area 0) (path \"k\") (reason \"x\") (mode 384) (reach 0) (owned 1))",
+        "(secret (area 0) (path \"k\") (reason \"x\") (mode 384) (reach 0) (owned 1) (exact 1) (exact 1))",
         "(secrets (status 0) (count 2) (shown 3) (others 0) (groups 0) (truncated 0))",
         "(secrets (status 0) (count 2) (shown 2) (others 2) (groups 1) (truncated 0))",
         "(secrets (status 2) (count 0) (shown 0) (others 0) (groups 0) (truncated 0))",
@@ -68,6 +95,7 @@ static void test_reject(void)
 int main(void)
 {
     test_round_trip();
+    test_area();
     test_reject();
     if (failures == 0)
         puts("secrets-io: all checks passed");

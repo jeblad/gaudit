@@ -158,6 +158,134 @@ static void on_start_clicked(GtkButton *button, gpointer user_data)
     adw_navigation_view_push(ADW_NAVIGATION_VIEW(nav), gaudit_run_page_new(task));
 }
 
+/* --- Page 1: folders to search --------------------------------------------
+ *
+ * Include only, as Pika Backup lists what to back up: the home folder is
+ * always the root and cannot be removed; the user may add folders
+ * elsewhere, on this computer or a network, and the whole tree under each
+ * is searched. Kept in the plugin's settings, read back checked. */
+
+typedef struct {
+    const GauditTaskInfo *task;
+    AdwPreferencesGroup *group;  /* weak */
+    GPtrArray *rows;             /* the added folders' rows now in the group */
+} Folders;
+
+static void folders_free(gpointer p)
+{
+    Folders *f = p;
+    if (f->group != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(f->group), (gpointer *)&f->group);
+    g_ptr_array_unref(f->rows);
+    g_free(f);
+}
+
+static void fill_folders(Folders *f);
+
+static void on_remove_folder(GtkButton *button, gpointer user_data)
+{
+    Folders *f = user_data;
+    const char *path = g_object_get_data(G_OBJECT(button), "gaudit-folder");
+    gaudit_task_remove_folder(f->task, path);
+    fill_folders(f);
+}
+
+/* user_data: the group, held while the dialog is open. */
+static void on_folder_chosen(GObject *source, GAsyncResult *res, gpointer user_data)
+{
+    g_autoptr(GObject) group = user_data;
+    Folders *f = g_object_get_data(group, "gaudit-folders");
+    g_autoptr(GFile) file = gtk_file_dialog_select_folder_finish(GTK_FILE_DIALOG(source), res, NULL);
+    g_autofree char *path = file != NULL ? g_file_get_path(file) : NULL;
+    if (path != NULL && f != NULL) {
+        g_auto(GStrv) now = gaudit_task_folders(f->task);
+        if (g_strv_length(now) >= GAUDIT_TASK_MAX_FOLDERS)
+            show_toast(GTK_WIDGET(group), _("No more folders can be added"));
+        else if (!g_strv_contains((const char *const *)now, path)
+                 && !gaudit_task_add_folder(f->task, path))
+            show_toast(GTK_WIDGET(group), _("Already checked with your home folder"));
+        fill_folders(f);
+    }
+}
+
+static void on_add_folder(GtkButton *button, gpointer user_data)
+{
+    Folders *f = user_data;
+    if (f->group == NULL)
+        return;
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(dialog, _("Add a Folder to Search"));
+    GtkRoot *root = gtk_widget_get_root(GTK_WIDGET(button));
+    gtk_file_dialog_select_folder(dialog, GTK_IS_WINDOW(root) ? GTK_WINDOW(root) : NULL, NULL,
+                                  on_folder_chosen, g_object_ref(f->group));
+    g_object_unref(dialog);
+}
+
+static void fill_folders(Folders *f)
+{
+    if (f->group == NULL)
+        return;
+    for (guint i = 0; i < f->rows->len; i++)
+        adw_preferences_group_remove(f->group, g_ptr_array_index(f->rows, i));
+    g_ptr_array_set_size(f->rows, 0);
+    g_auto(GStrv) places = NULL;
+    g_auto(GStrv) folders = gaudit_task_folders_split(f->task, &places);
+    for (guint i = 0; folders[i] != NULL; i++) {
+        AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
+        /* A path from the user: plain text, never markup. */
+        adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), folders[i]);
+        if (g_strv_contains((const char *const *)places, folders[i]))
+            adw_action_row_set_subtitle(row, _("From the file manager"));
+        adw_action_row_add_prefix(row, gtk_image_new_from_icon_name("folder-symbolic"));
+        /* An x, not a bin: nothing is deleted, the folder leaves the list. */
+        GtkWidget *remove = gtk_button_new_from_icon_name("gaudit-remove-symbolic");
+        gtk_widget_add_css_class(remove, "flat");
+        gtk_widget_set_valign(remove, GTK_ALIGN_CENTER);
+        gtk_widget_set_tooltip_text(remove, _("Remove from the List"));
+        gtk_accessible_update_property(GTK_ACCESSIBLE(remove), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                       _("Remove from the List"), -1);
+        g_object_set_data_full(G_OBJECT(remove), "gaudit-folder", g_strdup(folders[i]), g_free);
+        g_signal_connect(remove, "clicked", G_CALLBACK(on_remove_folder), f);
+        adw_action_row_add_suffix(row, remove);
+        adw_preferences_group_add(f->group, GTK_WIDGET(row));
+        g_ptr_array_add(f->rows, row);
+    }
+}
+
+static AdwPreferencesGroup *folders_group(const GauditTaskInfo *task)
+{
+    AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+    adw_preferences_group_set_title(group, _("Folders to Search"));
+    adw_preferences_group_set_description(group,
+        _("Everything under each folder is searched, within its own disk."));
+    GtkWidget *add = gtk_button_new_from_icon_name("list-add-symbolic");
+    gtk_widget_add_css_class(add, "flat");
+    gtk_widget_set_valign(add, GTK_ALIGN_CENTER);
+    gtk_widget_set_tooltip_text(add, _("Add a Folder to Search"));
+    gtk_accessible_update_property(GTK_ACCESSIBLE(add), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                   _("Add a Folder to Search"), -1);
+    adw_preferences_group_set_header_suffix(group, add);
+
+    /* The home folder is the root, always searched. */
+    AdwActionRow *home = ADW_ACTION_ROW(adw_action_row_new());
+    adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(home), FALSE);
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(home), _("Your Home Folder"));
+    adw_action_row_set_subtitle(home, _("Always searched"));
+    adw_action_row_add_prefix(home, gtk_image_new_from_icon_name("gaudit-home-symbolic"));
+    adw_preferences_group_add(group, GTK_WIDGET(home));
+
+    Folders *f = g_new0(Folders, 1);
+    f->task = task;
+    f->group = group;
+    f->rows = g_ptr_array_new();
+    g_object_add_weak_pointer(G_OBJECT(group), (gpointer *)&f->group);
+    g_object_set_data_full(G_OBJECT(group), "gaudit-folders", f, folders_free);
+    g_signal_connect(add, "clicked", G_CALLBACK(on_add_folder), f);
+    fill_folders(f);
+    return group;
+}
+
 /* --- Page 1: settings ----------------------------------------------------- */
 
 static GtkWidget *build_settings(const GauditTaskInfo *task)
@@ -184,12 +312,28 @@ static GtkWidget *build_settings(const GauditTaskInfo *task)
         adw_preferences_page_add(page, params);
     else
         g_object_unref(g_object_ref_sink(params));  /* nothing to set */
+    if (task->param_folders)
+        adw_preferences_page_add(page, folders_group(task));
 
     AdwPreferencesGroup *actions = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
     /* Opens page 2; the page's one action, so the default. */
     GtkWidget *start = gaudit_action_button_new(_("Start"), TRUE, TRUE);
     g_signal_connect(start, "clicked", G_CALLBACK(on_start_clicked), (gpointer)task);
-    adw_preferences_group_add(actions, start);
+    if (task->n_params > 0 || task->param_folders) {
+        /* Home runs without parameters, every time the same. */
+        GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+        GtkWidget *note = gtk_label_new(_("Applies to the full report only, not to Home"));
+        gtk_label_set_wrap(GTK_LABEL(note), TRUE);
+        gtk_label_set_xalign(GTK_LABEL(note), 1.0f);
+        gtk_widget_set_hexpand(note, TRUE);
+        gtk_widget_add_css_class(note, "dim-label");
+        gtk_widget_add_css_class(note, "caption");
+        gtk_box_append(GTK_BOX(row), note);
+        gtk_box_append(GTK_BOX(row), start);
+        adw_preferences_group_add(actions, row);
+    } else {
+        adw_preferences_group_add(actions, start);
+    }
     adw_preferences_page_add(page, actions);
 
     return GTK_WIDGET(page);

@@ -96,7 +96,7 @@ int main(void)
         char *buf = NULL;
         size_t len = 0;
         FILE *out = open_memstream(&buf, &len);
-        CHECK(out != NULL && gaudit_private_files_collect(&pw, deep, out) == 0);
+        CHECK(out != NULL && gaudit_private_files_collect(&pw, deep, NULL, 0, out) == 0);
         fclose(out);
 
         gaudit_secret_finding f[64];
@@ -106,7 +106,7 @@ int main(void)
         for (char *line = strtok(buf, "\n"); line != NULL; line = strtok(NULL, "\n")) {
             gaudit_secret_finding one;
             int r = gaudit_secrets_parse_line(line, &one, &sum);
-            CHECK(r == 1 || r == 2);
+            CHECK(r == 1 || r == 2 || r == 3);
             if (r == 1 && n < 64)
                 f[n++] = one;
             if (r == 2)
@@ -134,6 +134,69 @@ int main(void)
          * the stray key and the SSH key only the user can read. */
         CHECK(deep ? n == k.n + 2 : n == k.n);
     }
+
+    /* A folder the user added, outside the home folder: its whole tree is
+     * searched in the full collection, reach judged from "/" down; one
+     * overlapping the home folder and one that does not exist are named,
+     * not searched. */
+    char extra[] = "/tmp/gaudit-area-XXXXXX";
+    CHECK(mkdtemp(extra) != NULL);
+    chmod(extra, 0755);
+    char sub[512], keyfile[600], inside[600];
+    snprintf(sub, sizeof sub, "%s/deep/er", extra);
+    snprintf(inside, sizeof inside, "%s/inside", base);
+    mkdir(inside, 0755);
+    char mid[512];
+    snprintf(mid, sizeof mid, "%s/deep", extra);
+    mkdir(mid, 0755);
+    mkdir(sub, 0755);
+    snprintf(keyfile, sizeof keyfile, "%s/id.key", sub);
+    FILE *kf = fopen(keyfile, "w");
+    CHECK(kf != NULL);
+    if (kf != NULL) {
+        fputs(key, kf);
+        fclose(kf);
+    }
+    chmod(keyfile, 0644);
+    const char *folders[] = { extra, inside, "/nonexistent/gaudit" };
+    char *buf = NULL;
+    size_t len = 0;
+    FILE *out = open_memstream(&buf, &len);
+    CHECK(out != NULL && gaudit_private_files_collect(&pw, 1, folders, 3, out) == 0);
+    fclose(out);
+    int areas = 0, searched = 0, overlaps = 0, unreadable = 0, in_extra = 0;
+    for (char *line = strtok(buf, "\n"); line != NULL; line = strtok(NULL, "\n")) {
+        gaudit_secret_area a;
+        gaudit_secret_finding one;
+        gaudit_secrets_summary sum;
+        if (gaudit_secrets_parse_area(line, &a) == 0) {
+            areas++;
+            searched += a.status == GAUDIT_AREA_SEARCHED;
+            overlaps += a.status == GAUDIT_AREA_OVERLAPS;
+            unreadable += a.status == GAUDIT_AREA_UNREADABLE;
+        } else if (gaudit_secrets_parse_line(line, &one, &sum) == 1 && one.area == 1) {
+            in_extra++;
+            /* Every folder from "/" down lets others through, and it is 0644. */
+            CHECK(strcmp(one.path, "deep/er/id.key") == 0 && one.reach == GAUDIT_SECRET_OTHERS);
+        }
+    }
+    free(buf);
+    CHECK(areas == 4 && searched == 2 && overlaps == 1 && unreadable == 1 && in_extra == 1);
+    /* A closed folder on the way protects it. */
+    chmod(mid, 0700);
+    buf = NULL;
+    out = open_memstream(&buf, &len);
+    const char *only[] = { extra };
+    CHECK(out != NULL && gaudit_private_files_collect(&pw, 1, only, 1, out) == 0);
+    fclose(out);
+    for (char *line = strtok(buf, "\n"); line != NULL; line = strtok(NULL, "\n")) {
+        gaudit_secret_finding one;
+        gaudit_secrets_summary sum;
+        if (gaudit_secrets_parse_line(line, &one, &sum) == 1 && one.area == 1)
+            CHECK(one.reach == GAUDIT_SECRET_OWNER);
+    }
+    free(buf);
+    nftw(extra, rm_one, 16, FTW_DEPTH | FTW_PHYS);
 
     nftw(base, rm_one, 16, FTW_DEPTH | FTW_PHYS);
     if (failures == 0)

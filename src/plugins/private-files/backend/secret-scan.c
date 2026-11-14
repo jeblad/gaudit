@@ -292,16 +292,18 @@ static void walk(walker *w, int dir_fd, size_t rel_len, int depth, int group_pat
     closedir(d);
 }
 
-int gaudit_secret_scan(const char *home, uid_t uid, gaudit_secret_fn fn, void *ctx,
-                       gaudit_secret_stats *stats)
+/* Walks root; group and others reach it only if from_group/from_other
+ * (the folders above it let them through). */
+static int scan_from(const char *root, uid_t uid, int from_group, int from_other,
+                     gaudit_secret_fn fn, void *ctx, gaudit_secret_stats *stats)
 {
     gaudit_secret_stats dummy;
     if (stats == NULL)
         stats = &dummy;
     memset(stats, 0, sizeof *stats);
-    if (home == NULL || home[0] != '/' || fn == NULL)
+    if (root == NULL || root[0] != '/' || fn == NULL)
         return -1;
-    int fd = open(home, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    int fd = open(root, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
     struct stat sb;
     if (fd < 0)
         return -1;
@@ -311,6 +313,38 @@ int gaudit_secret_scan(const char *home, uid_t uid, gaudit_secret_fn fn, void *c
     }
     walker w = { .uid = uid, .dev = sb.st_dev, .fn = fn, .ctx = ctx, .stats = stats };
     w.rel[0] = '\0';
-    walk(&w, fd, 0, 0, (sb.st_mode & S_IXGRP) != 0, (sb.st_mode & S_IXOTH) != 0);
+    walk(&w, fd, 0, 0, from_group && (sb.st_mode & S_IXGRP) != 0,
+         from_other && (sb.st_mode & S_IXOTH) != 0);
     return 0;
+}
+
+int gaudit_secret_scan(const char *home, uid_t uid, gaudit_secret_fn fn, void *ctx,
+                       gaudit_secret_stats *stats)
+{
+    /* The home folder is judged from itself down. */
+    return scan_from(home, uid, 1, 1, fn, ctx, stats);
+}
+
+int gaudit_secret_scan_area(const char *root, uid_t uid, gaudit_secret_fn fn, void *ctx,
+                            gaudit_secret_stats *stats)
+{
+    if (root == NULL || root[0] != '/')
+        return -1;
+    /* The folders above root, from "/" down, only looked at, never listed:
+     * a closed one protects everything below it. */
+    char path[PATH_MAX];
+    if (snprintf(path, sizeof path, "%s", root) >= (int)sizeof path)
+        return -1;
+    int group = 1, other = 1;
+    for (char *slash = strrchr(path, '/'); slash != NULL; slash = strrchr(path, '/')) {
+        *slash = '\0';
+        struct stat sb;
+        if (stat(path[0] != '\0' ? path : "/", &sb) != 0)
+            return -1;
+        group = group && (sb.st_mode & S_IXGRP) != 0;
+        other = other && (sb.st_mode & S_IXOTH) != 0;
+        if (path[0] == '\0')
+            break;
+    }
+    return scan_from(root, uid, group, other, fn, ctx, stats);
 }

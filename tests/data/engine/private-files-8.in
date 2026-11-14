@@ -1,0 +1,9 @@
+(input (system (host "test") (distro "Ubuntu 26.04 LTS") (backend "debian"))
+       (level "full")
+       (collection
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (area (index 1) (path "/mnt/data") (status 0) (remote 0) (exact 1))
+        (area (index 2) (path "/net/share") (status 0) (remote 1) (exact 1))
+        (secret (area 1) (path "old/backup.kdbx") (reason "keepass") (mode 436) (reach 2) (owned 1) (exact 1))
+        (secret (area 2) (path "keys/server.pem") (reason "pem-private-key") (mode 420) (reach 3) (owned 1) (exact 1))
+        (secrets (status 0) (count 2) (shown 2) (others 1) (groups 1) (truncated 0))))

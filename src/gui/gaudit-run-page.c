@@ -16,6 +16,7 @@
 typedef struct {
     AdwStatusPage *status;  /* weak: the page may be left while the run goes on */
     const GauditTaskInfo *task;
+    GStrv args;             /* the run's parameters (the plugin's folders) */
     gaudit_firewall_report firewall;
 } RunJob;
 
@@ -248,6 +249,7 @@ static void job_free(RunJob *job)
 {
     if (job->status != NULL)
         g_object_remove_weak_pointer(G_OBJECT(job->status), (gpointer *)&job->status);
+    g_strfreev(job->args);
     g_free(job);
 }
 
@@ -269,7 +271,7 @@ static AdwNavigationPage *fix_page(const char *fix_id, guint item, gpointer user
     FixData *d = user_data;
     if (d->task->fix_page == NULL || item >= d->lines->len)
         return NULL;
-    return d->task->fix_page(fix_id, g_ptr_array_index(d->lines, item));
+    return d->task->fix_page(fix_id, d->lines, item);
 }
 
 typedef struct {
@@ -330,6 +332,113 @@ static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
     job_free(job);
 }
 
+/* --- A run already under way --------------------------------------------
+ *
+ * Run while an earlier run is still going (e.g. Home's collection): the
+ * same command (the same parameters) waits for that run and shows its
+ * result, "In progress, processing…"; a different one asks "In progress,
+ * restart?", so a long run, or one out of control, can be stopped. Either
+ * way this page's own run starts once the other has ended. A general
+ * method for every plugin. */
+
+static void start_or_ask(RunJob *job);
+
+/* The earlier run has ended (finished, or stopped): now ours. */
+static void on_other_done(gaudit_run_status status, const GauditRunResult *result,
+                          gpointer user_data)
+{
+    (void)status;
+    (void)result;
+    RunJob *job = user_data;
+    if (job->status == NULL) {
+        job_free(job);  /* the page is gone: nobody asked for it any more */
+        return;
+    }
+    adw_status_page_set_child(job->status, NULL);
+    start_or_ask(job);
+}
+
+static void on_restart_clicked(GtkButton *button, gpointer user_data)
+{
+    (void)user_data;
+    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+    gaudit_session_cancel();  /* on_other_done starts ours */
+}
+
+static void on_wait_clicked(GtkButton *button, gpointer user_data)
+{
+    RunJob *job = user_data;
+    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+    if (job->status != NULL)
+        adw_status_page_set_title(job->status, _("Waiting for the other check to finish…"));
+}
+
+static void start_or_ask(RunJob *job)
+{
+    const char *running = gaudit_session_running();
+    if (running == NULL) {
+        if (job->status != NULL)
+            adw_status_page_set_title(job->status, job->task->needs_admin
+                                      ? _("Waiting for the password") : _(job->task->run_running));
+        if (!gaudit_session_run_args(job->task->run_command, (const char *const *)job->args,
+                                     on_progress, on_run_done, job)) {
+            show(job, "dialog-warning-symbolic", _("The check could not be started"), NULL);
+            job_free(job);
+        }
+        return;
+    }
+    if (gaudit_session_running_is(job->task->run_command, (const char *const *)job->args)) {
+        /* The same parameters: that run is this one. */
+        if (job->status != NULL) {
+            adw_status_page_set_title(job->status, _("In progress, processing…"));
+            adw_status_page_set_description(job->status,
+                _("This check was already running. Its result is shown here when it is done."));
+        }
+        gaudit_session_attach(NULL, on_run_done, job);
+        return;
+    }
+    if (job->status != NULL) {
+        adw_status_page_set_title(job->status, _("In progress, restart?"));
+        adw_status_page_set_description(job->status,
+            _("Another check is still running. Stop it and start this one, or wait until it "
+              "has finished; this one starts then."));
+        GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+        gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
+        GtkWidget *restart = gaudit_action_button_new(_("Stop and Restart"), FALSE, FALSE);
+        gtk_widget_add_css_class(restart, "destructive-action");
+        gtk_widget_set_halign(restart, GTK_ALIGN_FILL);
+        g_signal_connect(restart, "clicked", G_CALLBACK(on_restart_clicked), job);
+        GtkWidget *wait = gaudit_action_button_new(_("Wait"), FALSE, FALSE);
+        gtk_widget_set_halign(wait, GTK_ALIGN_FILL);
+        g_signal_connect(wait, "clicked", G_CALLBACK(on_wait_clicked), job);
+        gtk_box_append(GTK_BOX(box), restart);
+        gtk_box_append(GTK_BOX(box), wait);
+        adw_status_page_set_child(job->status, box);
+    }
+    gaudit_session_attach(NULL, on_other_done, job);
+}
+
+AdwNavigationPage *gaudit_cached_report_page_new(const GauditTaskInfo *task)
+{
+    const char *command = NULL;
+    GPtrArray *lines = gaudit_cache_lines(task, NULL);
+    if (lines == NULL || (command = gaudit_cache_command(task)) == NULL)
+        return NULL;
+    AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
+    adw_status_page_set_icon_name(status, "content-loading-symbolic");
+    adw_status_page_set_title(status, _("Writing the report…"));
+    AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status), _("Report"), "report");
+    RunJob *job = g_new0(RunJob, 1);
+    job->status = status;
+    job->task = task;
+    g_object_add_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
+    ReportJob *rj = g_new0(ReportJob, 1);
+    rj->job = job;
+    rj->lines = g_ptr_array_ref(lines);
+    gaudit_report_run(task, command, rj->lines, on_report, rj);
+    return page;
+}
+
 AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)
 {
     AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
@@ -345,17 +454,14 @@ AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)
     } else {
         adw_status_page_set_title(status, _(task->run_running));
     }
-    AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status), _(task->title), "run");
+    AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status), _("Report"), "run");
 
     RunJob *job = g_new0(RunJob, 1);
     job->status = status;
     job->task = task;
+    /* The parameters as they are now: changing them later is another run. */
+    job->args = gaudit_task_folders(task);
     g_object_add_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
-    if (!gaudit_session_run(task->run_command, on_progress, on_run_done, job)) {
-        show(job, "dialog-information-symbolic", _("Another check is running"),
-             _("Wait until it has finished, then start this one again."));
-        g_object_remove_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
-        g_free(job);
-    }
+    start_or_ask(job);
     return page;
 }

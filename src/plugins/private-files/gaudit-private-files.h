@@ -13,7 +13,8 @@ G_BEGIN_DECLS
  * summary, which ends the collection. */
 gboolean gaudit_private_files_line(const char *line, gboolean *last);
 
-/* The fix the report names for item_line (a finding of the collection). */
-AdwNavigationPage *gaudit_private_files_fix_page(const char *fix_id, const char *item_line);
+/* The fix the report names for the finding at item in lines (the cached
+ * collection, which also names the areas). */
+AdwNavigationPage *gaudit_private_files_fix_page(const char *fix_id, GPtrArray *lines, guint item);
 
 G_END_DECLS

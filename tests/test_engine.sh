@@ -9,7 +9,7 @@ engine=$1
 data=$2
 status=0
 
-for n in 1 2 3 4 5 6; do
+for n in 1 2 3 4 5 6 7 8; do
     if ! "$engine" report core.private-files < "$data/private-files-$n.in" > out.$$ 2>/dev/null; then
         echo "private-files-$n: no report" >&2; status=1
     elif ! cmp -s out.$$ "$data/private-files-$n.out"; then

@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* "gaudit-orchestrator secrets quick|full": the plugin's collection, as the
- * user. quick: the known locations only (fast, for Home). full: the same
- * known locations first, then the deep scan of the whole home directory; a
- * path is reported once. So the full collection always holds everything
- * the quick one finds: a deeper level adds to the collection, it does not
- * replace it, and only the presentation differs. Reports path, reason, mode and reach,
- * never any content. Those others can reach come first, so they are always
- * among the findings sent. */
+/* "gaudit-orchestrator secrets quick|full [folder ...]": the plugin's
+ * collection, as the user. quick: the known locations only (fast, for
+ * Home). full: the same known locations first, then the deep scan of the
+ * whole home directory, and of each folder the user added (its whole tree,
+ * within its filesystem); a path is reported once. So the full collection
+ * always holds everything the quick one finds: a deeper level adds to the
+ * collection, it does not replace it, and only the presentation differs.
+ * Reports path, reason, mode and reach, never any content. Those others
+ * can reach come first, so they are always among the findings sent. */
 #include "secrets-mode.h"
 
 #include "private-files.h"
@@ -18,7 +19,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
 #include <unistd.h>
 
 /* Findings kept for sorting; beyond this they are counted only. */
@@ -28,6 +31,7 @@ typedef struct {
     const struct passwd *me;
     int own_gid_private;          /* the user's primary group is their own private group */
     char home[4096];
+    unsigned area;                /* the area being searched */
     gaudit_secret_finding *kept;
     unsigned n_kept;
     gaudit_secrets_summary sum;
@@ -72,6 +76,7 @@ static void add(scan_state *st, const char *rel, const char *reason, unsigned mo
     if (snprintf(f->path, sizeof f->path, "%s", rel[0] != '\0' ? rel : ".") >= (int)sizeof f->path
         || snprintf(f->reason, sizeof f->reason, "%s", reason) >= (int)sizeof f->reason)
         return;
+    f->area = st->area;
     f->mode = mode & 07777;
     f->reach = reach;
     f->owned = owned;
@@ -83,7 +88,7 @@ static void add(scan_state *st, const char *rel, const char *reason, unsigned mo
 static int already(const scan_state *st, const char *rel)
 {
     for (unsigned i = 0; i < st->n_kept; i++)
-        if (strcmp(st->kept[i].path, rel) == 0)
+        if (st->kept[i].area == st->area && strcmp(st->kept[i].path, rel) == 0)
             return 1;
     return 0;
 }
@@ -134,7 +139,53 @@ static int by_reach(const void *a, const void *b)
     return strcmp(x->path, y->path);
 }
 
-int gaudit_private_files_collect(const struct passwd *pw, int deep, FILE *out)
+/* Network filesystems: modes and owners there may not say who can reach a
+ * file on the server. */
+static int remote_fs(const char *path)
+{
+    struct statfs sf;
+    if (statfs(path, &sf) != 0)
+        return 0;
+    switch ((unsigned long)sf.f_type) {
+    case 0x6969UL:       /* NFS */
+    case 0x517BUL:       /* SMB */
+    case 0xFF534D42UL:   /* CIFS */
+    case 0xFE534D42UL:   /* SMB2 */
+    case 0x65735546UL:   /* FUSE (sshfs, rclone, gvfs and others) */
+    case 0x01021997UL:   /* 9P */
+    case 0x00C36400UL:   /* Ceph */
+    case 0x5346414FUL:   /* AFS */
+    case 0x73757245UL:   /* Coda */
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+/* Whether a is b or lies inside it. */
+static int within(const char *a, const char *b)
+{
+    size_t n = strlen(b);
+    return strncmp(a, b, n) == 0 && (a[n] == '\0' || a[n] == '/' || (n == 1 && b[0] == '/'));
+}
+
+static int emit_area(FILE *out, unsigned index, const char *path, gaudit_area_status status)
+{
+    gaudit_secret_area a = { .index = index, .status = status, .exact = sent_as_is(path) };
+    if (snprintf(a.path, sizeof a.path, "%s", path) >= (int)sizeof a.path) {
+        /* Named cut short (only an unreadable one, or a very long home). */
+        a.path[sizeof a.path - 2] = '/';
+        a.path[sizeof a.path - 1] = '\0';
+        a.exact = 0;
+    }
+    a.remote = status == GAUDIT_AREA_SEARCHED && remote_fs(path);
+    char line[1200];
+    return gaudit_secrets_format_area(&a, line, sizeof line) == 0 && fputs(line, out) != EOF ? 0 : -1;
+}
+
+int gaudit_private_files_collect(const struct passwd *pw, int deep, const char *const *folders,
+                                 size_t n_folders, FILE *out)
+
 {
     scan_state st = { 0 };
     st.sum.status = GAUDIT_SECRETS_UNKNOWN;
@@ -146,10 +197,45 @@ int gaudit_private_files_collect(const struct passwd *pw, int deep, FILE *out)
         gaudit_secret_stats stats;
         gid_t own_gid = st.own_gid_private ? pw->pw_gid : (gid_t)-1;
         memset(&stats, 0, sizeof stats);
+        if (emit_area(out, 0, pw->pw_dir, GAUDIT_AREA_SEARCHED) != 0) {
+            free(st.kept);
+            return 1;
+        }
         if (gaudit_private_files_each(pw->pw_dir, getuid(), own_gid, on_known, &st) >= 0
             && (!deep || gaudit_secret_scan(pw->pw_dir, getuid(), on_hit, &st, &stats) == 0)) {
             st.sum.status = GAUDIT_SECRETS_OK;
             st.sum.truncated = stats.truncated;
+        }
+        /* The folders the user added, full collection only. */
+        char roots[GAUDIT_SECRETS_MAX_AREAS][PATH_MAX];
+        snprintf(roots[0], sizeof roots[0], "%s", pw->pw_dir);
+        unsigned n_roots = 1;
+        for (size_t k = 0; deep && st.sum.status == GAUDIT_SECRETS_OK && k < n_folders
+                           && n_roots < GAUDIT_SECRETS_MAX_AREAS; k++) {
+            char real[PATH_MAX];
+            gaudit_area_status status = GAUDIT_AREA_SEARCHED;
+            if (folders[k][0] != '/' || strlen(folders[k]) >= sizeof ((gaudit_secret_area *)0)->path
+                || realpath(folders[k], real) == NULL
+                || strlen(real) >= sizeof ((gaudit_secret_area *)0)->path)
+                status = GAUDIT_AREA_UNREADABLE;  /* also: too long to name in the report */
+            for (unsigned r = 0; status == GAUDIT_AREA_SEARCHED && r < n_roots; r++)
+                if (within(real, roots[r]) || within(roots[r], real))
+                    status = GAUDIT_AREA_OVERLAPS;  /* searched already, or holding one */
+            const char *shown = status == GAUDIT_AREA_UNREADABLE ? folders[k] : real;
+            gaudit_secret_stats area_stats;
+            if (status == GAUDIT_AREA_SEARCHED) {
+                st.area = n_roots;
+                if (gaudit_secret_scan_area(real, getuid(), on_hit, &st, &area_stats) != 0)
+                    status = GAUDIT_AREA_UNREADABLE;
+                else
+                    st.sum.truncated |= area_stats.truncated;
+            }
+            if (emit_area(out, status == GAUDIT_AREA_SEARCHED ? n_roots : 0, shown, status) != 0) {
+                free(st.kept);
+                return 1;
+            }
+            if (status == GAUDIT_AREA_SEARCHED)
+                snprintf(roots[n_roots++], sizeof roots[0], "%s", real);
         }
     }
     if (st.sum.status != GAUDIT_SECRETS_OK) {
@@ -172,11 +258,13 @@ int gaudit_private_files_collect(const struct passwd *pw, int deep, FILE *out)
     return fflush(out) == 0 ? 0 : 1;
 }
 
-int gaudit_private_files_secrets(const char *level)
+int gaudit_private_files_secrets(const char *level, const char *const *folders, size_t n_folders)
 {
     int deep = level != NULL && strcmp(level, "full") == 0;
     if (level == NULL || (!deep && strcmp(level, "quick") != 0))
         return 2;
     /* The home directory from the password database, not from $HOME. */
-    return gaudit_private_files_collect(getpwuid(getuid()), deep, stdout);
+    if (!deep && n_folders > 0)
+        return 2;  /* the quick collection is the home folder's only */
+    return gaudit_private_files_collect(getpwuid(getuid()), deep, folders, n_folders, stdout);
 }

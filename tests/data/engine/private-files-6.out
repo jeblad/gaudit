@@ -1,3 +1,3 @@
 (report (verdict warning) (title (msgn "{n} secret can be read by others" "{n} secrets can be read by others" 1 (n 1))) (description (msg "Only the places where programs usually keep secrets were checked. The thorough report searches your whole home folder.")))
 (section (title (msg "Every account can read these")) (description (msg "Any other account on this computer can read them, including programs running as those accounts.")))
-(row (verdict warning) (title (text "~/.netrc")) (subtitle (msg "{kind} · {mode}" (kind (msg "Stored passwords or keys")) (mode "0644"))) (fix make-private (item 0)))
+(row (verdict warning) (title (text "~/.netrc")) (subtitle (msg "{kind} · {mode}" (kind (msg "Stored passwords or keys")) (mode "0644"))) (fix make-private (item 1)))

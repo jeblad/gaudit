@@ -1,6 +1,7 @@
 (input (system (host "test") (distro "Ubuntu 26.04 LTS") (backend "debian"))
        (collection
-        (secret (path ".netrc") (reason "known-secret") (mode 420) (reach 3) (owned 1) (exact 1))
-        (secret (path "Desktop/copy.key") (reason "openssh-private-key") (mode 416) (reach 2) (owned 1) (exact 1))
-        (secret (path ".ssh/id_ed25519") (reason "openssh-private-key") (mode 384) (reach 0) (owned 1) (exact 1))
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (secret (area 0) (path ".netrc") (reason "known-secret") (mode 420) (reach 3) (owned 1) (exact 1))
+        (secret (area 0) (path "Desktop/copy.key") (reason "openssh-private-key") (mode 416) (reach 2) (owned 1) (exact 1))
+        (secret (area 0) (path ".ssh/id_ed25519") (reason "openssh-private-key") (mode 384) (reach 0) (owned 1) (exact 1))
         (secrets (status 0) (count 3) (shown 3) (others 1) (groups 1) (truncated 0))))

@@ -47,6 +47,31 @@ typedef void (*GauditRunProgressFn)(gpointer user_data);
 gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress,
                             GauditRunDoneFn on_done, gpointer user_data);
 
+/* The same, with the run's parameters as arguments (NULL-terminated, may
+ * be NULL), passed on as they are; only for runs as the user ("user ..."),
+ * e.g. the folders a collection searches. */
+gboolean gaudit_session_run_args(const char *command, const char *const *args,
+                                 GauditRunProgressFn on_progress, GauditRunDoneFn on_done,
+                                 gpointer user_data);
+
+/* The command of the run under way (e.g. "user secrets quick"), or NULL. */
+const char *gaudit_session_running(void);
+
+/* Whether the run under way is command with exactly these arguments (the
+ * same parameters). */
+gboolean gaudit_session_running_is(const char *command, const char *const *args);
+
+/* Waits for the run under way as well: on_done (and on_progress, may be
+ * NULL) are called as for the one who started it. FALSE when none runs. */
+gboolean gaudit_session_attach(GauditRunProgressFn on_progress, GauditRunDoneFn on_done,
+                               gpointer user_data);
+
+/* Stops the run under way; it ends as GAUDIT_RUN_CANCELLED. A run as the
+ * user stops at once. One through the helper ends the session: while the
+ * password is asked for, at once; once the helper runs as root, after the
+ * check under way (it cannot be killed from the user's side). */
+void gaudit_session_cancel(void);
+
 /* Whether the helper holds elevated rights now. */
 gboolean gaudit_session_elevated(void);
 

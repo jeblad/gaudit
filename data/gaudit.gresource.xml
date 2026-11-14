@@ -27,6 +27,8 @@
     <file preprocess="xml-stripblanks" alias="open-menu-symbolic.svg">icons/scalable/actions/open-menu-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="preferences-system-symbolic.svg">icons/scalable/actions/preferences-system-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="system-software-install-symbolic.svg">icons/scalable/actions/system-software-install-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="folder-symbolic.svg">icons/scalable/actions/folder-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="list-add-symbolic.svg">icons/scalable/actions/list-add-symbolic.svg</file>
     <!-- gAudit's own names, so no icon theme can replace them: the shape
          carries the meaning. The shield outline is adwaita-icon-theme's
          security-* (LGPL-3.0, as above); high, medium and low are those
@@ -43,6 +45,14 @@
     <!-- The Updates plugin's sidebar icon: adwaita-icon-theme's
          package-x-generic-symbolic (LGPL-3.0, as above), renamed. -->
     <file preprocess="xml-stripblanks" alias="gaudit-packages-symbolic.svg">icons/scalable/actions/gaudit-packages-symbolic.svg</file>
+    <!-- A plugin's reports in its sidebar folder: the Yaru icon theme's
+         emblem-documents-symbolic, (c) 2018 Sam Hewitt, CC-BY-SA-4.0
+         (https://github.com/ubuntu/yaru), renamed so no theme can change it. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-documents-symbolic.svg">icons/scalable/actions/gaudit-documents-symbolic.svg</file>
+    <!-- Taking an entry off a list (nothing is deleted, so no bin): the
+         GNOME icon library's ⨯-button-symbolic, Jakub Steiner, CC0, under its
+         own name. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-remove-symbolic.svg">icons/scalable/actions/gaudit-remove-symbolic.svg</file>
     <!-- The Private Files plugin's sidebar icon: adwaita-icon-theme's
          dialog-password-symbolic (LGPL-3.0, as above), renamed. -->
     <file preprocess="xml-stripblanks" alias="gaudit-private-files-symbolic.svg">icons/scalable/actions/gaudit-private-files-symbolic.svg</file>

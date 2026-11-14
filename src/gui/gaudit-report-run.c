@@ -51,6 +51,12 @@ GPtrArray *gaudit_cache_lines(const GauditTaskInfo *task, const char **when)
     return e != NULL ? e->lines : NULL;
 }
 
+const char *gaudit_cache_command(const GauditTaskInfo *task)
+{
+    Entry *e = cache != NULL ? g_hash_table_lookup(cache, task->id) : NULL;
+    return e != NULL ? e->command : NULL;
+}
+
 /* --- Making a report ---------------------------------------------------- */
 
 typedef struct {

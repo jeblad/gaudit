@@ -6,13 +6,18 @@
 ;;
 ;;   (input (system (host "...") (distro "...") (backend "..."))
 ;;          (level "quick"|"full")
-;;          (collection (secret (path "...") (reason "...") (mode M) (reach R)
+;;          (collection (area (index I) (path "...") (status S) (remote 0|1) (exact 0|1)) ...
+;;                      (secret (area I) (path "...") (reason "...") (mode M) (reach R)
 ;;                              (owned 0|1) (exact 0|1)) ...
 ;;                      (secrets (status S) (count N) (shown M) (others A)
 ;;                               (groups B) (truncated 0|1))))
 ;;
 ;; quick holds the known places only (Home), full also the search of the
-;; whole home folder; a missing level counts as full.
+;; whole home folder and of the folders the user added; a missing level
+;; counts as full. Area 0 is the home folder; a finding's path is relative
+;; to its area. status: 0 searched, 1 could not be searched, 2 overlaps an
+;; area already searched. Findings on a network folder (remote) are
+;; uncertain: modes and owners there may not say who can reach a file.
 ;; reach: 0 only the user, 1 the user's own private group, 2 other groups,
 ;; 3 every account. The result is a list of report elements; texts are
 ;; English msgids in the plugin's own text domain (marked G_, and N_ for a
@@ -90,53 +95,87 @@
   (let loop ((s (number->string mode 8)))
     (if (< (string-length s) 4) (loop (string-append "0" s)) s)))
 
-(define (shown-path path)
-  (if (equal? path ".") "~" (string-append "~/" path)))
+;; --- Areas --------------------------------------------------------------
+
+(define (area-of areas index)
+  (cond ((null? areas) #f)
+        ((= (field (car areas) 'index) index) (car areas))
+        (else (area-of (cdr areas) index))))
+
+(define (remote? areas item)
+  (let ((a (area-of areas (field item 'area))))
+    (and a (= (field a 'remote) 1))))
+
+(define (shown-path areas item)
+  (let ((path (field item 'path))
+        (a (area-of areas (field item 'area))))
+    (cond ((and (= (field item 'area) 0) (equal? path ".")) "~")
+          ((= (field item 'area) 0) (string-append "~/" path))
+          (a (string-append (field a 'path) "/" path))
+          (else path))))
+
+;; --- Findings -------------------------------------------------------------
 
 ;; Secrets only the user (or their own private group) can read are fine.
 (define (problem? item) (>= (field item 'reach) 2))
 
-(define (row entry)
+(define (row areas entry)
   (let* ((n (car entry))
          (item (cdr entry))
-         (path (field item 'path))
+         (far (remote? areas item))
+         (bad (problem? item))
          (head (list 'row
-                     (list 'verdict (if (problem? item) 'warning 'ok))
-                     (list 'title (list 'text (shown-path path)))
-                     (list 'subtitle (msg (G_ "{kind} · {mode}")
-                                          (list 'kind (reason-text (field item 'reason)))
-                                          (list 'mode (octal (field item 'mode))))))))
-    (if (problem? item)
-        (append head (list (list 'fix (if (equal? path ".") 'close-home 'make-private)
+                     (list 'verdict (cond ((and bad far) 'unknown) (bad 'warning) (else 'ok)))
+                     (list 'title (list 'text (shown-path areas item)))
+                     (list 'subtitle
+                           (msg (if (and bad far)
+                                    (G_ "{kind} · {mode} · on a network folder")
+                                    (G_ "{kind} · {mode}"))
+                                (list 'kind (reason-text (field item 'reason)))
+                                (list 'mode (octal (field item 'mode))))))))
+    (if bad
+        (append head (list (list 'fix (if (and (= (field item 'area) 0)
+                                               (equal? (field item 'path) "."))
+                                          'close-home 'make-private)
                                  (list 'item n))))
         head)))
 
-;; A section for the findings whose reach is in reaches, or nothing.
-(define (section entries reaches title description)
-  (let ((mine (keep (lambda (e) (memv (field (cdr e) 'reach) reaches)) entries)))
+;; A section for the findings pred keeps, or nothing.
+(define (section areas entries pred title description)
+  (let ((mine (keep (lambda (e) (pred (cdr e))) entries)))
     (if (null? mine)
         '()
         (cons (list 'section (list 'title (msg title)) (list 'description (msg description)))
-              (map row mine)))))
+              (map (lambda (e) (row areas e)) mine)))))
 
-(define (verdict summary)
-  (cond ((not (= (field summary 'status) 0)) 'unknown)
-        ((> (+ (field summary 'others) (field summary 'groups)) 0) 'warning)
-        ((= (field summary 'truncated) 1) 'unknown)
-        (else 'ok)))
+(define (count-of pred entries)
+  (length (keep (lambda (e) (pred (cdr e))) entries)))
+
+;; Reachable on a network folder only: not known for sure.
+(define (verdict summary far-problems)
+  (let ((reachable (+ (field summary 'others) (field summary 'groups))))
+    (cond ((not (= (field summary 'status) 0)) 'unknown)
+          ((> (- reachable far-problems) 0) 'warning)
+          ((> far-problems 0) 'unknown)
+          ((= (field summary 'truncated) 1) 'unknown)
+          (else 'ok))))
 
 (define (quick? input)
   (equal? (section-of input 'level) '("quick")))
 
-(define (head summary quick)
-  (let* ((v (verdict summary))
+(define (head summary quick far-problems)
+  (let* ((v (verdict summary far-problems))
          (count (field summary 'count))
-         (reachable (+ (field summary 'others) (field summary 'groups)))
+         (reachable (- (+ (field summary 'others) (field summary 'groups)) far-problems))
          (title
           (cond ((eq? v 'warning)
                  (msgn (N_ "{n} secret can be read by others"
                            "{n} secrets can be read by others")
                        reachable (list 'n reachable)))
+                ((and (> far-problems 0) (= (field summary 'status) 0))
+                 (msgn (N_ "{n} secret on a network folder may be readable by others"
+                           "{n} secrets on network folders may be readable by others")
+                       far-problems (list 'n far-problems)))
                 ((and (eq? v 'ok) quick)
                  (msg (G_ "The usual places for secrets are closed")))
                 ((and (eq? v 'ok) (= count 0))
@@ -155,8 +194,22 @@
                  (msg (G_ "Secrets only you can read are normal. This means none were found that others can read, not that every secret was found.")))
                 ((eq? v 'warning)
                  (msg (G_ "Anyone who can use these accounts can copy them. Open each one marked with a warning to see how to close it.")))
+                ((> far-problems 0)
+                 (msg (G_ "On a network folder the server decides who can read a file, and what this computer shows may not say so. Check them on the server.")))
                 (else (msg (G_ "Nothing is known about the files that were not searched."))))))
     (list 'report (list 'verdict v) (list 'title title) (list 'description description))))
+
+(define (area-notes areas)
+  (map (lambda (a)
+         (let ((path (list 'path (field a 'path))))
+           (list 'note
+                 (case (field a 'status)
+                   ((0) (msg (G_ "Also searched: {path}") path))
+                   ((2) (msg (G_ "Not searched again, it overlaps a folder already searched: {path}") path))
+                   (else (msg (G_ "Could not be searched: {path}") path))))))
+       ;; Every area but the home folder itself: added ones searched, and
+       ;; those not searched (they carry index 0).
+       (keep (lambda (a) (or (> (field a 'index) 0) (not (= (field a 'status) 0)))) areas)))
 
 (define (notes summary)
   (append
@@ -172,17 +225,32 @@
 (define (report input)
   (let* ((entries (numbered (section-of input 'collection)))
          (summary (first-with 'secrets entries))
-         (findings (keep (lambda (e) (eq? (car (cdr e)) 'secret)) entries)))
+         (areas (map cdr (keep (lambda (e) (eq? (car (cdr e)) 'area)) entries)))
+         ;; Not searched areas keep index 0 in their line; only searched ones
+         ;; are areas findings belong to.
+         (searched (keep (lambda (a) (= (field a 'status) 0)) areas))
+         (findings (keep (lambda (e) (eq? (car (cdr e)) 'secret)) entries))
+         (far (lambda (item) (and (problem? item) (remote? searched item))))
+         (far-problems (count-of far findings)))
     (if (not summary)
         (list (list 'report (list 'verdict 'unknown)
                     (list 'title (msg (G_ "Your home folder could not be searched")))
                     (list 'description (msg (G_ "Nothing is known about the files that were not searched.")))))
         (append
-         (list (head summary (quick? input)))
-         (section findings '(3) (G_ "Every account can read these")
+         (list (head summary (quick? input) far-problems))
+         (section searched findings
+                  (lambda (i) (and (= (field i 'reach) 3) (not (far i))))
+                  (G_ "Every account can read these")
                   (G_ "Any other account on this computer can read them, including programs running as those accounts."))
-         (section findings '(2) (G_ "Members of a group can read these")
+         (section searched findings
+                  (lambda (i) (and (= (field i 'reach) 2) (not (far i))))
+                  (G_ "Members of a group can read these")
                   (G_ "Accounts in a group that has access to the file, or to a folder on the way, can read them."))
-         (section findings '(0 1) (G_ "Only you can read these")
+         (section searched findings far
+                  (G_ "On network folders, perhaps readable by others")
+                  (G_ "This computer shows them as readable by others, but on a network folder the server decides."))
+         (section searched findings (lambda (i) (< (field i 'reach) 2))
+                  (G_ "Only you can read these")
                   (G_ "This is how secrets should be kept. Listed so you know where they are."))
+         (area-notes areas)
          (notes summary)))))

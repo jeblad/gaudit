@@ -45,3 +45,10 @@ typedef void (*gaudit_secret_fn)(const gaudit_secret_hit *hit, void *ctx);
  * or -1 if home cannot be opened. */
 int gaudit_secret_scan(const char *home, uid_t uid, gaudit_secret_fn fn, void *ctx,
                        gaudit_secret_stats *stats);
+
+/* The same for a folder elsewhere (absolute, canonical): its whole tree,
+ * within its filesystem; reach also takes the folders above it into
+ * account, from "/" down (looked at with stat, never listed). rel is then
+ * relative to root. */
+int gaudit_secret_scan_area(const char *root, uid_t uid, gaudit_secret_fn fn, void *ctx,
+                            gaudit_secret_stats *stats);

@@ -26,4 +26,20 @@
       <summary>Report level on Home</summary>
     </key>
   </schema>
+  <!-- A plugin's parameters, relocatable: one path per plugin and report,
+       /@GAUDIT_SCHEMA_PATH@/plugins/<plugin-id>/<report-id>/. Plugins never
+       install schemas of their own. Values are checked when read; dconf is
+       writable by the account, so a report always says what it covered. -->
+  <schema id="@GAUDIT_APP_ID@.plugin">
+    <key name="folders" type="as">
+      <default>[]</default>
+      <summary>Folders searched besides the home folder</summary>
+    </key>
+    <!-- Places from the file manager the user took off the list; they are
+         offered there again only if the user adds them back. -->
+    <key name="removed-places" type="as">
+      <default>[]</default>
+      <summary>File manager places not searched</summary>
+    </key>
+  </schema>
 </schemalist>

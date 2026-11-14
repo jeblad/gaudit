@@ -46,9 +46,11 @@ typedef struct {
      * whether it is the last. NULL for runs that give a result directly. */
     gboolean (*collection_line)(const char *line, gboolean *last);
     const char *text_domain;  /* the plugin's own, for its report and fix pages */
-    /* The page for a fix a report row names; item_line is the collection
-     * line it is about, from the validated cache. NULL: no fixes. */
-    AdwNavigationPage *(*fix_page)(const char *fix_id, const char *item_line);
+    gboolean param_folders;   /* takes folders to search besides the home folder */
+    /* The page for a fix a report row names: item is the position of the
+     * collection line it is about, in lines (the validated cache). NULL: no
+     * fixes. */
+    AdwNavigationPage *(*fix_page)(const char *fix_id, GPtrArray *lines, guint item);
     const char *backend;      /* only with this package backend (e.g. "debian"); NULL: any */
     const char *run_waiting;  /* page 2 while the password is asked for, N_()-marked */
     const char *run_running;  /* page 2 while the check runs, N_()-marked */
@@ -69,6 +71,30 @@ guint gaudit_task_home_from(const GauditTaskInfo *task);
 /* The task that runs command (its own or a Home one), with its index; NULL
  * for none. */
 const GauditTaskInfo *gaudit_task_for_command(const char *command, gsize *index);
+
+/* The task's parameters for its full run (report "full"), or NULL when
+ * the schema is missing. */
+GSettings *gaudit_task_settings(const GauditTaskInfo *task);
+
+/* The folders the task searches besides the home folder (param_folders):
+ * those the user added (kept in its settings), then the file manager's
+ * places outside the home folder (bookmarks, KDE places, /mnt/<user> when
+ * it is the user's, mounted disks and network folders) the user has not
+ * taken off the list. Places under the
+ * home folder are searched with it anyway. All checked: absolute,
+ * printable, no "..", existing folders, at most GAUDIT_TASK_MAX_FOLDERS.
+ * Never NULL. places (may be NULL) gets which of them are places. */
+#define GAUDIT_TASK_MAX_FOLDERS 15
+GStrv gaudit_task_folders(const GauditTaskInfo *task);
+GStrv gaudit_task_folders_split(const GauditTaskInfo *task, GStrv *places);
+
+/* Adds a folder (and gives back a place taken off before), or takes one
+ * off: a folder the user added is forgotten, a place is remembered as
+ * removed. */
+/* FALSE when the folder is not taken: under the home folder (searched with
+ * it already) or not a plain absolute path. */
+gboolean gaudit_task_add_folder(const GauditTaskInfo *task, const char *folder);
+void gaudit_task_remove_folder(const GauditTaskInfo *task, const char *folder);
 
 /* Packages needed by the task that are not installed.
  * Empty array: everything is in place. NULL: the task is not supported on

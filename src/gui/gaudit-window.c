@@ -51,7 +51,11 @@ struct _GauditWindow {
     GtkWidget *elevated_marker;  /* ... and with administrator rights: a menu button */
 
     AdwNavigationSplitView *split;
-    GtkListBox *sidebar;
+    AdwNavigationView *side_nav;  /* the sidebar: its root, and a plugin's folder on top */
+    GtkListBox *sidebar;          /* the root's list: Home and the plugins */
+    GtkListBox *folder_list;      /* weak: the open folder's list */
+    int folder;                   /* the task whose folder is open, -1 for none */
+    gboolean syncing;             /* the two views are being brought in line */
     AdwNavigationView *content;
 
     const gaudit_pkg_backend *pkg;
@@ -604,10 +608,16 @@ static void fill_row(GauditWindow *self, int k)
 
 /* --- Home: report level and groups ------------------------------------------ */
 
+static void open_plugin(GauditWindow *self, gsize i, int entry);
+
+/* A group's chevron: into the plugin, on the report its Home row is a
+ * condensate of, made from the cached collection (whatever level that
+ * collection is; the full report takes Run). */
 static void on_group_chevron_clicked(GtkButton *button, gpointer user_data)
 {
     int index = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(button), "gaudit-index"));
-    navigate(GAUDIT_WINDOW(user_data), index, TRUE);
+    if (index > 0)
+        open_plugin(GAUDIT_WINDOW(user_data), (gsize)index - 1, 1);
 }
 
 static void on_level_selected(GObject *row, GParamSpec *pspec, gpointer user_data)
@@ -887,30 +897,211 @@ static AdwNavigationPage *build_home(GauditWindow *self)
 
 /* --- Navigation ----------------------------------------------------------- */
 
-/* index 0 is Home, index i > 0 is task i - 1. */
-static void navigate(GauditWindow *self, int index, gboolean show_content)
+/* Inside a plugin, the content's title says where: "<plugin> › <page>"
+ * (e.g. "Private Files › Parameters"); each page's own title is the second
+ * part. Done once per page. */
+static void title_in_folder(GauditWindow *self, AdwNavigationPage *page)
 {
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
-    g_return_if_fail(index >= 0 && (gsize)index <= n_tasks);
+    if (page == NULL || self->folder < 0 || (gsize)self->folder >= n_tasks
+        || g_object_get_data(G_OBJECT(page), "gaudit-titled") != NULL)
+        return;
+    /* Translators: the content's title inside a plugin, "<plugin> › <page>",
+     * e.g. "Private Files › Parameters". Turn the separator around for
+     * right-to-left languages if it reads wrong. */
+    g_autofree char *title = g_strdup_printf(_("%s › %s"), _(tasks[self->folder].title),
+                                             adw_navigation_page_get_title(page));
+    adw_navigation_page_set_title(page, title);
+    g_object_set_data(G_OBJECT(page), "gaudit-titled", GINT_TO_POINTER(1));
+}
 
-    AdwNavigationPage *page = index == 0
-        ? build_home(self)
-        : gaudit_task_page_new(&tasks[index - 1], self->pkg);
-    adw_navigation_view_replace(self->content, &page, 1);
+/* Pages pushed inside a plugin (a run, a fix) get the plugin in their title. */
+static void on_content_pushed(AdwNavigationView *nav, gpointer user_data)
+{
+    title_in_folder(GAUDIT_WINDOW(user_data), adw_navigation_view_get_visible_page(nav));
+}
 
+/* The content: Home, with page on top (NULL: Home alone), so the content's
+ * back button leads back to Home, as the folder's back button does. */
+static void content_set(GauditWindow *self, AdwNavigationPage *page)
+{
+    AdwNavigationPage *pages[2] = { build_home(self), page };
+    self->syncing = TRUE;
+    adw_navigation_view_replace(self->content, pages, page != NULL ? 2 : 1);
+    self->syncing = FALSE;
+}
+
+static void show_content(GauditWindow *self)
+{
+    adw_navigation_split_view_set_show_content(self->split, TRUE);
+}
+
+static void select_root(GauditWindow *self, int index)
+{
     GtkListBoxRow *row = gtk_list_box_get_row_at_index(self->sidebar, index);
-    if (gtk_list_box_get_selected_row(self->sidebar) != row)
+    if (row != NULL && gtk_list_box_get_selected_row(self->sidebar) != row)
         gtk_list_box_select_row(self->sidebar, row);
+}
 
-    if (show_content)
-        adw_navigation_split_view_set_show_content(self->split, TRUE);
+/* Back to Home, from anywhere: the sidebar to its root, the content to Home. */
+static void go_home(GauditWindow *self, gboolean show)
+{
+    self->syncing = TRUE;
+    adw_navigation_view_pop_to_tag(self->side_nav, "sidebar");
+    self->syncing = FALSE;
+    self->folder = -1;
+    content_set(self, NULL);
+    select_root(self, 0);
+    if (show)
+        show_content(self);
+}
+
+static void select_folder_row(GauditWindow *self, int index)
+{
+    GtkListBoxRow *row = self->folder_list != NULL
+        ? gtk_list_box_get_row_at_index(self->folder_list, index) : NULL;
+    if (row != NULL && gtk_list_box_get_selected_row(self->folder_list) != row)
+        gtk_list_box_select_row(self->folder_list, row);
+}
+
+/* A folder entry: 0 the plugin's parameters (page 1), 1 its report, from
+ * the cached collection; with nothing cached, a run is started (from page
+ * 1 when the plugin takes parameters). */
+static void open_entry(GauditWindow *self, int entry)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    if (self->folder < 0 || (gsize)self->folder >= n_tasks)
+        return;
+    const GauditTaskInfo *task = &tasks[self->folder];
+    AdwNavigationPage *page = NULL;
+    if (entry == 1) {
+        page = gaudit_cached_report_page_new(task);
+        if (page == NULL && task->n_params == 0) {
+            g_autoptr(GPtrArray) missing = gaudit_task_missing_packages(task, self->pkg);
+            if (missing != NULL && missing->len == 0)
+                page = gaudit_run_page_new(task);
+        }
+        if (page == NULL)
+            entry = 0;  /* to page 1, to run it from there */
+    }
+    if (page == NULL) {
+        page = gaudit_task_page_new(task, self->pkg);
+        adw_navigation_page_set_title(page, _("Parameters"));
+    }
+    title_in_folder(self, page);
+    content_set(self, page);
+    select_folder_row(self, entry);
+    show_content(self);
+}
+
+static void on_folder_row_activated(GtkListBox *box, GtkListBoxRow *row, gpointer user_data)
+{
+    (void)box;
+    open_entry(GAUDIT_WINDOW(user_data), gtk_list_box_row_get_index(row));
+}
+
+static GtkWidget *sidebar_row(const char *icon, const char *title, const char *subtitle);
+static GtkWidget *primary_menu_button(void);
+
+/* The plugin's folder in the sidebar: its parameters first, then its
+ * reports (for now one, until the plugin gives the list itself). No title
+ * and no administrator switch, a back button; the primary menu stays. */
+static AdwNavigationPage *folder_page(GauditWindow *self, const GauditTaskInfo *task)
+{
+    GtkListBox *list = GTK_LIST_BOX(gtk_list_box_new());
+    gtk_widget_add_css_class(GTK_WIDGET(list), "navigation-sidebar");
+    gtk_list_box_append(list, sidebar_row("preferences-system-symbolic", _("Parameters"), NULL));
+    gtk_list_box_append(list, sidebar_row("gaudit-documents-symbolic", _("Report"), NULL));
+    g_signal_connect(list, "row-activated", G_CALLBACK(on_folder_row_activated), self);
+    set_weak(&self->folder_list, list);
+
+    GtkWidget *scroller = gtk_scrolled_window_new();
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), GTK_WIDGET(list));
+    AdwHeaderBar *header = ADW_HEADER_BAR(adw_header_bar_new());
+    adw_header_bar_set_show_title(header, FALSE);
+    adw_header_bar_pack_end(header, primary_menu_button());
+    AdwToolbarView *view = ADW_TOOLBAR_VIEW(adw_toolbar_view_new());
+    adw_toolbar_view_add_top_bar(view, GTK_WIDGET(header));
+    adw_toolbar_view_set_content(view, scroller);
+    g_autofree char *tag = g_strdup_printf("folder-%s", task->id);
+    AdwNavigationPage *page = adw_navigation_page_new(GTK_WIDGET(view), _(task->title));
+    adw_navigation_page_set_tag(page, tag);
+    return page;
+}
+
+/* Into a plugin: its folder slides in, and the content shows entry (0
+ * page 1, 1 the report from the cache; -1: page 1, or in a narrow window
+ * only the folder, until an entry is picked). */
+static void open_plugin(GauditWindow *self, gsize i, int entry)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    g_return_if_fail(i < n_tasks);
+    if (self->folder != (int)i) {
+        self->syncing = TRUE;
+        adw_navigation_view_pop_to_tag(self->side_nav, "sidebar");
+        adw_navigation_view_push(self->side_nav, folder_page(self, &tasks[i]));
+        self->syncing = FALSE;
+        self->folder = (int)i;
+    }
+    select_root(self, (int)i + 1);
+    if (entry < 0 && adw_navigation_split_view_get_collapsed(self->split)) {
+        if (self->folder_list != NULL)
+            gtk_list_box_unselect_all(self->folder_list);
+        return;
+    }
+    open_entry(self, entry < 0 ? 0 : entry);
+}
+
+/* index 0 is Home, index i > 0 is task i - 1. */
+static void navigate(GauditWindow *self, int index, gboolean show)
+{
+    gsize n_tasks;
+    gaudit_tasks_get(&n_tasks);
+    g_return_if_fail(index >= 0 && (gsize)index <= n_tasks);
+    if (index == 0)
+        go_home(self, show);
+    else
+        open_plugin(self, (gsize)index - 1, -1);
 }
 
 static void on_sidebar_row_activated(GtkListBox *box, GtkListBoxRow *row, gpointer user_data)
 {
     (void)box;
     navigate(GAUDIT_WINDOW(user_data), gtk_list_box_row_get_index(row), TRUE);
+}
+
+/* The folder's back button: back to Home in the content too. */
+static void on_side_popped(AdwNavigationView *nav, AdwNavigationPage *page, gpointer user_data)
+{
+    (void)nav;
+    (void)page;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    if (self->syncing)
+        return;
+    self->folder = -1;
+    content_set(self, NULL);
+    select_root(self, 0);
+}
+
+/* The content's back button to Home: the folder closes too. A fix page
+ * popped back to its report leaves the folder open. */
+static void on_content_popped(AdwNavigationView *nav, AdwNavigationPage *page, gpointer user_data)
+{
+    (void)page;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    AdwNavigationPage *visible = adw_navigation_view_get_visible_page(nav);
+    if (self->syncing || self->folder < 0 || visible == NULL
+        || g_strcmp0(adw_navigation_page_get_tag(visible), "home") != 0)
+        return;
+    self->syncing = TRUE;
+    adw_navigation_view_pop_to_tag(self->side_nav, "sidebar");
+    self->syncing = FALSE;
+    self->folder = -1;
+    select_root(self, 0);
 }
 
 /* subtitle may be NULL. */
@@ -1045,6 +1236,7 @@ static void gaudit_window_dispose(GObject *object)
         set_weak(&win->rows[k], NULL);
     for (gsize g = 0; g < N_HOME_GROUPS; g++)
         set_weak(&win->groups[g], NULL);
+    set_weak(&win->folder_list, NULL);
     g_clear_object(&GAUDIT_WINDOW(object)->settings);
     G_OBJECT_CLASS(gaudit_window_parent_class)->dispose(object);
 }
@@ -1151,12 +1343,21 @@ static void gaudit_window_init(GauditWindow *self)
     AdwNavigationPage *sidebar_page =
         adw_navigation_page_new(GTK_WIDGET(sidebar_view), GAUDIT_APP_NAME);
     adw_navigation_page_set_tag(sidebar_page, "sidebar");
+    /* The sidebar navigates on its own: a plugin's folder slides in over
+     * the root, like folders in Secrets. */
+    self->folder = -1;
+    self->side_nav = ADW_NAVIGATION_VIEW(adw_navigation_view_new());
+    adw_navigation_view_add(self->side_nav, sidebar_page);
+    g_signal_connect(self->side_nav, "popped", G_CALLBACK(on_side_popped), self);
 
     /* Content: a navigation view, so a page 2 can be pushed on top. */
     self->content = ADW_NAVIGATION_VIEW(adw_navigation_view_new());
+    g_signal_connect(self->content, "popped", G_CALLBACK(on_content_popped), self);
+    g_signal_connect(self->content, "pushed", G_CALLBACK(on_content_pushed), self);
 
     self->split = ADW_NAVIGATION_SPLIT_VIEW(adw_navigation_split_view_new());
-    adw_navigation_split_view_set_sidebar(self->split, sidebar_page);
+    adw_navigation_split_view_set_sidebar(self->split,
+        adw_navigation_page_new(GTK_WIDGET(self->side_nav), GAUDIT_APP_NAME));
     adw_navigation_split_view_set_content(self->split,
         adw_navigation_page_new(GTK_WIDGET(self->content), GAUDIT_APP_NAME));
 
@@ -1243,8 +1444,12 @@ void gaudit_window_task_failed(GauditWindow *self, gsize task_index, gaudit_run_
         return;
     /* Nothing new: an earlier result stays; otherwise the row says why. */
     self->results[task_index].running = FALSE;
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    gboolean admin = task_index < n_tasks && tasks[task_index].needs_admin;
     self->results[task_index].note =
-        status == GAUDIT_RUN_CANCELLED ? _("Not checked: no password was given")
+        status == GAUDIT_RUN_CANCELLED && !admin ? _("Not checked: it was stopped")
+        : status == GAUDIT_RUN_CANCELLED ? _("Not checked: no password was given, or it was stopped")
         : status == GAUDIT_RUN_DENIED ? _("Not checked: the password was not accepted")
         : status == GAUDIT_RUN_OK ? _("Another check is running. Try again when it has finished")
         : _("The check could not be completed");

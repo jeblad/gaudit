@@ -1,4 +1,5 @@
 (input (system (host "test") (distro "Fedora Linux 45") (backend "fedora"))
        (collection
-        (secret (path ".") (reason "home-writable") (mode 509) (reach 2) (owned 1) (exact 1))
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (secret (area 0) (path ".") (reason "home-writable") (mode 509) (reach 2) (owned 1) (exact 1))
         (secrets (status 0) (count 1) (shown 1) (others 0) (groups 1) (truncated 1))))

@@ -1,5 +1,6 @@
 (input (system (host "test") (distro "Arch Linux") (backend "arch"))
        (collection
-        (secret (path ".ssh/id_ed25519") (reason "openssh-private-key") (mode 384) (reach 0) (owned 1) (exact 1))
-        (secret (path "notes/key.pem") (reason "no-such-reason") (mode 432) (reach 1) (owned 1) (exact 1))
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (secret (area 0) (path ".ssh/id_ed25519") (reason "openssh-private-key") (mode 384) (reach 0) (owned 1) (exact 1))
+        (secret (area 0) (path "notes/key.pem") (reason "no-such-reason") (mode 432) (reach 1) (owned 1) (exact 1))
         (secrets (status 0) (count 2) (shown 2) (others 0) (groups 0) (truncated 0))))

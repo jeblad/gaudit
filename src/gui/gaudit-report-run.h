@@ -24,6 +24,9 @@ void gaudit_cache_store(const GauditTaskInfo *task, const char *command, GPtrArr
  * made ("14:32"). */
 GPtrArray *gaudit_cache_lines(const GauditTaskInfo *task, const char **when);
 
+/* The command task's cached collection was made by (borrowed; NULL for none). */
+const char *gaudit_cache_command(const GauditTaskInfo *task);
+
 /* The report, or NULL when none could be made. Called exactly once. */
 typedef void (*GauditReportDoneFn)(GauditReport *report, gpointer user_data);
 

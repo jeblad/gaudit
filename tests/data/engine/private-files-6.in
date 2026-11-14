@@ -1,5 +1,6 @@
 (input (system (host "test") (distro "Ubuntu 26.04 LTS") (backend "debian"))
        (level "quick")
        (collection
-        (secret (path ".netrc") (reason "known-secret") (mode 420) (reach 3) (owned 1) (exact 1))
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (secret (area 0) (path ".netrc") (reason "known-secret") (mode 420) (reach 3) (owned 1) (exact 1))
         (secrets (status 0) (count 1) (shown 1) (others 1) (groups 0) (truncated 0))))

@@ -109,15 +109,12 @@ static const char app_css[] =
     "  background-color: alpha(var(--window-fg-color), 0.1);\n"
     "  color: var(--window-fg-color);\n"
     "}\n"
-    ".elevated-marker {\n"
-    "  color: var(--destructive-color);\n"
-    "}\n"
     ".navigation-sidebar row:selected .sidebar-icon {\n"
     "  background-color: var(--accent-bg-color);\n"
     "  color: var(--accent-fg-color);\n"
     "}\n";
 
-/* --- Home's checks that need the password ---------------------------------
+/* --- Home's tasks at the chosen level ---------------------------------------
  *
  * Run one after another through the session, so one password covers all
  * of them (the helper's lease). A cancelled or refused password stops the
@@ -127,64 +124,98 @@ static const char app_css[] =
 typedef struct {
     GauditApp *app;
     GauditWindow *view;
+    guint level;
     gsize next;      /* the task index to look at next */
     gsize current;
-} ElevatedJob;
+} LevelJob;
 
-static void elevated_next(ElevatedJob *job);
+static LevelJob *level_job;  /* the one under way, if any */
 
-static void elevated_finish(ElevatedJob *job)
+static void level_next(LevelJob *job);
+
+static void level_finish(LevelJob *job)
 {
-    gaudit_window_elevated_end(job->view, gaudit_model_summary(job->app->model));
+    gaudit_window_set_worst(job->view, gaudit_model_summary(job->app->model));
     g_object_unref(job->view);
     g_object_unref(job->app);
     g_free(job);
+    level_job = NULL;
 }
 
-static void on_elevated_done(gaudit_run_status status, const gaudit_firewall_report *result,
-                             gpointer user_data)
+static void on_level_done(gaudit_run_status status, const GauditRunResult *result,
+                          gpointer user_data)
 {
-    ElevatedJob *job = user_data;
+    LevelJob *job = user_data;
     /* A result is already in place (on_session_result); only say why
      * nothing came. */
     if (status != GAUDIT_RUN_OK || result == NULL)
-        gaudit_window_elevated_result(job->view, job->current, status, NULL);
+        gaudit_window_task_failed(job->view, job->current,
+                                  status == GAUDIT_RUN_OK ? GAUDIT_RUN_FAILED : status);
     if (status == GAUDIT_RUN_CANCELLED || status == GAUDIT_RUN_DENIED) {
-        elevated_finish(job);
+        level_finish(job);
         return;
     }
-    elevated_next(job);
+    level_next(job);
 }
 
-static void elevated_next(ElevatedJob *job)
+static void level_next(LevelJob *job)
 {
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
-    while (job->next < n_tasks && !tasks[job->next].home_elevated)
+    while (job->next < n_tasks
+           && (tasks[job->next].home_level == 0 || tasks[job->next].home_level > job->level))
         job->next++;
     if (job->next >= n_tasks) {
-        elevated_finish(job);
+        level_finish(job);
         return;
     }
     job->current = job->next++;
-    if (!gaudit_session_run(tasks[job->current].run_command, NULL, on_elevated_done, job)) {
-        gaudit_window_elevated_busy(job->view);
-        elevated_finish(job);
+    gaudit_window_task_running(job->view, job->current);
+    if (!gaudit_session_run(tasks[job->current].run_command, NULL, on_level_done, job)) {
+        /* Another run is under way (e.g. from a plugin's page 2). */
+        gaudit_window_task_failed(job->view, job->current, GAUDIT_RUN_OK);
+        level_finish(job);
     }
 }
 
-static void on_run_elevated(GSimpleAction *action, GVariant *param, gpointer app)
+/* The checks of the level chosen on Home, in the active window. */
+static void on_run_level(GSimpleAction *action, GVariant *param, gpointer app)
 {
     (void)action;
     (void)param;
     GtkWindow *win = gtk_application_get_active_window(GTK_APPLICATION(app));
-    if (!GAUDIT_IS_WINDOW(win))
+    if (!GAUDIT_IS_WINDOW(win) || level_job != NULL)
         return;
-    ElevatedJob *job = g_new0(ElevatedJob, 1);
+    guint level = gaudit_window_home_level(GAUDIT_WINDOW(win));
+    if (level == GAUDIT_LEVEL_QUICK)
+        return;  /* Home's own probes cover it */
+    LevelJob *job = g_new0(LevelJob, 1);
     job->app = g_object_ref(GAUDIT_APP(app));
     job->view = g_object_ref(GAUDIT_WINDOW(win));
-    gaudit_window_elevated_begin(job->view);
-    elevated_next(job);
+    job->level = level;
+    level_job = job;
+    level_next(job);
+}
+
+/* The switch in the header bar: administrator rights before any check. The
+ * switch itself follows the helper (on_elevated_changed), so a cancelled
+ * or refused password simply leaves it as it was. With the rights, the
+ * checks of Home's level run (switching is an explicit act). */
+static void on_elevate_done(gaudit_run_status status, const GauditRunResult *result,
+                            gpointer app)
+{
+    (void)result;
+    if (status == GAUDIT_RUN_OK)
+        g_action_group_activate_action(G_ACTION_GROUP(app), "run-level", NULL);
+}
+
+static void on_elevate(GSimpleAction *action, GVariant *param, gpointer app)
+{
+    (void)action;
+    (void)param;
+    (void)app;
+    if (!gaudit_session_elevated())
+        gaudit_session_run("elevate", NULL, on_elevate_done, app);  /* FALSE: a run is under way */
 }
 
 /* --- Actions (primary menu and shortcuts) --------------------------------- */
@@ -286,7 +317,8 @@ static const GActionEntry app_actions[] = {
     { .name = "shortcuts",   .activate = on_shortcuts },
     { .name = "about",       .activate = on_about },
     { .name = "quit",        .activate = on_quit },
-    { .name = "run-elevated", .activate = on_run_elevated },
+    { .name = "run-level",    .activate = on_run_level },
+    { .name = "elevate",      .activate = on_elevate },
 };
 
 static void set_accel(GApplication *app, const char *action, const char *accel)
@@ -299,27 +331,30 @@ static void set_accel(GApplication *app, const char *action, const char *accel)
  * page 2): into the model under the task's id, replacing an earlier one,
  * and onto Home's row for that task in every window, so the two never
  * disagree. */
-static void on_session_result(const char *command, const gaudit_firewall_report *result,
+static void on_session_result(const char *command, const GauditRunResult *result,
                               gpointer app)
 {
     GauditApp *self = GAUDIT_APP(app);
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    /* Every task has its row in its group on Home: its result is kept for
+     * the session, shown there, and counts in the summary. */
     for (gsize i = 0; i < n_tasks; i++) {
-        if (!tasks[i].home_elevated || g_strcmp0(tasks[i].run_command, command) != 0)
+        if (g_strcmp0(tasks[i].run_command, command) != 0)
             continue;
-        if (gaudit_model_add_finding(self->model, tasks[i].id, result->verdict) != GAUDIT_OK)
+        if (gaudit_model_add_finding(self->model, tasks[i].id, gaudit_run_result_verdict(result))
+            != GAUDIT_OK)
             g_warning("gaudit: could not record finding %s", tasks[i].id);
         gaudit_verdict worst = gaudit_model_summary(self->model);
         for (GList *w = gtk_application_get_windows(GTK_APPLICATION(app)); w != NULL; w = w->next)
             if (GAUDIT_IS_WINDOW(w->data)) {
-                gaudit_window_elevated_result(GAUDIT_WINDOW(w->data), i, GAUDIT_RUN_OK, result);
+                gaudit_window_task_result(GAUDIT_WINDOW(w->data), i, result);
                 gaudit_window_set_worst(GAUDIT_WINDOW(w->data), worst);
             }
     }
 }
 
-/* The red disc follows the helper in every window. */
+/* The user/administrator switch follows the helper in every window. */
 static void on_elevated_changed(gboolean on, gpointer app)
 {
     for (GList *w = gtk_application_get_windows(GTK_APPLICATION(app)); w != NULL; w = w->next)
@@ -328,7 +363,7 @@ static void on_elevated_changed(gboolean on, gpointer app)
 }
 
 /* With the last window gone, so are the elevated rights: nobody would see
- * the red disc. (Jobs that go on in the background come later.) */
+ * the switch. (Jobs that go on in the background come later.) */
 static void on_window_removed(GtkApplication *app, GtkWindow *window, gpointer user_data)
 {
     (void)window;

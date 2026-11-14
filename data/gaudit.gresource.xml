@@ -40,8 +40,13 @@
     <file preprocess="xml-stripblanks" alias="gaudit-status-medium-symbolic-rtl.svg">icons/scalable/actions/gaudit-status-medium-rtl-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="gaudit-status-low-symbolic.svg">icons/scalable/actions/gaudit-status-low-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="gaudit-status-unknown-symbolic.svg">icons/scalable/actions/gaudit-status-unknown-symbolic.svg</file>
-    <!-- The marker for elevated rights: adwaita-icon-theme's media-record
-         (LGPL-3.0, as above), renamed so no theme can change or hide it. -->
-    <file preprocess="xml-stripblanks" alias="gaudit-elevated-rights-symbolic.svg">icons/scalable/actions/gaudit-elevated-rights-symbolic.svg</file>
+    <!-- The Updates plugin's sidebar icon: adwaita-icon-theme's
+         package-x-generic-symbolic (LGPL-3.0, as above), renamed. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-packages-symbolic.svg">icons/scalable/actions/gaudit-packages-symbolic.svg</file>
+    <!-- The user/administrator switch: from the GNOME icon library, Jakub
+         Steiner, CC0 (one person, and two, the front one in the accent
+         colour), under own names so no theme can change or hide them. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-user-symbolic.svg">icons/scalable/actions/gaudit-user-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="gaudit-superuser-symbolic.svg">icons/scalable/actions/gaudit-superuser-symbolic.svg</file>
   </gresource>
 </gresources>

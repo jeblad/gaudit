@@ -2,6 +2,7 @@
 #include "config.h"
 
 #include <glib/gi18n.h>
+#include <string.h>
 
 #include "gaudit-category.h"
 #include "gaudit-firewall-text.h"
@@ -13,6 +14,7 @@
 
 typedef struct {
     AdwStatusPage *status;  /* weak: the page may be left while the run goes on */
+    const GauditTaskInfo *task;
     gaudit_firewall_report firewall;
 } RunJob;
 
@@ -90,31 +92,176 @@ static void show_firewall(RunJob *job)
         show_enable(job);
 }
 
+/* --- Package integrity ------------------------------------------------- */
+
+/* A dpkg package name, optionally with ":arch": [a-z0-9][a-z0-9+.-]+, so
+ * it can go into a command without quoting. Anything else is left out of
+ * the command (the finding is still listed). */
+static gboolean plain_package(const char *name)
+{
+    const char *colon = strchr(name, ':');
+    gsize len = colon != NULL ? (gsize)(colon - name) : strlen(name);
+    if (len < 2 || !(g_ascii_islower(name[0]) || g_ascii_isdigit(name[0])))
+        return FALSE;
+    for (gsize i = 0; i < len; i++)
+        if (!(g_ascii_islower(name[i]) || g_ascii_isdigit(name[i]) || strchr("+.-", name[i]) != NULL))
+            return FALSE;
+    if (colon != NULL)
+        for (const char *c = colon + 1; *c != '\0'; c++)
+            if (!(g_ascii_islower(*c) || g_ascii_isdigit(*c) || *c == '-'))
+                return FALSE;
+    return colon == NULL || colon[1] != '\0';
+}
+
+static GtkWidget *findings_group(const GauditRunResult *r, gaudit_integrity_file_kind kind,
+                                 const char *title, const char *description)
+{
+    AdwPreferencesGroup *group = NULL;
+    for (unsigned i = 0; i < r->n_files; i++) {
+        if (r->files[i].kind != kind)
+            continue;
+        if (group == NULL) {
+            group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+            adw_preferences_group_set_title(group, title);
+            adw_preferences_group_set_description(group, description);
+        }
+        AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
+        /* Paths and names come from the system: plain text only. */
+        adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), r->files[i].path);
+        adw_action_row_set_subtitle(row, r->files[i].package);
+        adw_preferences_row_set_title_selectable(ADW_PREFERENCES_ROW(row), TRUE);
+        adw_preferences_group_add(group, GTK_WIDGET(row));
+    }
+    return group != NULL ? GTK_WIDGET(group) : NULL;
+}
+
+char *gaudit_run_result_title(const GauditRunResult *r)
+{
+    if (r == NULL)
+        return g_strdup(_("Unknown"));
+    if (r->kind == GAUDIT_RUN_EVENT_FIREWALL) {
+        const char *icon;
+        char *title = NULL, *description = NULL;
+        gaudit_firewall_text(&r->firewall, &icon, &title, &description);
+        g_free(description);
+        return title;
+    }
+    const gaudit_integrity_report *ir = &r->integrity;
+    switch (ir->verdict) {
+    case GAUDIT_VERDICT_OK:
+        return g_strdup(_("No changed package files found"));
+    case GAUDIT_VERDICT_WARNING: {
+        unsigned long n = ir->changed + ir->missing;
+        return g_strdup_printf(ngettext("%lu package file has changed or is missing",
+                                        "%lu package files have changed or are missing", n), n);
+    }
+    default:
+        return g_strdup(_("Some package files could not be checked"));
+    }
+}
+
+static void show_integrity(RunJob *job, const GauditRunResult *r)
+{
+    const gaudit_integrity_report *ir = &r->integrity;
+    g_autofree char *title = gaudit_run_result_title(r);
+    const char *icon = ir->verdict == GAUDIT_VERDICT_OK ? "gaudit-status-high-symbolic"
+                     : ir->verdict == GAUDIT_VERDICT_WARNING ? "gaudit-status-medium-symbolic"
+                     : "gaudit-status-unknown-symbolic";
+    /* Translators: "Checked <files> files from <packages> packages (<MB> MB) in <s> seconds." */
+    g_autofree char *how = g_strdup_printf(_("Checked %lu files from %lu packages (%lu MB) in %u seconds."),
+                                           ir->checked, ir->packages, ir->megabytes, ir->seconds);
+    g_autofree char *description = ir->verdict == GAUDIT_VERDICT_OK
+        ? g_strdup_printf("%s %s", how,
+              /* Translators: Keep the meaning: no changes found is not proof. */
+              _("This means no changes were found, not that the computer is proven clean."))
+        : g_strdup(how);
+    show(job, icon, title, description);
+    if (job->status == NULL)
+        return;
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 24);
+    GtkWidget *changed = findings_group(r, GAUDIT_INTEGRITY_FILE_CHANGED, _("Changed"),
+        _("The file differs from the one the package installed."));
+    if (changed != NULL) {
+        gtk_box_append(GTK_BOX(box), changed);
+        /* Reinstalling puts the package's own files back. */
+        g_autoptr(GString) cmd = g_string_new("sudo apt install --reinstall");
+        g_autoptr(GHashTable) seen = g_hash_table_new(g_str_hash, g_str_equal);
+        for (unsigned i = 0; i < r->n_files; i++) {
+            const char *p = r->files[i].package;
+            if (r->files[i].kind != GAUDIT_INTEGRITY_FILE_CHANGED || !plain_package(p)
+                || !g_hash_table_add(seen, (gpointer)p))
+                continue;
+            g_string_append_printf(cmd, " %s", p);
+        }
+        if (g_hash_table_size(seen) > 0) {
+            gtk_box_append(GTK_BOX(box), small_note(
+                _("If you did not change these files yourself, put the packages' own files back "
+                  "by reinstalling them:")));
+            gtk_box_append(GTK_BOX(box), gaudit_command_field_new(cmd->str));
+        }
+    }
+    GtkWidget *missing = findings_group(r, GAUDIT_INTEGRITY_FILE_MISSING, _("Missing"),
+        _("The package installed the file, but it is gone."));
+    if (missing != NULL)
+        gtk_box_append(GTK_BOX(box), missing);
+    GtkWidget *unreadable = findings_group(r, GAUDIT_INTEGRITY_FILE_UNREADABLE, _("Could not be read"),
+        _("Even with administrator rights, these could not be read, so they were not checked."));
+    if (unreadable != NULL)
+        gtk_box_append(GTK_BOX(box), unreadable);
+    unsigned long total = ir->changed + ir->missing + ir->unreadable;
+    if (ir->shown < total) {
+        g_autofree char *more = g_strdup_printf(_("Showing %u of %lu files."), ir->shown, total);
+        gtk_box_append(GTK_BOX(box), small_note(more));
+    }
+    if (ir->bad_lines > 0) {
+        g_autofree char *bad = g_strdup_printf(
+            ngettext("%lu line in the packages' checksum lists could not be read.",
+                     "%lu lines in the packages' checksum lists could not be read.", ir->bad_lines),
+            ir->bad_lines);
+        gtk_box_append(GTK_BOX(box), small_note(bad));
+    }
+    if (gtk_widget_get_first_child(box) == NULL) {
+        g_object_ref_sink(box);
+        g_object_unref(box);
+        return;
+    }
+    GtkWidget *clamp = adw_clamp_new();
+    adw_clamp_set_child(ADW_CLAMP(clamp), box);
+    adw_status_page_set_child(job->status, clamp);
+}
+
+/* --- The run ---------------------------------------------------------- */
+
 static void on_progress(gpointer user_data)
 {
     RunJob *job = user_data;
     if (job->status != NULL) {
-        adw_status_page_set_title(job->status, _("Checking the firewall…"));
+        adw_status_page_set_title(job->status, _(job->task->run_running));
         adw_status_page_set_description(job->status, NULL);
     }
 }
 
-static void on_run_done(gaudit_run_status status, const gaudit_firewall_report *result,
+static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
                         gpointer user_data)
 {
     RunJob *job = user_data;
-    if (status == GAUDIT_RUN_OK && result != NULL) {
-        job->firewall = *result;
+    if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RUN_EVENT_FIREWALL) {
+        job->firewall = result->firewall;
         show_firewall(job);
+    } else if (status == GAUDIT_RUN_OK && result != NULL
+               && result->kind == GAUDIT_RUN_EVENT_INTEGRITY) {
+        show_integrity(job, result);
     } else if (status == GAUDIT_RUN_CANCELLED) {
         show(job, "dialog-information-symbolic", _("The check was cancelled"),
-             _("No password was given, so the firewall was not checked."));
+             _("No password was given, so nothing was checked."));
     } else if (status == GAUDIT_RUN_DENIED) {
         show(job, "dialog-password-symbolic", _("Not authorized"),
              _("The password was not accepted, or this account may not run administrator checks."));
     } else {
         show(job, "dialog-warning-symbolic", _("The check could not be completed"),
-             _("Nothing is known about the firewall from this run."));
+             _("Nothing is known from this run."));
     }
     if (job->status != NULL)
         g_object_remove_weak_pointer(G_OBJECT(job->status), (gpointer *)&job->status);
@@ -131,12 +278,12 @@ AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)
     adw_status_page_set_icon_name(status, "content-loading-symbolic");
 #endif
     adw_status_page_set_title(status, _("Waiting for the password"));
-    adw_status_page_set_description(status,
-        _("Reading the firewall rules needs the administrator password."));
+    adw_status_page_set_description(status, _(task->run_waiting));
     AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status), _(task->title), "run");
 
     RunJob *job = g_new0(RunJob, 1);
     job->status = status;
+    job->task = task;
     g_object_add_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
     if (!gaudit_session_run(task->run_command, on_progress, on_run_done, job)) {
         show(job, "dialog-information-symbolic", _("Another check is running"),

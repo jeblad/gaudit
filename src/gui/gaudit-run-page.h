@@ -5,10 +5,15 @@
 
 #include <adwaita.h>
 
+#include "gaudit-session.h"
 #include "gaudit-task.h"
 
 G_BEGIN_DECLS
 
 AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task);
+
+/* A result in one translated line, e.g. "No changed package files found".
+ * Free with g_free. */
+char *gaudit_run_result_title(const GauditRunResult *result);
 
 G_END_DECLS

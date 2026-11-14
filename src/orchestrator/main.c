@@ -14,7 +14,9 @@
  *   gaudit-orchestrator session
  *
  * Runs on request, one at a time, as the GUI asks for them on stdin ("run
- * firewall", "run integrity", "quit"). The first run starts the privileged helper through
+ * firewall", "run integrity", "elevate", "quit"). "elevate" only starts the
+ * helper, so the user can switch to administrator before any check; it
+ * ends ok once the helper runs as root. The first run starts the privileged helper through
  * pkexec (which asks for the administrator password) in its session mode;
  * later runs within the helper's lease use the same helper without asking
  * again. The helper decides when the lease ends, not this process. Writes
@@ -84,8 +86,9 @@ static long elapsed_ms(const struct timespec *start)
 /* --- Session: runs on request through the helper ------------------------ */
 
 #define PKEXEC_PATH      "/usr/bin/pkexec"
-/* What the GUI may ask for, the helper command it becomes, and how long
- * the run may take, typing the password included. */
+/* What the GUI may ask for, the helper command it becomes (NULL: none,
+ * only the helper itself), and how long the run may take, typing the
+ * password included. */
 static const struct {
     const char *request;
     const char *helper_cmd;
@@ -93,8 +96,9 @@ static const struct {
 } runs[] = {
     { "run firewall",  "firewall\n",  5 * 60 * 1000L },
     { "run integrity", "integrity\n", 20 * 60 * 1000L },  /* the helper allows 15 */
+    { "elevate",       NULL,          5 * 60 * 1000L },
 };
-enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_KINDS };
+enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_ELEVATE, RUN_KINDS };
 #define MAX_HELPER_OUT   (256 * 1024)     /* over a whole session */
 #define MAX_LINE_LEN     1024
 
@@ -172,7 +176,7 @@ typedef struct {
     int overdue;            /* its deadline has passed and been dealt with */
     int queued;             /* waits for the ending helper to be gone */
     struct timespec run_start;
-    int kind;               /* RUN_FIREWALL, RUN_INTEGRITY */
+    int kind;               /* RUN_FIREWALL, RUN_INTEGRITY, RUN_ELEVATE */
     int have_result;
     gaudit_firewall_report fw;
     gaudit_integrity_report integrity;
@@ -335,7 +339,13 @@ static int on_helper_line(char *line, void *ctx)
         if (gaudit_sexpr_parse(line, "helper-start", start, 4) != 0 || idle == 0 || cap == 0)
             return -1;
         st->started = 1;
-        return emit_elevated(1);
+        if (emit_elevated(1) != 0)
+            return -1;
+        if (st->running && st->kind == RUN_ELEVATE) {
+            st->running = 0;  /* that was all it asked for */
+            return emit_end(GAUDIT_RUN_OK);
+        }
+        return 0;
     }
     if (gaudit_sexpr_parse(line, "helper-end", end, 1) == 0) {
         close_helper_input(st);  /* leaving: nothing more goes to it */
@@ -399,7 +409,8 @@ static int helper_gone(session_state *st, int broken)
         /* A run asked for while the lease ran out: a new helper, which
          * asks for the password again. */
         st->queued = 0;
-        if (start_helper(st) != 0 || send_helper(st, runs[st->kind].helper_cmd) != 0) {
+        if (start_helper(st) != 0
+            || (runs[st->kind].helper_cmd != NULL && send_helper(st, runs[st->kind].helper_cmd) != 0)) {
             st->running = 0;
             return emit_end(GAUDIT_RUN_FAILED) != 0 ? -1 : r;
         }
@@ -441,6 +452,8 @@ static int on_gui_line(char *line, void *ctx)
             kind = i;
     if (kind < 0 || st->running)
         return -1;  /* unknown, or one run at a time */
+    if (kind == RUN_ELEVATE && st->started && st->to_helper >= 0)
+        return emit_end(GAUDIT_RUN_OK);  /* already root, and not leaving */
     st->kind = kind;
     st->running = 1;
     st->overdue = 0;
@@ -455,6 +468,8 @@ static int on_gui_line(char *line, void *ctx)
         st->running = 0;
         return emit_end(GAUDIT_RUN_FAILED);
     }
+    if (runs[st->kind].helper_cmd == NULL)
+        return 0;  /* only the helper: its (helper-start ...) ends the run */
     /* Waits in the pipe until the helper runs (after the password). */
     if (send_helper(st, runs[st->kind].helper_cmd) != 0)
         close_helper_input(st);  /* the helper's end reports the run */

@@ -4,17 +4,18 @@
 #include "gaudit-orchestrator.h"
 #include "gaudit-session.h"
 
-/* A run waits for the password at most 5 minutes in the orchestrator;
- * this is the GUI's own limit on top. */
-#define RUN_WATCHDOG_S (6 * 60)
+/* The orchestrator gives a run at most 20 minutes (the integrity check;
+ * others less); this is the GUI's own limit on top. */
+#define RUN_WATCHDOG_S (21 * 60)
 
 typedef struct {
     char *command;
     GauditRunProgressFn on_progress;
     GauditRunDoneFn on_done;
     gpointer user_data;
+    gboolean wants_result;  /* FALSE for "elevate", which only starts the helper */
     gboolean have_result;
-    gaudit_firewall_report result;
+    GauditRunResult result;
 } Run;
 
 static struct {
@@ -24,7 +25,7 @@ static struct {
     guint watchdog_id;
     void (*listener)(gboolean on, gpointer user_data);
     gpointer listener_data;
-    void (*result_listener)(const char *command, const gaudit_firewall_report *result,
+    void (*result_listener)(const char *command, const GauditRunResult *result,
                             gpointer user_data);
     gpointer result_listener_data;
 } S;
@@ -48,7 +49,7 @@ static void end_run(gaudit_run_status status)
         g_source_remove(S.watchdog_id);
         S.watchdog_id = 0;
     }
-    const gaudit_firewall_report *result =
+    const GauditRunResult *result =
         status == GAUDIT_RUN_OK && run->have_result ? &run->result : NULL;
     if (result != NULL && S.result_listener != NULL)
         S.result_listener(run->command, result, S.result_listener_data);
@@ -72,16 +73,33 @@ static gboolean on_line(const char *line, gpointer user_data)
             S.run->on_progress(S.run->user_data);
         return TRUE;
     case GAUDIT_RUN_EVENT_FIREWALL:
-        if (S.run == NULL || S.run->have_result)
-            return FALSE;  /* unasked, or twice */
+        if (S.run == NULL || !S.run->wants_result || S.run->have_result || S.run->result.n_files > 0)
+            return FALSE;  /* unasked, twice, or after another kind's findings */
         S.run->have_result = TRUE;
-        S.run->result = ev.firewall;
+        S.run->result.kind = ev.type;
+        S.run->result.firewall = ev.firewall;
+        return TRUE;
+    case GAUDIT_RUN_EVENT_INTEGRITY_FILE:
+        if (S.run == NULL || !S.run->wants_result || S.run->have_result
+            || S.run->result.n_files >= GAUDIT_INTEGRITY_SHOWN)
+            return FALSE;  /* unasked, after the result, or too many */
+        S.run->result.files[S.run->result.n_files++] = ev.file;
+        return TRUE;
+    case GAUDIT_RUN_EVENT_INTEGRITY:
+        if (S.run == NULL || !S.run->wants_result || S.run->have_result
+            || ev.integrity.shown != S.run->result.n_files)
+            return FALSE;  /* unasked, twice, or not the findings it says it listed */
+        S.run->have_result = TRUE;
+        S.run->result.kind = ev.type;
+        S.run->result.integrity = ev.integrity;
         return TRUE;
     case GAUDIT_RUN_EVENT_END:
         if (S.run == NULL)
             return FALSE;
-        if (ev.status == GAUDIT_RUN_OK && !S.run->have_result)
-            return FALSE;  /* OK without a result */
+        if (ev.status == GAUDIT_RUN_OK && S.run->wants_result != S.run->have_result)
+            return FALSE;  /* OK without the result asked for */
+        if (ev.status == GAUDIT_RUN_OK && !S.run->wants_result && !S.elevated)
+            return FALSE;  /* "elevate" ok, but the helper never started */
         end_run(ev.status);
         return TRUE;
     default:
@@ -121,6 +139,7 @@ gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress
     run->on_progress = on_progress;
     run->on_done = on_done_fn;
     run->user_data = user_data;
+    run->wants_result = g_strcmp0(command, "elevate") != 0;
     S.run = run;
     S.watchdog_id = g_timeout_add_seconds(RUN_WATCHDOG_S, on_watchdog, NULL);
 
@@ -152,8 +171,17 @@ void gaudit_session_set_elevated_listener(void (*fn)(gboolean on, gpointer user_
     S.listener_data = user_data;
 }
 
+gaudit_verdict gaudit_run_result_verdict(const GauditRunResult *result)
+{
+    if (result == NULL)
+        return GAUDIT_VERDICT_UNKNOWN;
+    return result->kind == GAUDIT_RUN_EVENT_FIREWALL ? result->firewall.verdict
+         : result->kind == GAUDIT_RUN_EVENT_INTEGRITY ? result->integrity.verdict
+         : GAUDIT_VERDICT_UNKNOWN;
+}
+
 void gaudit_session_set_result_listener(void (*fn)(const char *command,
-                                                   const gaudit_firewall_report *result,
+                                                   const GauditRunResult *result,
                                                    gpointer user_data),
                                         gpointer user_data)
 {

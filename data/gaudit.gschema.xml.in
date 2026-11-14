@@ -14,5 +14,16 @@
       <default>false</default>
       <summary>Window maximized</summary>
     </key>
+    <!-- Home's report level. dconf is writable by the user (and by malware
+         on the account), so Home always shows the level it runs at. -->
+    <key name="home-level" type="s">
+      <choices>
+        <choice value="quick"/>
+        <choice value="normal"/>
+        <choice value="thorough"/>
+      </choices>
+      <default>"quick"</default>
+      <summary>Report level on Home</summary>
+    </key>
   </schema>
 </schemalist>

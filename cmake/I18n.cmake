@@ -75,3 +75,46 @@ function(gaudit_i18n_merge kind template output)
     DEPENDS ${template} ${GAUDIT_PO_FILES} ${GAUDIT_PO_DIR}/LINGUAS
     VERBATIM)
 endfunction()
+
+# A plugin's own text domain: its report (rule files, Scheme: G_ and the
+# plural pair N_) and its GUI code (C: P_). The plugin's po/ holds
+# POTFILES.in (C files), RULES.in (rule files), LINGUAS and <lang>.po.
+# Joins the pot/update-po targets, and builds its .mo files into the same
+# locale directory, so the compiled-in path finds them.
+function(gaudit_plugin_domain domain podir)
+  set(_pot ${podir}/${domain}.pot)
+  file(STRINGS ${podir}/LINGUAS _langs REGEX "^[^#]")
+  list(TRANSFORM _langs STRIP)
+  list(FILTER _langs EXCLUDE REGEX "^$")
+  add_custom_target(pot-${domain}
+    COMMAND ${XGETTEXT_EXECUTABLE} --from-code=UTF-8 --add-comments=Translators
+            --language=C --keyword=P_ --package-name=${domain}
+            --package-version=${PROJECT_VERSION} --directory=${PROJECT_SOURCE_DIR}
+            --files-from=${podir}/POTFILES.in --output=${_pot}
+    COMMAND ${XGETTEXT_EXECUTABLE} --from-code=UTF-8 --join-existing
+            --language=Scheme --keyword=G_ --keyword=N_:1,2
+            --directory=${PROJECT_SOURCE_DIR} --files-from=${podir}/RULES.in --output=${_pot}
+    COMMENT "Extracting the strings of ${domain}"
+    VERBATIM)
+  add_dependencies(pot pot-${domain})
+  set(_cmds)
+  set(_mos)
+  foreach(lang IN LISTS _langs)
+    set(_po ${podir}/${lang}.po)
+    list(APPEND _cmds COMMAND ${MSGMERGE_EXECUTABLE} --quiet --update --backup=none ${_po} ${_pot})
+    set(_mo_dir ${GAUDIT_BUILD_LOCALEDIR}/${lang}/LC_MESSAGES)
+    set(_mo ${_mo_dir}/${domain}.mo)
+    add_custom_command(OUTPUT ${_mo}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${_mo_dir}
+      COMMAND ${MSGFMT_EXECUTABLE} --check --output-file=${_mo} ${_po}
+      DEPENDS ${_po}
+      COMMENT "Compiling ${domain} translation ${lang}"
+      VERBATIM)
+    list(APPEND _mos ${_mo})
+    install(FILES ${_mo} DESTINATION ${CMAKE_INSTALL_LOCALEDIR}/${lang}/LC_MESSAGES)
+  endforeach()
+  add_custom_target(update-po-${domain} ${_cmds} VERBATIM)
+  add_dependencies(update-po-${domain} pot-${domain})
+  add_dependencies(update-po update-po-${domain})
+  add_custom_target(translations-${domain} ALL DEPENDS ${_mos})
+endfunction()

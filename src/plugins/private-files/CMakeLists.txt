@@ -4,6 +4,7 @@
 #   backend/       the scans themselves
 #   common/        the line format between orchestrator and GUI
 #   orchestrator/  the "secrets" mode
+#   rules/         the report, in Guile (run by gaudit-engine)
 target_sources(gaudit_backend PRIVATE backend/private-files.c backend/secret-scan.c)
 target_include_directories(gaudit_backend PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/backend)
 target_sources(gaudit_probe PRIVATE common/secrets-io.c)
@@ -11,5 +12,12 @@ target_include_directories(gaudit_probe PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/commo
                                         PRIVATE ${PROJECT_SOURCE_DIR}/src/probe)
 target_sources(gaudit-orchestrator PRIVATE orchestrator/secrets.c)
 target_include_directories(gaudit-orchestrator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/orchestrator)
-target_sources(gaudit PRIVATE plugin.c gaudit-secrets-page.c)
+target_sources(gaudit PRIVATE plugin.c gaudit-private-files.c)
 target_include_directories(gaudit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Its own text domain: the report and the fix pages.
+gaudit_plugin_domain(gaudit-private-files ${CMAKE_CURRENT_SOURCE_DIR}/po)
+
+set(GAUDIT_PLUGIN_ID core.private-files)
+configure_file(rules/report.scm ${GAUDIT_BUILD_RULES_DIR}/${GAUDIT_PLUGIN_ID}/report.scm COPYONLY)
+install(FILES rules/report.scm DESTINATION ${GAUDIT_INSTALL_RULES_DIR}/${GAUDIT_PLUGIN_ID})

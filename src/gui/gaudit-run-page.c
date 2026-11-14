@@ -7,7 +7,7 @@
 #include "gaudit-category.h"
 #include "gaudit-firewall-text.h"
 #include "gaudit-run-page.h"
-#include "gaudit-secrets-page.h"
+#include "gaudit-report-run.h"
 #include "gaudit-session.h"
 #include "gaudit/backend.h"
 #include "gaudit-task-page.h"
@@ -141,8 +141,6 @@ char *gaudit_run_result_title(const GauditRunResult *r)
 {
     if (r == NULL)
         return g_strdup(_("Unknown"));
-    if (r->kind == GAUDIT_RESULT_SECRETS)
-        return gaudit_secrets_title(r);
     if (r->kind == GAUDIT_RESULT_FIREWALL) {
         const char *icon;
         char *title = NULL, *description = NULL;
@@ -246,13 +244,73 @@ static void on_progress(gpointer user_data)
     }
 }
 
+static void job_free(RunJob *job)
+{
+    if (job->status != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(job->status), (gpointer *)&job->status);
+    g_free(job);
+}
+
+/* A fix the report names, built by the plugin from the collected line. */
+typedef struct {
+    const GauditTaskInfo *task;
+    GPtrArray *lines;
+} FixData;
+
+static void fix_data_free(gpointer p)
+{
+    FixData *d = p;
+    g_ptr_array_unref(d->lines);
+    g_free(d);
+}
+
+static AdwNavigationPage *fix_page(const char *fix_id, guint item, gpointer user_data)
+{
+    FixData *d = user_data;
+    if (d->task->fix_page == NULL || item >= d->lines->len)
+        return NULL;
+    return d->task->fix_page(fix_id, g_ptr_array_index(d->lines, item));
+}
+
+typedef struct {
+    RunJob *job;
+    GPtrArray *lines;
+} ReportJob;
+
+static void on_report(GauditReport *report, gpointer user_data)
+{
+    ReportJob *rj = user_data;
+    RunJob *job = rj->job;
+    if (job->status != NULL && report != NULL) {
+        FixData *d = g_new0(FixData, 1);
+        d->task = job->task;
+        d->lines = g_ptr_array_ref(rj->lines);
+        gaudit_report_show(job->status, report, job->task->text_domain, fix_page, d, fix_data_free);
+    } else if (report == NULL) {
+        show(job, "dialog-warning-symbolic", _("The report could not be made"),
+             _("The check ran, but its report could not be put together."));
+    }
+    gaudit_report_free(report);
+    g_ptr_array_unref(rj->lines);
+    g_free(rj);
+    job_free(job);
+}
+
 static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
                         gpointer user_data)
 {
     RunJob *job = user_data;
-    if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_SECRETS) {
-        if (job->status != NULL)
-            gaudit_secrets_show(job->status, result);
+    if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_COLLECTION) {
+        /* The plugin's rule script makes the report from what was collected. */
+        if (job->status != NULL) {
+            adw_status_page_set_title(job->status, _("Writing the report…"));
+            adw_status_page_set_description(job->status, NULL);
+        }
+        ReportJob *rj = g_new0(ReportJob, 1);
+        rj->job = job;
+        rj->lines = g_ptr_array_ref(result->lines);
+        gaudit_report_run(job->task, job->task->run_command, rj->lines, on_report, rj);
+        return;
     } else if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_FIREWALL) {
         job->firewall = result->firewall;
         show_firewall(job);
@@ -269,9 +327,7 @@ static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
         show(job, "dialog-warning-symbolic", _("The check could not be completed"),
              _("Nothing is known from this run."));
     }
-    if (job->status != NULL)
-        g_object_remove_weak_pointer(G_OBJECT(job->status), (gpointer *)&job->status);
-    g_free(job);
+    job_free(job);
 }
 
 AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)

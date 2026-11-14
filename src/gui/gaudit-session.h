@@ -7,14 +7,13 @@
 #include <glib.h>
 
 #include "gaudit/run.h"
-#include "secrets.h"
 
 G_BEGIN_DECLS
 
 typedef enum {
     GAUDIT_RESULT_FIREWALL,
     GAUDIT_RESULT_INTEGRITY,
-    GAUDIT_RESULT_SECRETS,
+    GAUDIT_RESULT_COLLECTION,  /* collected data for the plugin's rule script */
 } GauditResultKind;
 
 /* What a run found: one kind of result, with its findings. */
@@ -24,12 +23,10 @@ typedef struct {
     gaudit_integrity_report integrity;
     gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
     unsigned n_files;
-    gaudit_secrets_summary secrets;
-    gaudit_secret_finding secret[GAUDIT_SECRETS_MAX_SHOWN];
-    unsigned n_secrets;
+    GPtrArray *lines;  /* COLLECTION: its lines (char *), each checked by the plugin */
 } GauditRunResult;
 
-/* The verdict of a result. */
+/* The verdict of a result (unknown for a collection: its report decides). */
 gaudit_verdict gaudit_run_result_verdict(const GauditRunResult *result);
 
 /* When a run has ended: status, and the result when status is

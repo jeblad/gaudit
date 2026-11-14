@@ -12,6 +12,7 @@
 #include "gaudit-task.h"
 #include "gaudit-task-page.h"
 #include "gaudit-run-page.h"
+#include "gaudit-report-run.h"
 
 /* Home's groups: each core plugin's report, its rows in this order. The
  * chevron in a group's title leads to the task named by task_id, when this
@@ -33,7 +34,7 @@ static const struct {
      * into a finding. */
     { N_("Firewall"), "core.firewall", { GAUDIT_PROBE_FIREWALL, GAUDIT_PROBE_LISTENING }, 2 },
     { N_("Antivirus"), NULL, { GAUDIT_PROBE_ANTIVIRUS }, 1 },
-    { N_("Private Files"), "core.private-files", { GAUDIT_PROBE_PRIVATE_FILES }, 1 },
+    { N_("Private Files"), "core.private-files", { 0 }, 0 },
 };
 #define N_HOME_GROUPS (sizeof home_groups / sizeof home_groups[0])
 
@@ -77,6 +78,7 @@ struct _GauditWindow {
     } results[GAUDIT_WINDOW_MAX_TASKS];
     AdwActionRow *check_rows[GAUDIT_WINDOW_MAX_TASKS];  /* weak: rows of tasks on Home */
     AdwActionRow *empty_rows[GAUDIT_WINDOW_MAX_TASKS];  /* weak: "no report at this level" */
+    GtkWidget *chevrons[GAUDIT_WINDOW_MAX_TASKS];       /* weak: in the plugins' group titles */
 };
 
 G_DEFINE_FINAL_TYPE(GauditWindow, gaudit_window, ADW_TYPE_APPLICATION_WINDOW)
@@ -89,8 +91,9 @@ static guint home_level(GauditWindow *self);
 static void fill_check_row(GauditWindow *self, gsize i);
 static void fill_check_rows(GauditWindow *self);
 
-/* Whether every check above Quick at the chosen level has run and passed
- * in this session. At Quick there are none: the summary stays "high". */
+/* Whether every check that needs the password at the chosen level has run
+ * and passed in this session (the status-ok shield); the others count in
+ * the summary as findings. At Quick there are none: the shield stays high. */
 static gboolean strict_passed(GauditWindow *self)
 {
     gsize n_tasks;
@@ -98,7 +101,7 @@ static gboolean strict_passed(GauditWindow *self)
     guint level = home_level(self);
     gboolean any = FALSE;
     for (gsize i = 0; i < n_tasks && i < GAUDIT_WINDOW_MAX_TASKS; i++) {
-        if (tasks[i].home_level == 0 || tasks[i].home_level > level)
+        if (!tasks[i].needs_admin || gaudit_task_home_command(&tasks[i], level) == NULL)
             continue;
         if (!self->results[i].have || self->results[i].verdict != GAUDIT_VERDICT_OK)
             return FALSE;
@@ -306,19 +309,6 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
             *subtitle = g_strdup_printf(_("Security updates come from %s, a mirror that may lag behind"),
                                         r->text[0] != '\0' ? r->text : "?");
         return _("Source of security updates");
-
-    case GAUDIT_PROBE_PRIVATE_FILES:
-        if (r->verdict == GAUDIT_VERDICT_UNKNOWN)
-            *subtitle = g_strdup(_("Could not check the private files"));
-        else if (r->count == 0)
-            *subtitle = g_strdup(_("Private files and folders are protected"));
-        else
-            /* Translators: %s is the first file or folder, e.g. ~/.ssh/id_ed25519. */
-            *subtitle = g_strdup_printf(ngettext("%u private file or folder can be reached by others: %s",
-                                                 "%u private files or folders can be reached by others, e.g. %s",
-                                                 r->count),
-                                        r->count, r->text);
-        return _("Usual places for secrets");
 
     case GAUDIT_PROBE_PACKAGE_INDEX:
         /* When the package lists were refreshed, which is not the same as
@@ -567,6 +557,32 @@ static void fill_row_inner(GauditWindow *self, int k)
     gtk_widget_set_visible(GTK_WIDGET(row), TRUE);
 }
 
+/* The chevron to a plugin appears once its collection is done, that is,
+ * once a collection of it is cached. Plugins that do not collect for a
+ * rule script yet (their checks run in the helper) have no cache: for
+ * them, once every probe row of the group has its answer and their own
+ * run is not under way. */
+static void update_chevron(GauditWindow *self, gsize task)
+{
+    if (task >= GAUDIT_WINDOW_MAX_TASKS || self->chevrons[task] == NULL)
+        return;
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    if (tasks[task].collection_line != NULL) {
+        gtk_widget_set_visible(self->chevrons[task], gaudit_cache_lines(&tasks[task], NULL) != NULL
+                                                     && !self->results[task].running);
+        return;
+    }
+    gboolean done = !self->results[task].running;
+    for (gsize g = 0; done && g < N_HOME_GROUPS; g++) {
+        if (g_strcmp0(home_groups[g].task_id, tasks[task].id) != 0)
+            continue;
+        for (int j = 0; j < home_groups[g].n_kinds; j++)
+            done = done && self->received[home_groups[g].kinds[j]];
+    }
+    gtk_widget_set_visible(self->chevrons[task], done);
+}
+
 /* A group is shown while any of its rows is: one whose checks do not apply
  * here (e.g. Snap without snapd) goes once all of them have said so. */
 static void fill_row(GauditWindow *self, int k)
@@ -581,6 +597,8 @@ static void fill_row(GauditWindow *self, int k)
         }
         if (has_k && self->groups[g] != NULL)
             gtk_widget_set_visible(GTK_WIDGET(self->groups[g]), any);
+        if (has_k)
+            update_chevron(self, (gsize)task_by_id(home_groups[g].task_id));
     }
 }
 
@@ -603,10 +621,9 @@ static void on_level_selected(GObject *row, GParamSpec *pspec, gpointer user_dat
         g_settings_set_string(self->settings, "home-level", home_levels[i]);
     fill_check_rows(self);
     gaudit_window_set_worst(self, self->worst);
-    /* Picking a level is an explicit act: now its checks run, and the
-     * password is asked for if they need it. */
-    if (i > GAUDIT_LEVEL_QUICK)
-        gtk_widget_activate_action(GTK_WIDGET(row), "app.run-level", NULL);
+    /* Picking a level is an explicit act: now its reports are collected,
+     * and the password is asked for if they need it. */
+    gtk_widget_activate_action(GTK_WIDGET(row), "app.run-level", NULL);
 }
 
 /* The level Home runs at; "quick" when unset, unknown or not in the schema. */
@@ -667,6 +684,10 @@ static GtkWidget *build_group(GauditWindow *self, const char *title, int task,
         g_object_set_data(G_OBJECT(chevron), "gaudit-index", GINT_TO_POINTER(task + 1));
         g_signal_connect(chevron, "clicked", G_CALLBACK(on_group_chevron_clicked), self);
         adw_preferences_group_set_header_suffix(group, chevron);
+        /* Shown once the group's first collection is in (update_chevron). */
+        gtk_widget_set_visible(chevron, FALSE);
+        if (task < GAUDIT_WINDOW_MAX_TASKS)
+            set_weak(&self->chevrons[task], chevron);
     }
     if (slot != NULL)
         set_weak(slot, group);
@@ -721,7 +742,7 @@ static gboolean task_has_core_group(gsize i)
  * verdict and what was found, with the time. In its group it is shown at
  * the levels that include it, and always once it has a result: results do
  * not vanish when the level goes down. */
-static void fill_check_row(GauditWindow *self, gsize i)
+static void fill_check_row_inner(GauditWindow *self, gsize i)
 {
     AdwActionRow *row = self->check_rows[i];
     if (row == NULL)
@@ -735,17 +756,18 @@ static void fill_check_row(GauditWindow *self, gsize i)
     const GauditTaskInfo *task = &gaudit_tasks_get(&n_tasks)[i];
     /* Shown at the levels that include it (none for a task with no Home
      * report), and always once it has a result. */
-    gboolean shown = (task->home_level > 0 && task->home_level <= home_level(self))
+    gboolean shown = gaudit_task_home_command(task, home_level(self)) != NULL
                      || self->results[i].have || self->results[i].running;
     gtk_widget_set_visible(GTK_WIDGET(row), shown);
     AdwActionRow *empty = self->empty_rows[i];
     if (empty != NULL) {
         gtk_widget_set_visible(GTK_WIDGET(empty), !shown);
-        if (task->home_level > 0 && task->home_level < GAUDIT_LEVEL_COUNT) {
+        guint from_level = gaudit_task_home_from(task);
+        if (from_level < GAUDIT_LEVEL_COUNT) {
             /* Translators: the level a plugin's report on Home first shows
              * at, e.g. "Shown from Thorough". */
             g_autofree char *from = g_strdup_printf(_("Shown from %s"),
-                                                    _(home_level_names[task->home_level]));
+                                                    _(home_level_names[from_level]));
             adw_action_row_set_subtitle(empty, from);
         } else {
             adw_action_row_set_subtitle(empty, _("Its check runs on the plugin's own page"));
@@ -774,23 +796,30 @@ static void fill_check_row(GauditWindow *self, gsize i)
                                    : _("Switch to administrator to run this check"));
 }
 
+static void fill_check_row(GauditWindow *self, gsize i)
+{
+    fill_check_row_inner(self, i);
+    update_chevron(self, i);
+}
+
 static void fill_check_rows(GauditWindow *self)
 {
     for (gsize i = 0; i < GAUDIT_WINDOW_MAX_TASKS; i++)
         fill_check_row(self, i);
 }
 
-void gaudit_window_task_result(GauditWindow *self, gsize task_index, const GauditRunResult *result)
+void gaudit_window_task_report(GauditWindow *self, gsize task_index, gaudit_verdict verdict,
+                               const char *title)
 {
-    g_return_if_fail(GAUDIT_IS_WINDOW(self) && result != NULL);
+    g_return_if_fail(GAUDIT_IS_WINDOW(self) && title != NULL);
     if (task_index >= GAUDIT_WINDOW_MAX_TASKS)
         return;
     self->results[task_index].have = TRUE;
     self->results[task_index].running = FALSE;
     self->results[task_index].note = NULL;
-    self->results[task_index].verdict = gaudit_run_result_verdict(result);
+    self->results[task_index].verdict = verdict;
     g_free(self->results[task_index].title);
-    self->results[task_index].title = gaudit_run_result_title(result);
+    self->results[task_index].title = g_strdup(title);
     g_autoptr(GDateTime) now = g_date_time_new_now_local();
     g_autofree char *when = g_date_time_format(now, "%H:%M");
     g_strlcpy(self->results[task_index].when, when != NULL ? when : "",
@@ -1009,6 +1038,7 @@ static void gaudit_window_dispose(GObject *object)
     for (int i = 0; i < GAUDIT_WINDOW_MAX_TASKS; i++) {
         set_weak(&win->check_rows[i], NULL);
         set_weak(&win->empty_rows[i], NULL);
+        set_weak(&win->chevrons[i], NULL);
         g_clear_pointer(&win->results[i].title, g_free);
     }
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)

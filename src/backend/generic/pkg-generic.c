@@ -51,7 +51,6 @@ static const gaudit_pkg_backend generic_pkg = {
     .name = "generic",
     .own_package_system = -1,
     .package_systems_present = gaudit_package_systems_present_here,
-    .private_files = gaudit_private_files_here,
     .listening = gaudit_listening_here,
     .capability = capability,
     .flatpak_state = flatpak_state,

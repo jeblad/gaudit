@@ -1,0 +1,268 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-14 21:30+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: src/plugins/private-files/gaudit-private-files.c:47
+msgid "Others can change what is in your home folder."
+msgstr ""
+
+#. Translators: %s is a file name, e.g. "~/.netrc".
+#: src/plugins/private-files/gaudit-private-files.c:50
+#, c-format
+msgid "Every account on this computer can read %s."
+msgstr ""
+
+#: src/plugins/private-files/gaudit-private-files.c:51
+#, c-format
+msgid "Members of a group can read %s."
+msgstr ""
+
+#: src/plugins/private-files/gaudit-private-files.c:55
+msgid ""
+"It belongs to another account, so only that account or the administrator can "
+"change who may read it."
+msgstr ""
+
+#: src/plugins/private-files/gaudit-private-files.c:58
+msgid ""
+"Run this command in a terminal. Others can still see the names of your "
+"files, but no longer change them."
+msgstr ""
+
+#: src/plugins/private-files/gaudit-private-files.c:62
+msgid ""
+"Its name has characters that cannot be shown exactly here, so no command is "
+"given. In the file manager, open its properties and let only you read it."
+msgstr ""
+
+#: src/plugins/private-files/gaudit-private-files.c:65
+msgid ""
+"Run this command in a terminal. Afterwards only you can read it; it stays "
+"where it is."
+msgstr ""
+
+#: src/plugins/private-files/gaudit-private-files.c:68
+msgid "If you no longer need it, deleting it is safer still."
+msgstr ""
+
+#: src/plugins/private-files/gaudit-private-files.c:70
+msgid "Close Your Home Folder"
+msgstr ""
+
+#: src/plugins/private-files/gaudit-private-files.c:70
+msgid "Make It Private"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:57
+msgid "Your home folder can be changed by others"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:58
+msgid "Permissions SSH or GnuPG refuse"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:59
+msgid "Stored passwords or keys"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:60
+msgid "SSH private key"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:61
+msgid "Private key"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:62
+msgid "PGP private key"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:63
+msgid "PuTTY private key"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:64
+msgid "GnuPG private key"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:65
+msgid "Old GnuPG secret keyring"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:66
+msgid "Certificate with private key"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:67
+msgid "Java keystore"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:68
+msgid "KeePass password database"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:69
+msgid "Password store entry"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:70
+msgid "GNOME keyring"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:71
+msgid "KDE wallet"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:72
+msgid "Saved browser passwords"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:73
+msgid "Cryptocurrency wallet"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:74
+msgid "Stored logins (.netrc)"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:75
+msgid "PostgreSQL passwords"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:76
+msgid "MySQL login"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:77
+msgid "Git passwords"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:78
+msgid "AWS keys"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:79
+msgid "Kubernetes credentials"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:80
+msgid "Docker logins"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:81
+msgid "GitHub login"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:82
+msgid "Cloud storage logins (rclone)"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:106
+msgid "{kind} · {mode}"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:137
+msgid "{n} secret can be read by others"
+msgid_plural "{n} secrets can be read by others"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/private-files/rules/report.scm:141
+msgid "The usual places for secrets are closed"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:143
+msgid "No secrets found outside the usual places"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:145
+msgid "{n} secret found, only you can read it"
+msgid_plural "{n} secrets found, only you can read them"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/private-files/rules/report.scm:149
+msgid "The search stopped before the end"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:150
+#: src/plugins/private-files/rules/report.scm:178
+msgid "Your home folder could not be searched"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:153
+msgid ""
+"Only the places where programs usually keep secrets were checked. The "
+"thorough report searches your whole home folder."
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:155
+msgid ""
+"Secrets only you can read are normal. This means none were found that others "
+"can read, not that every secret was found."
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:157
+msgid ""
+"Anyone who can use these accounts can copy them. Open each one marked with a "
+"warning to see how to close it."
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:158
+#: src/plugins/private-files/rules/report.scm:179
+msgid "Nothing is known about the files that were not searched."
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:164
+msgid "Showing {shown} of {count} files."
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:169
+msgid ""
+"Your home folder has more files than the search goes through, so it stopped "
+"before the end."
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:182
+msgid "Every account can read these"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:183
+msgid ""
+"Any other account on this computer can read them, including programs running "
+"as those accounts."
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:184
+msgid "Members of a group can read these"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:185
+msgid ""
+"Accounts in a group that has access to the file, or to a folder on the way, "
+"can read them."
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:186
+msgid "Only you can read these"
+msgstr ""
+
+#: src/plugins/private-files/rules/report.scm:187
+msgid "This is how secrets should be kept. Listed so you know where they are."
+msgstr ""

@@ -22,7 +22,6 @@ typedef enum {
     GAUDIT_PROBE_LISTENING,         /* services listening for the network (informs only) */
     GAUDIT_PROBE_AUTO_UPDATES,      /* updates are installed automatically */
     GAUDIT_PROBE_SECURITY_SOURCE,   /* security updates come from the distribution itself */
-    GAUDIT_PROBE_PRIVATE_FILES,     /* private files in the home directory are protected */
     GAUDIT_PROBE_PACKAGE_INDEX,     /* when updates were last checked for */
     GAUDIT_PROBE_PENDING_UPGRADES,  /* updates waiting to be installed */
     GAUDIT_PROBE_OBSOLETE_PACKAGES, /* packages no software source offers */
@@ -53,8 +52,7 @@ typedef struct {
     unsigned mask;            /* _OTHER_PACKAGE_SYSTEMS: 1 << gaudit_package_system */
     int64_t until_epoch;      /* _SNAP: automatic refreshes held until then (0: not held) */
     int service_down;         /* _SNAP: snapd did not answer */
-    char text[64];            /* _SECURITY_SOURCE: the mirror's host name;
-                                 _PRIVATE_FILES: the first problem ("~/..."), count in count */
+    char text[64];            /* _SECURITY_SOURCE: the mirror's host name */
     /* _SNAP also uses count (devmode), extra_count (held), info_count
      * (classic, informs only) and age_seconds (since the last refresh, -1 unknown). */
 } gaudit_probe_result;
@@ -77,7 +75,7 @@ void gaudit_probe_init(gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
 /* The probes in independent tasks, so they can run side by side (the
  * orchestrator runs each in its own process) and a slow one does not hold
  * up the rest. A task may fill several kinds. */
-#define GAUDIT_PROBE_TASK_COUNT 10
+#define GAUDIT_PROBE_TASK_COUNT 9
 
 /* The kinds a task fills, as 1 << kind; 0 for an unknown task. */
 unsigned gaudit_probe_task_kinds(int task);

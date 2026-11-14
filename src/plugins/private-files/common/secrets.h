@@ -14,7 +14,6 @@
 
 #include <stddef.h>
 
-#include "gaudit/model.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,10 +59,7 @@ int gaudit_secrets_format_summary(const gaudit_secrets_summary *s, char *buf, si
 /* One line, strictly: 1 a finding (in *f), 2 the summary (in *s), -1 anything else. */
 int gaudit_secrets_parse_line(const char *line, gaudit_secret_finding *f, gaudit_secrets_summary *s);
 
-/* Warning when anyone but the user can reach a secret; unknown when the
- * search failed or stopped early; otherwise OK (secrets only the user can
- * read are normal, e.g. SSH keys). */
-gaudit_verdict gaudit_secrets_verdict(const gaudit_secrets_summary *s);
+/* The verdict is the rule script's (rules/report.scm), nowhere else. */
 
 #ifdef __cplusplus
 }

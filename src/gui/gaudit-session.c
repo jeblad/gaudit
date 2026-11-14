@@ -3,6 +3,7 @@
 
 #include "gaudit-orchestrator.h"
 #include "gaudit-session.h"
+#include "gaudit-task.h"
 
 #include <string.h>
 
@@ -17,6 +18,7 @@ typedef struct {
     gpointer user_data;
     gboolean wants_result;  /* FALSE for "elevate", which only starts the helper */
     gboolean user;          /* runs as the user, not through the session */
+    gboolean (*collection_line)(const char *line, gboolean *last);  /* user runs */
     gboolean have_result;
     GauditRunResult result;
 } Run;
@@ -57,6 +59,8 @@ static void end_run(gaudit_run_status status)
     if (result != NULL && S.result_listener != NULL)
         S.result_listener(run->command, result, S.result_listener_data);
     run->on_done(status, result, run->user_data);
+    if (run->result.lines != NULL)
+        g_ptr_array_unref(run->result.lines);
     g_free(run->command);
     g_free(run);
 }
@@ -117,30 +121,23 @@ static gboolean on_line(const char *line, gpointer user_data)
 /* The deep scan takes about 10 s on a large home. */
 #define USER_RUN_TIMEOUT_S 120
 
-/* A line of "user secrets": findings, then the summary, strictly. */
+/* A line of a collection, checked by the plugin it belongs to; nothing
+ * may come after the last. */
+#define MAX_COLLECTION_LINES 1024
+
 static gboolean on_user_line(const char *line, gpointer user_data)
 {
     Run *run = user_data;
-    if (S.run != run || run->have_result)
-        return FALSE;  /* nothing after the summary */
-    gaudit_secret_finding f;
-    gaudit_secrets_summary sum;
-    switch (gaudit_secrets_parse_line(line, &f, &sum)) {
-    case 1:
-        if (run->result.n_secrets >= GAUDIT_SECRETS_MAX_SHOWN)
-            return FALSE;
-        run->result.secret[run->result.n_secrets++] = f;
-        return TRUE;
-    case 2:
-        if (sum.shown != run->result.n_secrets)
-            return FALSE;  /* not the findings it says it sent */
-        run->result.kind = GAUDIT_RESULT_SECRETS;
-        run->result.secrets = sum;
-        run->have_result = TRUE;
-        return TRUE;
-    default:
+    gboolean last = FALSE;
+    if (S.run != run || run->have_result || run->result.lines->len >= MAX_COLLECTION_LINES
+        || !run->collection_line(line, &last))
         return FALSE;
+    g_ptr_array_add(run->result.lines, g_strdup(line));
+    if (last) {
+        run->result.kind = GAUDIT_RESULT_COLLECTION;
+        run->have_result = TRUE;
     }
+    return TRUE;
 }
 
 static void on_user_done(gboolean broken, gpointer user_data)
@@ -192,15 +189,24 @@ gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress
     if (g_str_has_prefix(command, "user ")) {
         /* As the user: an orchestrator of its own, with its own timeout. */
         const char *mode = command + strlen("user ");
-        if (strcmp(mode, "secrets") != 0) {
+        const GauditTaskInfo *task = gaudit_task_for_command(command, NULL);
+        run->collection_line = task != NULL ? task->collection_line : NULL;
+        run->user = TRUE;
+        if (run->collection_line == NULL) {
+            end_run(GAUDIT_RUN_FAILED);  /* no plugin to check its lines */
+            return TRUE;
+        }
+        run->result.lines = g_ptr_array_new_with_free_func(g_free);
+        /* The mode and its argument, from the plugin's fixed table. */
+        g_auto(GStrv) args = g_strsplit(mode, " ", 3);
+        if (g_strv_length(args) > 2) {
             end_run(GAUDIT_RUN_FAILED);
             return TRUE;
         }
-        run->user = TRUE;
-        const char *args[] = { mode, NULL };
         if (on_progress != NULL)
             on_progress(user_data);  /* no password to wait for */
-        gaudit_orchestrator_start(args, USER_RUN_TIMEOUT_S, FALSE, on_user_line, on_user_done, run);
+        gaudit_orchestrator_start((const char *const *)args, USER_RUN_TIMEOUT_S, FALSE,
+                                  on_user_line, on_user_done, run);
         return TRUE;
     }
     S.watchdog_id = g_timeout_add_seconds(RUN_WATCHDOG_S, on_watchdog, NULL);
@@ -240,7 +246,7 @@ gaudit_verdict gaudit_run_result_verdict(const GauditRunResult *result)
     switch (result->kind) {
     case GAUDIT_RESULT_FIREWALL:  return result->firewall.verdict;
     case GAUDIT_RESULT_INTEGRITY: return result->integrity.verdict;
-    case GAUDIT_RESULT_SECRETS:   return gaudit_secrets_verdict(&result->secrets);
+    case GAUDIT_RESULT_COLLECTION: return GAUDIT_VERDICT_UNKNOWN;
     }
     return GAUDIT_VERDICT_UNKNOWN;
 }

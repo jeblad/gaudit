@@ -13,7 +13,6 @@ static const char *const probe_ids[GAUDIT_PROBE_COUNT] = {
     [GAUDIT_PROBE_LISTENING]            = "status.listening",
     [GAUDIT_PROBE_AUTO_UPDATES]         = "status.auto-updates",
     [GAUDIT_PROBE_SECURITY_SOURCE]      = "status.security-source",
-    [GAUDIT_PROBE_PRIVATE_FILES]        = "status.private-files",
     [GAUDIT_PROBE_PACKAGE_INDEX]        = "status.package-index",
     [GAUDIT_PROBE_PENDING_UPGRADES]     = "status.pending-upgrades",
     [GAUDIT_PROBE_OBSOLETE_PACKAGES]    = "status.obsolete-packages",
@@ -78,19 +77,6 @@ static void auto_updates(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
         return;
     }
     r->verdict = enabled ? GAUDIT_VERDICT_OK : GAUDIT_VERDICT_WARNING;
-}
-
-static void private_files(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
-{
-    if (pkg->private_files == NULL) {
-        r->applicable = 0;
-        return;
-    }
-    unsigned n = 0;
-    if (pkg->private_files(&n, r->text, sizeof r->text) != GAUDIT_BACKEND_OK)
-        return;  /* unknown */
-    r->count = n;
-    r->verdict = n > 0 ? GAUDIT_VERDICT_WARNING : GAUDIT_VERDICT_OK;
 }
 
 /* A mirror may lag behind, and security updates must not wait for it. */
@@ -257,7 +243,6 @@ static const unsigned task_kinds[GAUDIT_PROBE_TASK_COUNT] = {
     BIT(GAUDIT_PROBE_ANTIVIRUS) | BIT(GAUDIT_PROBE_FIREWALL),
     BIT(GAUDIT_PROBE_AUTO_UPDATES),
     BIT(GAUDIT_PROBE_SECURITY_SOURCE),
-    BIT(GAUDIT_PROBE_PRIVATE_FILES),
     BIT(GAUDIT_PROBE_PACKAGE_INDEX),
     BIT(GAUDIT_PROBE_PENDING_UPGRADES) | BIT(GAUDIT_PROBE_OBSOLETE_PACKAGES),
     BIT(GAUDIT_PROBE_FLATPAK),
@@ -298,22 +283,19 @@ void gaudit_probe_run_task(int task, const gaudit_pkg_backend *pkg,
         security_source(pkg, &out[GAUDIT_PROBE_SECURITY_SOURCE]);
         break;
     case 4:
-        private_files(pkg, &out[GAUDIT_PROBE_PRIVATE_FILES]);
-        break;
-    case 5:
         index_age(pkg, now, &out[GAUDIT_PROBE_PACKAGE_INDEX]);
         break;
-    case 6:
+    case 5:
         package_state(pkg, &out[GAUDIT_PROBE_PENDING_UPGRADES],
                       &out[GAUDIT_PROBE_OBSOLETE_PACKAGES]);
         break;
-    case 7:
+    case 6:
         flatpak(pkg, &out[GAUDIT_PROBE_FLATPAK]);
         break;
-    case 8:
+    case 7:
         snap(pkg, now, &out[GAUDIT_PROBE_SNAP]);
         break;
-    case 9:
+    case 8:
         listening(pkg, &out[GAUDIT_PROBE_LISTENING]);
         break;
     default:

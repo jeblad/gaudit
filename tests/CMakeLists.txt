@@ -148,3 +148,24 @@ add_executable(test_integrity test_integrity.c)
 target_compile_definitions(test_integrity PRIVATE _GNU_SOURCE)
 target_link_libraries(test_integrity PRIVATE gaudit_sandbox)
 add_test(NAME integrity COMMAND test_integrity)
+
+# The rule engine, built against the test rules plus the plugins' real ones.
+set(TEST_RULES ${CMAKE_CURRENT_BINARY_DIR}/rules)
+foreach(rule loop alloc io eval bad)
+  configure_file(data/rules/${rule}/report.scm ${TEST_RULES}/${rule}/report.scm COPYONLY)
+endforeach()
+configure_file(${PROJECT_SOURCE_DIR}/src/plugins/private-files/rules/report.scm
+               ${TEST_RULES}/core.private-files/report.scm COPYONLY)
+add_executable(test-engine ${PROJECT_SOURCE_DIR}/src/engine/main.c ${PROJECT_SOURCE_DIR}/src/engine/confine.c)
+target_compile_definitions(test-engine PRIVATE _GNU_SOURCE ENGINE_RULES_DIR="${TEST_RULES}")
+target_link_libraries(test-engine PRIVATE PkgConfig::GUILE gaudit_sandbox gaudit_config)
+add_test(NAME engine COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/test_engine.sh
+         $<TARGET_FILE:test-engine> ${CMAKE_CURRENT_SOURCE_DIR}/data/engine)
+
+# The GUI's strict reading of a plugin's report (the view itself is not
+# under test; its icon helper is stubbed).
+pkg_check_modules(TEST_ADW REQUIRED IMPORTED_TARGET libadwaita-1)
+add_executable(test_report test_report.c ${PROJECT_SOURCE_DIR}/src/gui/gaudit-report.c)
+target_include_directories(test_report PRIVATE ${PROJECT_SOURCE_DIR}/src/gui)
+target_link_libraries(test_report PRIVATE PkgConfig::TEST_ADW gaudit_backend gaudit_model gaudit_config)
+add_test(NAME report COMMAND test_report ${CMAKE_CURRENT_SOURCE_DIR}/data/engine)

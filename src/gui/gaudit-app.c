@@ -6,6 +6,8 @@
 
 #include "gaudit-app.h"
 #include "gaudit-orchestrator.h"
+#include "gaudit-report-run.h"
+#include "gaudit-run-page.h"
 #include "gaudit-session.h"
 #include "gaudit-task.h"
 #include "gaudit-window.h"
@@ -164,7 +166,7 @@ static void level_next(LevelJob *job)
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
     while (job->next < n_tasks
-           && (tasks[job->next].home_level == 0 || tasks[job->next].home_level > job->level
+           && (gaudit_task_home_command(&tasks[job->next], job->level) == NULL
                || (tasks[job->next].needs_admin && !job->with_admin)))
         job->next++;
     if (job->next >= n_tasks) {
@@ -173,7 +175,8 @@ static void level_next(LevelJob *job)
     }
     job->current = job->next++;
     gaudit_window_task_running(job->view, job->current);
-    if (!gaudit_session_run(tasks[job->current].run_command, NULL, on_level_done, job)) {
+    if (!gaudit_session_run(gaudit_task_home_command(&tasks[job->current], job->level), NULL,
+                            on_level_done, job)) {
         /* Another run is under way (e.g. from a plugin's page 2). */
         gaudit_window_task_failed(job->view, job->current, GAUDIT_RUN_OK);
         level_finish(job);
@@ -189,8 +192,6 @@ static void start_level_job(GauditApp *app, GauditWindow *view, gboolean with_ad
     if (level_job != NULL)
         return;
     guint level = gaudit_window_home_level(view);
-    if (level == GAUDIT_LEVEL_QUICK)
-        return;  /* Home's own probes cover it */
     LevelJob *job = g_new0(LevelJob, 1);
     job->app = g_object_ref(app);
     job->view = g_object_ref(view);
@@ -343,6 +344,41 @@ static void set_accel(GApplication *app, const char *action, const char *accel)
  * page 2): into the model under the task's id, replacing an earlier one,
  * and onto Home's row for that task in every window, so the two never
  * disagree. */
+/* A task's latest result onto its Home row in every window, and into the
+ * model under the task's id, so the summary counts it. */
+static void record(GauditApp *self, gsize i, gaudit_verdict verdict, const char *title)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    if (gaudit_model_add_finding(self->model, tasks[i].id, verdict) != GAUDIT_OK)
+        g_warning("gaudit: could not record finding %s", tasks[i].id);
+    gaudit_verdict worst = gaudit_model_summary(self->model);
+    for (GList *w = gtk_application_get_windows(GTK_APPLICATION(self)); w != NULL; w = w->next)
+        if (GAUDIT_IS_WINDOW(w->data)) {
+            gaudit_window_task_report(GAUDIT_WINDOW(w->data), i, verdict, title);
+            gaudit_window_set_worst(GAUDIT_WINDOW(w->data), worst);
+        }
+}
+
+typedef struct {
+    GauditApp *app;
+    gsize task;
+} CachedReport;
+
+/* The report on a new collection: its verdict and title for Home. */
+static void on_cached_report(GauditReport *report, gpointer user_data)
+{
+    CachedReport *c = user_data;
+    gsize n_tasks;
+    const GauditTaskInfo *task = &gaudit_tasks_get(&n_tasks)[c->task];
+    g_autofree char *title = report != NULL ? gaudit_report_title(report, task->text_domain)
+                                            : g_strdup(_("The report could not be made"));
+    record(c->app, c->task, gaudit_report_verdict(report), title);
+    gaudit_report_free(report);
+    g_object_unref(c->app);
+    g_free(c);
+}
+
 static void on_session_result(const char *command, const GauditRunResult *result,
                               gpointer app)
 {
@@ -351,18 +387,21 @@ static void on_session_result(const char *command, const GauditRunResult *result
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
     /* Every task has its row in its group on Home: its result is kept for
      * the session, shown there, and counts in the summary. */
-    for (gsize i = 0; i < n_tasks; i++) {
-        if (g_strcmp0(tasks[i].run_command, command) != 0)
+    gsize found;
+    if (gaudit_task_for_command(command, &found) == NULL)
+        return;
+    for (gsize i = found; i == found; i++) {
+        if (result->kind == GAUDIT_RESULT_COLLECTION) {
+            /* Kept for the session; the plugin's report on it decides. */
+            gaudit_cache_store(&tasks[i], command, result->lines);
+            CachedReport *c = g_new0(CachedReport, 1);
+            c->app = g_object_ref(self);
+            c->task = i;
+            gaudit_report_run(&tasks[i], command, result->lines, on_cached_report, c);
             continue;
-        if (gaudit_model_add_finding(self->model, tasks[i].id, gaudit_run_result_verdict(result))
-            != GAUDIT_OK)
-            g_warning("gaudit: could not record finding %s", tasks[i].id);
-        gaudit_verdict worst = gaudit_model_summary(self->model);
-        for (GList *w = gtk_application_get_windows(GTK_APPLICATION(app)); w != NULL; w = w->next)
-            if (GAUDIT_IS_WINDOW(w->data)) {
-                gaudit_window_task_result(GAUDIT_WINDOW(w->data), i, result);
-                gaudit_window_set_worst(GAUDIT_WINDOW(w->data), worst);
-            }
+        }
+        g_autofree char *title = gaudit_run_result_title(result);
+        record(self, i, gaudit_run_result_verdict(result), title);
     }
 }
 

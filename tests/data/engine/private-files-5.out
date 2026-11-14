@@ -1,0 +1,1 @@
+(report (verdict ok) (title (msg "The usual places for secrets are closed")) (description (msg "Only the places where programs usually keep secrets were checked. The thorough report searches your whole home folder.")))

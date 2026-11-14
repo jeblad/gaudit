@@ -294,29 +294,3 @@ int gaudit_private_files_check(const char *home, uid_t uid, gid_t own_gid,
     first_state f = { first, first_len, 0 };
     return gaudit_private_files_each(home, uid, own_gid, keep_first, &f);
 }
-
-gaudit_backend_status gaudit_private_files_here(unsigned *out_count, char *first, size_t first_len)
-{
-    if (out_count == NULL)
-        return GAUDIT_BACKEND_ERROR;
-    /* The home directory from the password database, not from $HOME. */
-    struct passwd *pw = getpwuid(getuid());
-    if (pw == NULL || pw->pw_dir == NULL)
-        return GAUDIT_BACKEND_ERROR;
-    /* The user's private group, as Ubuntu and most distributions create
-     * them: same name as the user, the user's primary group, nobody else
-     * listed in it. */
-    gid_t own_gid = (gid_t)-1;
-    struct group *gr = getgrgid(pw->pw_gid);
-    if (gr != NULL && strcmp(gr->gr_name, pw->pw_name) == 0) {
-        own_gid = pw->pw_gid;
-        for (char **m = gr->gr_mem; *m != NULL; m++)
-            if (strcmp(*m, pw->pw_name) != 0)
-                own_gid = (gid_t)-1;
-    }
-    int n = gaudit_private_files_check(pw->pw_dir, getuid(), own_gid, first, first_len);
-    if (n < 0)
-        return GAUDIT_BACKEND_ERROR;
-    *out_count = (unsigned)n;
-    return GAUDIT_BACKEND_OK;
-}

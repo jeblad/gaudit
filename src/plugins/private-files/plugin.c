@@ -4,6 +4,7 @@
 #include "config.h"
 
 #include "gaudit-plugins.h"
+#include "gaudit-private-files.h"
 
 #include <glib/gi18n.h>
 
@@ -25,12 +26,18 @@ const GauditTaskInfo gaudit_plugin_private_files = {
     .capabilities = NULL,
     .params = NULL,
     .n_params = 0,
-    .run_command = "user secrets",
+    .run_command = "user secrets full",
     .home_probe = "status.private-files",
     .home_tooltip = N_("Search your whole home folder"),
-    .home_level = GAUDIT_LEVEL_THOROUGH,  /* about 10 s on a large home */
-    .home_title = N_("Secrets anywhere in your home folder"),
+    /* Quick: the known places; Thorough: the whole home folder (about 10 s
+     * on a large one). */
+    .home_commands = { [GAUDIT_LEVEL_QUICK] = "user secrets quick",
+                       [GAUDIT_LEVEL_THOROUGH] = "user secrets full" },
+    .home_title = N_("Secrets in your home folder"),
     .needs_admin = FALSE,
+    .collection_line = gaudit_private_files_line,
+    .text_domain = GAUDIT_PRIVATE_FILES_DOMAIN,
+    .fix_page = gaudit_private_files_fix_page,
     .run_waiting = N_("Searching your home folder…"),
     .run_running = N_("Searching your home folder… This takes a few seconds."),
 };

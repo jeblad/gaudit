@@ -1,0 +1,3 @@
+(input (system (host "test") (distro "Ubuntu 26.04 LTS") (backend "debian"))
+       (collection
+        (secrets (status 0) (count 0) (shown 0) (others 0) (groups 0) (truncated 1))))

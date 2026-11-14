@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* "gaudit-orchestrator secrets": the plugin's full collection, as the user.
- * First the known locations, exactly the check Home counts, then the deep
- * scan of the whole home directory; a path is reported once. So the full
- * list always holds everything Home has found: the collection is the same,
- * only the presentation differs. Reports path, reason, mode and reach,
+/* "gaudit-orchestrator secrets quick|full": the plugin's collection, as the
+ * user. quick: the known locations only (fast, for Home). full: the same
+ * known locations first, then the deep scan of the whole home directory; a
+ * path is reported once. So the full collection always holds everything
+ * the quick one finds: a deeper level adds to the collection, it does not
+ * replace it, and only the presentation differs. Reports path, reason, mode and reach,
  * never any content. Those others can reach come first, so they are always
  * among the findings sent. */
 #include "secrets-mode.h"
@@ -133,7 +134,7 @@ static int by_reach(const void *a, const void *b)
     return strcmp(x->path, y->path);
 }
 
-int gaudit_private_files_collect(const struct passwd *pw, FILE *out)
+int gaudit_private_files_collect(const struct passwd *pw, int deep, FILE *out)
 {
     scan_state st = { 0 };
     st.sum.status = GAUDIT_SECRETS_UNKNOWN;
@@ -144,8 +145,9 @@ int gaudit_private_files_collect(const struct passwd *pw, FILE *out)
         snprintf(st.home, sizeof st.home, "%s", pw->pw_dir);
         gaudit_secret_stats stats;
         gid_t own_gid = st.own_gid_private ? pw->pw_gid : (gid_t)-1;
+        memset(&stats, 0, sizeof stats);
         if (gaudit_private_files_each(pw->pw_dir, getuid(), own_gid, on_known, &st) >= 0
-            && gaudit_secret_scan(pw->pw_dir, getuid(), on_hit, &st, &stats) == 0) {
+            && (!deep || gaudit_secret_scan(pw->pw_dir, getuid(), on_hit, &st, &stats) == 0)) {
             st.sum.status = GAUDIT_SECRETS_OK;
             st.sum.truncated = stats.truncated;
         }
@@ -170,8 +172,11 @@ int gaudit_private_files_collect(const struct passwd *pw, FILE *out)
     return fflush(out) == 0 ? 0 : 1;
 }
 
-int gaudit_private_files_secrets(void)
+int gaudit_private_files_secrets(const char *level)
 {
+    int deep = level != NULL && strcmp(level, "full") == 0;
+    if (level == NULL || (!deep && strcmp(level, "quick") != 0))
+        return 2;
     /* The home directory from the password database, not from $HOME. */
-    return gaudit_private_files_collect(getpwuid(getuid()), stdout);
+    return gaudit_private_files_collect(getpwuid(getuid()), deep, stdout);
 }

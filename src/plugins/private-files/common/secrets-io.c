@@ -89,14 +89,3 @@ int gaudit_secrets_parse_line(const char *line, gaudit_secret_finding *f, gaudit
     }
     return -1;
 }
-
-gaudit_verdict gaudit_secrets_verdict(const gaudit_secrets_summary *s)
-{
-    if (s == NULL || s->status != GAUDIT_SECRETS_OK)
-        return GAUDIT_VERDICT_UNKNOWN;
-    if (s->others + s->groups > 0)
-        return GAUDIT_VERDICT_WARNING;
-    if (s->truncated)
-        return GAUDIT_VERDICT_UNKNOWN;
-    return GAUDIT_VERDICT_OK;
-}

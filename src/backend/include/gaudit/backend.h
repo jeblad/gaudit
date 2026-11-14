@@ -132,11 +132,6 @@ typedef struct gaudit_pkg_backend {
     gaudit_backend_status (*security_sources)(unsigned *out_official, unsigned *out_mirror,
                                               char *host, size_t host_len);
 
-    /* Private files in the home directory that others could reach: count,
-     * and the first one ("~/...") copied to first. The same on every
-     * distribution: backends point it at gaudit_private_files_here. */
-    gaudit_backend_status (*private_files)(unsigned *out_count, char *first, size_t first_len);
-
     /* Capabilities recommended when a category (firewall, antivirus) has
      * nothing installed: the distribution's usual choice. NULL-terminated;
      * NULL for none. Presentation only. */
@@ -183,9 +178,6 @@ const char *gaudit_package_system_label(gaudit_package_system s);
  * machine), detected by their databases on disk. Bitmask as above. */
 unsigned gaudit_package_systems_present(const char *root);
 unsigned gaudit_package_systems_present_here(void);
-
-/* The private-files check for the user running it. */
-gaudit_backend_status gaudit_private_files_here(unsigned *out_count, char *first, size_t first_len);
 
 /* The listening check for the user running it (/proc/net/tcp, tcp6). */
 gaudit_backend_status gaudit_listening_here(unsigned *out_services, unsigned *out_own);

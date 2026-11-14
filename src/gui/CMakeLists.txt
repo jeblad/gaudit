@@ -25,6 +25,8 @@ add_executable(gaudit
   gaudit-app.c
   gaudit-orchestrator.c
   gaudit-run-page.c
+  gaudit-report.c
+  gaudit-report-run.c
   gaudit-category.c
   gaudit-crossfade.c
   gaudit-sourceless-page.c

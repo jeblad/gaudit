@@ -39,7 +39,8 @@ void gaudit_window_task_failed(GauditWindow *self, gsize task_index, gaudit_run_
 
 /* A result of a task shown on Home, kept for the rest of the session: its
  * row then shows the verdict and what was found. */
-void gaudit_window_task_result(GauditWindow *self, gsize task_index, const GauditRunResult *result);
+void gaudit_window_task_report(GauditWindow *self, gsize task_index, gaudit_verdict verdict,
+                               const char *title);
 
 /* The summary at the top of Home, after a result came in. */
 void gaudit_window_set_worst(GauditWindow *self, gaudit_verdict worst);

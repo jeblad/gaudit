@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* The deep scan's findings over the orchestrator pipe: write and read
- * back, reject anything else, and the verdict. The GUI treats this input
+ * back, and reject anything else (the verdict is the rule's, tested with
+ * the engine). The GUI treats this input
  * as untrusted. */
 #include "secrets.h"
 
@@ -64,26 +65,10 @@ static void test_reject(void)
         }
 }
 
-static void test_verdict(void)
-{
-    gaudit_secrets_summary s = { .status = GAUDIT_SECRETS_OK, .count = 4 };
-    CHECK(gaudit_secrets_verdict(&s) == GAUDIT_VERDICT_OK);       /* only the user's own */
-    s.groups = 1;
-    CHECK(gaudit_secrets_verdict(&s) == GAUDIT_VERDICT_WARNING);
-    s.groups = 0;
-    s.truncated = 1;
-    CHECK(gaudit_secrets_verdict(&s) == GAUDIT_VERDICT_UNKNOWN);  /* the rest is not known */
-    s.others = 1;
-    CHECK(gaudit_secrets_verdict(&s) == GAUDIT_VERDICT_WARNING);  /* a found one still warns */
-    s = (gaudit_secrets_summary){ .status = GAUDIT_SECRETS_UNKNOWN };
-    CHECK(gaudit_secrets_verdict(&s) == GAUDIT_VERDICT_UNKNOWN);
-}
-
 int main(void)
 {
     test_round_trip();
     test_reject();
-    test_verdict();
     if (failures == 0)
         puts("secrets-io: all checks passed");
     return failures == 0 ? 0 : 1;

@@ -29,6 +29,43 @@ const GauditTaskInfo *gaudit_tasks_get(gsize *n_tasks)
     return available;
 }
 
+const char *gaudit_task_home_command(const GauditTaskInfo *task, guint level)
+{
+    if (level >= GAUDIT_LEVEL_COUNT)
+        level = GAUDIT_LEVEL_COUNT - 1;
+    for (int l = (int)level; l >= 0; l--)
+        if (task->home_commands[l] != NULL)
+            return task->home_commands[l];
+    if (task->home_level > 0 && task->home_level <= level)
+        return task->run_command;
+    return NULL;
+}
+
+guint gaudit_task_home_from(const GauditTaskInfo *task)
+{
+    for (guint l = 0; l < GAUDIT_LEVEL_COUNT; l++)
+        if (gaudit_task_home_command(task, l) != NULL)
+            return l;
+    return GAUDIT_LEVEL_COUNT;
+}
+
+const GauditTaskInfo *gaudit_task_for_command(const char *command, gsize *index)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *all = gaudit_tasks_get(&n_tasks);
+    for (gsize i = 0; command != NULL && i < n_tasks; i++) {
+        gboolean match = g_strcmp0(all[i].run_command, command) == 0;
+        for (guint l = 0; !match && l < GAUDIT_LEVEL_COUNT; l++)
+            match = g_strcmp0(all[i].home_commands[l], command) == 0;
+        if (match) {
+            if (index != NULL)
+                *index = i;
+            return &all[i];
+        }
+    }
+    return NULL;
+}
+
 GPtrArray *gaudit_task_missing_packages(const GauditTaskInfo *task,
                                         const gaudit_pkg_backend *pkg)
 {

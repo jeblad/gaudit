@@ -35,6 +35,7 @@
 #include "gaudit/sourceless.h"
 
 #include "collector.h"
+#include "report.h"
 #include "secrets-mode.h"
 
 #include <errno.h>
@@ -656,8 +657,10 @@ int main(int argc, char *argv[])
         return status_refresh();
     if (argc == 2 && strcmp(argv[1], "session") == 0)
         return run_session();
-    if (argc == 2 && strcmp(argv[1], "secrets") == 0)
-        return gaudit_private_files_secrets();
+    if (argc == 3 && strcmp(argv[1], "report") == 0)
+        return gaudit_orchestrator_report(argv[2]);
+    if (argc == 3 && strcmp(argv[1], "secrets") == 0)
+        return gaudit_private_files_secrets(argv[2]);
     if (argc == 2 && strcmp(argv[1], "packages") == 0)
         return list_packages();
 #if GAUDIT_DEVELOPER_BUILD
@@ -669,6 +672,6 @@ int main(int argc, char *argv[])
         return status_refresh();
     }
 #endif
-    fputs("usage: gaudit-orchestrator [session | packages | secrets]\n", stderr);
+    fputs("usage: gaudit-orchestrator [session | packages | secrets quick|full | report <plugin-id>]\n", stderr);
     return 2;
 }

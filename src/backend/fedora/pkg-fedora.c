@@ -109,7 +109,6 @@ static const gaudit_pkg_backend fedora_pkg = {
     .detect = detect,
     .own_package_system = GAUDIT_PKGSYS_RPM,
     .package_systems_present = gaudit_package_systems_present_here,
-    .private_files = gaudit_private_files_here,
     .listening = gaudit_listening_here,
     .recommended = recommended,
     .manual_install_command = "sudo dnf install",

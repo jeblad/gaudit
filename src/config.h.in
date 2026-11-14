@@ -17,6 +17,9 @@
 #define GAUDIT_PKGLIBEXECDIR "@GAUDIT_PKGLIBEXECDIR@"
 #define GAUDIT_HELPER_PATH   "@GAUDIT_HELPER_PATH@"
 #define GAUDIT_ORCHESTRATOR_PATH "@GAUDIT_ORCHESTRATOR_PATH@"
+#define GAUDIT_ENGINE_PATH   "@GAUDIT_ENGINE_PATH@"
+/* Plugins' rule files: <dir>/<plugin-id>/report.scm. */
+#define GAUDIT_RULES_DIR     "@GAUDIT_RULES_DIR@"
 /* "" means the system schema directory. */
 #define GAUDIT_SCHEMA_DIR    "@GAUDIT_SCHEMA_DIR@"
 #define GAUDIT_FLATPAK_PROBE_PATH "@GAUDIT_FLATPAK_PROBE_PATH@"

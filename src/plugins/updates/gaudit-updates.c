@@ -10,6 +10,8 @@
 #include "gaudit-session.h"
 #include "gaudit-task.h"
 #include "updates.h"
+#include "apt-ops.h"
+#include "gaudit-report-run.h"
 #include "gaudit/run.h"
 
 /* The plugin's own texts. */
@@ -42,25 +44,6 @@ static gboolean find_fact(GPtrArray *lines, gaudit_update_key key, gaudit_update
     return FALSE;
 }
 
-/* A dpkg package name, optionally with ":arch": [a-z0-9][a-z0-9+.-]+, so
- * it can go into a command without quoting. Anything else is left out of
- * the command. */
-static gboolean plain_package(const char *name)
-{
-    const char *colon = strchr(name, ':');
-    gsize len = colon != NULL ? (gsize)(colon - name) : strlen(name);
-    if (len < 2 || !(g_ascii_islower(name[0]) || g_ascii_isdigit(name[0])))
-        return FALSE;
-    for (gsize i = 0; i < len; i++)
-        if (!(g_ascii_islower(name[i]) || g_ascii_isdigit(name[i]) || strchr("+.-", name[i]) != NULL))
-            return FALSE;
-    if (colon != NULL)
-        for (const char *c = colon + 1; *c != '\0'; c++)
-            if (!(g_ascii_islower(*c) || g_ascii_isdigit(*c) || *c == '-'))
-                return FALSE;
-    return colon == NULL || colon[1] != '\0';
-}
-
 /* The commands per backend: fixed, never from the collection or the
  * report. NULL where the backend has none. */
 typedef struct {
@@ -71,8 +54,9 @@ typedef struct {
 } commands;
 
 static const commands table[] = {
-    { "debian", "sudo apt update", "sudo apt update && sudo apt upgrade",
-      "sudo systemctl enable --now apt-daily.timer apt-daily-upgrade.timer" },
+    /* Debian's are steps from the shared table (debian_steps), with a run
+     * button; never a compound command. */
+    { "debian", NULL, NULL, NULL },
     { "fedora", "sudo dnf check-update --refresh", "sudo dnf upgrade --refresh", NULL },
     /* Never "pacman -Sy" alone: a partial upgrade can break the system. */
     { "arch", NULL, "sudo pacman -Syu", NULL },
@@ -102,9 +86,89 @@ static void recollect(gpointer data)
 {
     (void)data;
     const GauditTaskInfo *task = gaudit_task_by_id("core.updates");
-    if (task != NULL)
-        gaudit_session_run(gaudit_task_home_command(task, GAUDIT_LEVEL_QUICK), NULL,
-                           on_recollected, NULL);
+    if (task == NULL)
+        return;
+    /* The same depth as the report the page came from (the package files
+     * again after a reinstall), else Home's quick one. */
+    const char *command = gaudit_cache_command(task);
+    if (command == NULL)
+        command = gaudit_task_home_command(task, GAUDIT_LEVEL_QUICK);
+    gaudit_session_run_args(command, gaudit_cache_full(task) ? gaudit_cache_args(task) : NULL,
+                            NULL, on_recollected, NULL);
+}
+
+/* --- Debian: steps from the shared table ----------------------------------
+ *
+ * The command shown is the helper's argv (common/apt-ops.h), and what each
+ * part does is said in plain words, so pressing Run or copying it is an
+ * informed choice. */
+
+static gsize apt_explain(const char *op, const char **out)
+{
+    gsize n = 0;
+    if (strcmp(op, "apt-update") == 0)
+        out[n++] = P_("apt-get update fetches the newest lists of updates from your software "
+                      "sources. Nothing is installed.");
+    if (strcmp(op, "apt-upgrade-update") == 0)
+        out[n++] = P_("--update first fetches the newest lists of updates.");
+    if (strcmp(op, "apt-upgrade") == 0 || strcmp(op, "apt-upgrade-update") == 0) {
+        out[n++] = P_("upgrade installs the updates that are waiting.");
+        out[n++] = P_("--with-new-pkgs may also install new packages an update needs; it never "
+                      "removes any.");
+    }
+    if (strcmp(op, "reinstall") == 0)
+        out[n++] = P_("install --reinstall installs these packages again, which puts their own "
+                      "files back.");
+    if (strcmp(op, "apt-upgrade") == 0 || strcmp(op, "apt-upgrade-update") == 0
+        || strcmp(op, "reinstall") == 0) {
+        out[n++] = P_("-y answers yes on your behalf, so it does not stop to ask.");
+        out[n++] = P_("The two --force-conf options: where you have changed a settings file and "
+                      "the package brings a new one, your version is kept.");
+        out[n++] = P_("Packages that are not signed are never installed: apt stops instead.");
+    }
+    if (strcmp(op, "enable-apt-timers") == 0) {
+        out[n++] = P_("enable --now switches the jobs on now, and at every start.");
+        out[n++] = P_("apt-daily.timer looks for updates every day; apt-daily-upgrade.timer "
+                      "installs them, as set up.");
+    }
+    out[n++] = P_("sudo runs it with administrator rights. From this page, the switch beside the "
+                  "title asks for the password.");
+    out[n] = NULL;
+    return n;
+}
+
+/* One step: the shown command, the run arguments and the explanation, kept
+ * together until the page has copied them. */
+typedef struct {
+    char shown[1024];
+    char *run[4 + GAUDIT_APT_MAX_PACKAGES];
+    const char *explain[12];
+    GauditFixStep step;
+} AptStep;
+
+static gboolean apt_step(AptStep *a, const char *op, const char *const *packages, gsize n)
+{
+    const gaudit_apt_op *o = gaudit_apt_op_find(op);
+    if (o == NULL || gaudit_apt_op_shown(o, packages, n, a->shown, sizeof a->shown) != 0)
+        return FALSE;
+    gsize k = 0;
+    a->run[k++] = (char *)"session";
+    a->run[k++] = (char *)"run";
+    a->run[k++] = (char *)o->name;
+    for (gsize i = 0; i < n; i++)
+        a->run[k++] = (char *)packages[i];
+    a->run[k] = NULL;
+    apt_explain(op, a->explain);
+    a->step = (GauditFixStep){ a->shown, (const char *const *)a->run, a->explain };
+    return TRUE;
+}
+
+/* Whether the upgrade can fetch the lists itself (apt 2.7.0 and newer). */
+static gboolean upgrade_updates(GPtrArray *lines)
+{
+    gaudit_update_fact f;
+    return find_fact(lines, GAUDIT_UPDATE_UPGRADE_UPDATES, &f) && f.status == GAUDIT_FACT_KNOWN
+           && f.value == 1;
 }
 
 /* Installing automatically. With an admin tool that sets updates up
@@ -190,8 +254,8 @@ AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines,
         if (gaudit_run_parse_line(g_ptr_array_index(lines, item), &ev) != 0
             || ev.type != GAUDIT_RUN_EVENT_INTEGRITY)
             return NULL;
-        g_autoptr(GString) command = g_string_new("sudo apt install --reinstall");
-        g_autoptr(GHashTable) seen = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+        g_autoptr(GPtrArray) names = g_ptr_array_new_with_free_func(g_free);
+        g_autoptr(GHashTable) seen = g_hash_table_new(g_str_hash, g_str_equal);
         gboolean left_out = FALSE;
         for (guint i = 0; i < lines->len; i++) {
             gaudit_run_event fe;
@@ -199,27 +263,37 @@ AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines,
                 || fe.type != GAUDIT_RUN_EVENT_INTEGRITY_FILE
                 || fe.file.kind == GAUDIT_INTEGRITY_FILE_UNREADABLE)
                 continue;
-            if (!plain_package(fe.file.package)) {
+            if (!gaudit_apt_plain_package(fe.file.package) || names->len >= GAUDIT_APT_MAX_PACKAGES) {
                 left_out = TRUE;
                 continue;
             }
-            if (g_hash_table_add(seen, g_strdup(fe.file.package)))
-                g_string_append_printf(command, " %s", fe.file.package);
+            char *name = g_strdup(fe.file.package);
+            if (g_hash_table_add(seen, name))
+                g_ptr_array_add(names, name);
+            else
+                g_free(name);
         }
         gboolean debian = cmd != NULL && strcmp(cmd->backend, "debian") == 0;
         unsigned long found = ev.integrity.changed + ev.integrity.missing;
-        return gaudit_fix_page_new(
-            P_("Put the Package Files Back"),
-            P_("Files installed by packages were changed or are gone. It may be harmless, such "
-               "as a program changing its own file, but nothing should change installed files."),
-            P_("If you did not change them yourself, reinstall the packages with this command in a "
-               "terminal: it puts their own files back, and keeps your settings in /etc."),
-            debian && g_hash_table_size(seen) > 0 ? command->str : NULL,
-            ev.integrity.shown < found || left_out
-                ? P_("Not every package is in the command: only those listed in the report, with "
-                     "plain names. Check again afterwards to see what is left.")
-                : P_("Afterwards, check again: the files should then match."),
-            NULL, NULL, NULL, NULL);
+        const char *problem = P_("Files installed by packages were changed or are gone. It may be "
+                                 "harmless, such as a program changing its own file, but nothing "
+                                 "should change installed files.");
+        const char *note = ev.integrity.shown < found || left_out
+            ? P_("Not every package is in the command: only those listed in the report, with "
+                 "plain names. Check again afterwards to see what is left.")
+            : P_("Afterwards, it is checked again: the files should then match.");
+        AptStep a;
+        if (debian && names->len > 0
+            && apt_step(&a, "reinstall", (const char *const *)names->pdata, names->len))
+            return gaudit_fix_page_new_steps(
+                P_("Put the Package Files Back"), problem,
+                P_("If you did not change them yourself, reinstall the packages: it puts their "
+                   "own files back, and keeps your settings in /etc."),
+                &a.step, 1, note, recollect, NULL, NULL);
+        return gaudit_fix_page_new(P_("Put the Package Files Back"), problem,
+                                   P_("If you did not change them yourself, reinstall the packages "
+                                      "with your package manager."),
+                                   NULL, note, NULL, NULL, NULL, NULL);
     }
 
     if (gaudit_update_parse_line(g_ptr_array_index(lines, item), &f, &count) != 1)
@@ -228,6 +302,20 @@ AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines,
     if (strcmp(fix_id, "sourceless") == 0 && f.key >= GAUDIT_UPDATE_SOURCELESS
         && f.key <= GAUDIT_UPDATE_SOURCELESS_OTHER)
         return gaudit_sourceless_page_new();  /* the packages, listed */
+
+    gboolean debian = cmd != NULL && strcmp(cmd->backend, "debian") == 0;
+    AptStep steps[2];
+
+    if (strcmp(fix_id, "check-on") == 0 && f.key == GAUDIT_UPDATE_CHECK_DAYS && debian
+        && apt_step(&steps[0], "apt-update", NULL, 0))
+        return gaudit_fix_page_new_steps(
+            P_("Look for Updates"),
+            P_("This computer never looks for updates, so it never finds security updates either."),
+            P_("In your system's settings for software updates, choose to look for updates every "
+               "day. Until then, you can look once yourself."),
+            &steps[0].step, 1,
+            P_("Looking once is not enough: updates come out all the time."),
+            recollect, NULL, NULL);
 
     if (strcmp(fix_id, "check-on") == 0 && f.key == GAUDIT_UPDATE_CHECK_DAYS)
         return gaudit_fix_page_new(
@@ -242,6 +330,18 @@ AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines,
     if (strcmp(fix_id, "automatic-on") == 0 && f.key == GAUDIT_UPDATE_INSTALL)
         return automatic_page(lines, f.status == GAUDIT_FACT_KNOWN && f.value == 1, cmd);
 
+    if (strcmp(fix_id, "timers") == 0 && debian
+        && (f.key == GAUDIT_UPDATE_CHECK_TIMER || f.key == GAUDIT_UPDATE_INSTALL_TIMER)
+        && apt_step(&steps[0], "enable-apt-timers", NULL, 0))
+        return gaudit_fix_page_new_steps(
+            P_("Switch On the Daily Jobs"),
+            P_("The jobs that look for and install updates every day are switched off, so the "
+               "settings for updates have no effect."),
+            P_("Switch them on again:"),
+            &steps[0].step, 1,
+            P_("Afterwards, it is checked again: the jobs should then be listed as on."),
+            recollect, NULL, NULL);
+
     if (strcmp(fix_id, "timers") == 0
         && (f.key == GAUDIT_UPDATE_CHECK_TIMER || f.key == GAUDIT_UPDATE_INSTALL_TIMER))
         return gaudit_fix_page_new(
@@ -252,6 +352,16 @@ AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines,
             cmd != NULL ? cmd->timers : NULL,
             P_("Afterwards, check again: the jobs should then be listed as on."),
             NULL, NULL, NULL, NULL);
+
+    if (strcmp(fix_id, "look-now") == 0 && f.key == GAUDIT_UPDATE_INDEX_AGE && debian
+        && apt_step(&steps[0], "apt-update", NULL, 0))
+        return gaudit_fix_page_new_steps(
+            P_("Look for Updates Now"),
+            P_("This computer has not looked for updates for a long time, so it does not know "
+               "about updates published since."),
+            P_("Look for them now. If it keeps happening, check that the computer looks for "
+               "updates by itself."),
+            &steps[0].step, 1, NULL, recollect, NULL, NULL);
 
     if (strcmp(fix_id, "look-now") == 0 && f.key == GAUDIT_UPDATE_INDEX_AGE)
         return gaudit_fix_page_new(
@@ -264,6 +374,30 @@ AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines,
                 : P_("Install the updates with the command below; it looks for new ones first."),
             cmd != NULL ? (cmd->look != NULL ? cmd->look : cmd->install) : NULL,
             NULL, NULL, NULL, NULL, NULL);
+
+    if (strcmp(fix_id, "install-now") == 0 && debian
+        && (f.key == GAUDIT_UPDATE_PENDING_SECURITY || f.key == GAUDIT_UPDATE_PENDING)) {
+        /* One command where apt can fetch the lists itself, else two steps. */
+        gsize n = 0;
+        if (upgrade_updates(lines))
+            n = apt_step(&steps[0], "apt-upgrade-update", NULL, 0) ? 1 : 0;
+        else if (apt_step(&steps[0], "apt-update", NULL, 0) && apt_step(&steps[1], "apt-upgrade", NULL, 0))
+            n = 2;
+        GauditFixStep s2[2];
+        for (gsize i = 0; i < n; i++)
+            s2[i] = steps[i].step;
+        if (n > 0)
+            return gaudit_fix_page_new_steps(
+                P_("Install the Updates"),
+                f.key == GAUDIT_UPDATE_PENDING_SECURITY
+                    ? P_("Security updates are waiting. Until they are installed, the problems they "
+                         "fix stay open on this computer.")
+                    : P_("Updates are waiting, and some of them may be security updates."),
+                P_("Install them with your system's software updater, or here:"),
+                s2, n,
+                P_("Installing updates automatically keeps this from building up again."),
+                recollect, NULL, NULL);
+    }
 
     if (strcmp(fix_id, "install-now") == 0
         && (f.key == GAUDIT_UPDATE_PENDING_SECURITY || f.key == GAUDIT_UPDATE_PENDING))

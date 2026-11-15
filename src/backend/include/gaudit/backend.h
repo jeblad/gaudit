@@ -85,6 +85,8 @@ typedef struct {
                               Updater, Synaptic, ...): how many */
     char admin_names[128]; /* their package names, ", " between */
     int own_setting;       /* gAudit's own drop-in for automatic updates is there */
+    int upgrade_updates;   /* the upgrade command can fetch the lists itself (apt 2.7.0 and
+                              newer: --update), so the fix needs no second step */
 } gaudit_update_settings;
 
 typedef struct gaudit_capability {

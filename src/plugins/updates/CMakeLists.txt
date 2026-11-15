@@ -8,15 +8,17 @@
 target_sources(gaudit_probe PRIVATE common/updates-io.c)
 target_include_directories(gaudit_probe PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/common
                                         PRIVATE ${PROJECT_SOURCE_DIR}/src/probe)
-target_sources(gaudit-orchestrator PRIVATE orchestrator/updates.c)
+target_sources(gaudit-orchestrator PRIVATE orchestrator/updates.c common/apt-ops.c)
 target_include_directories(gaudit-orchestrator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/orchestrator)
-target_sources(gaudit PRIVATE plugin.c gaudit-updates.c)
+target_sources(gaudit PRIVATE plugin.c gaudit-updates.c common/apt-ops.c)
 target_include_directories(gaudit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Its own text domain: the report and the fix pages.
 gaudit_plugin_domain(gaudit-updates ${CMAKE_CURRENT_SOURCE_DIR}/po)
-target_sources(gaudit_sandbox PRIVATE helper/md5.c helper/integrity.c helper/automatic.c)
-target_include_directories(gaudit_sandbox PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/helper)
+target_sources(gaudit_sandbox PRIVATE helper/md5.c helper/integrity.c helper/automatic.c helper/apt.c
+                                     common/apt-ops.c)
+target_include_directories(gaudit_sandbox PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/helper
+                                          ${CMAKE_CURRENT_SOURCE_DIR}/common)
 
 set(GAUDIT_PLUGIN_ID core.updates)
 configure_file(rules/report.scm ${GAUDIT_BUILD_RULES_DIR}/${GAUDIT_PLUGIN_ID}/report.scm COPYONLY)

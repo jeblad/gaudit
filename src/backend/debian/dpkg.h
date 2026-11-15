@@ -14,6 +14,10 @@ int gaudit_deb_present(const char *status_file, const char *dpkg_bin);
 int gaudit_deb_installed_names(const char *status_file, const char *const *names, char *out,
                                size_t len, unsigned *count);
 
+/* The installed version of package name, by the dpkg status, into out.
+ * 1 found, 0 not installed, -1 when the status cannot be read. */
+int gaudit_deb_installed_version(const char *status_file, const char *name, char *out, size_t len);
+
 /* dpkg's version ordering (epoch:upstream-revision, '~' sorts first).
  * Returns <0, 0 or >0. */
 int gaudit_deb_version_compare(const char *a, const char *b);

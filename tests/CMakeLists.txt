@@ -193,3 +193,9 @@ target_compile_definitions(test_updates PRIVATE _GNU_SOURCE)
 target_include_directories(test_updates PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/updates/orchestrator)
 target_link_libraries(test_updates PRIVATE gaudit_probe)
 add_test(NAME updates COMMAND test_updates)
+
+# The apt operations: what a fix page shows is what the helper runs.
+add_executable(test_apt_ops test_apt_ops.c)
+target_compile_definitions(test_apt_ops PRIVATE _GNU_SOURCE)
+target_link_libraries(test_apt_ops PRIVATE gaudit_sandbox)
+add_test(NAME apt-ops COMMAND test_apt_ops)

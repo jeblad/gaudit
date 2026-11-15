@@ -114,6 +114,11 @@ int gaudit_run_format(const gaudit_run_event *ev, char *buf, size_t len)
         n = snprintf(buf, len, "(conf (template \"%s\") (action \"%s\") (result \"%s\"))\n",
                      ev->conf.template_id, ev->conf.action, ev->conf.result);
         break;
+    case GAUDIT_RUN_EVENT_EXEC:
+        if (!plain_word(ev->exec.op) || ev->exec.status < 0 || ev->exec.status > 255)
+            return -1;
+        n = snprintf(buf, len, "(exec (op \"%s\") (status %d))\n", ev->exec.op, ev->exec.status);
+        break;
     case GAUDIT_RUN_EVENT_END:
         n = snprintf(buf, len, "(end (status %d))\n", (int)ev->status);
         break;
@@ -200,6 +205,19 @@ int gaudit_run_parse_line(const char *line, gaudit_run_event *out)
         if (!integrity_consistent(r) || r->verdict != gaudit_integrity_verdict(r))
             return -1;
         ev.type = GAUDIT_RUN_EVENT_INTEGRITY;
+        *out = ev;
+        return 0;
+    }
+    long long xs;
+    const gaudit_sexpr_field exec[] = {
+        { .key = "op",     .text = ev.exec.op, .text_len = sizeof ev.exec.op },
+        { .key = "status", .value = &xs, .max = 255 },
+    };
+    if (gaudit_sexpr_parse(copy, "exec", exec, 2) == 0) {
+        if (!plain_word(ev.exec.op))
+            return -1;
+        ev.type = GAUDIT_RUN_EVENT_EXEC;
+        ev.exec.status = (int)xs;
         *out = ev;
         return 0;
     }

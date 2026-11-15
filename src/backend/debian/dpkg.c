@@ -657,6 +657,34 @@ static int find_installed(const stanza *s, void *vctx)
     return 0;
 }
 
+typedef struct {
+    const char *name;
+    char *out;
+    size_t len;
+    int found;
+} version_ctx;
+
+static int find_version(const stanza *s, void *vctx)
+{
+    version_ctx *ctx = vctx;
+    if (!ctx->found && is_installed(s->status) && strcmp(s->package, ctx->name) == 0) {
+        snprintf(ctx->out, ctx->len, "%s", s->version);
+        ctx->found = 1;
+    }
+    return 0;
+}
+
+int gaudit_deb_installed_version(const char *status_file, const char *name, char *out, size_t len)
+{
+    if (status_file == NULL || name == NULL || out == NULL || len == 0)
+        return -1;
+    version_ctx ctx = { name, out, len, 0 };
+    out[0] = '\0';
+    if (read_stanzas(status_file, find_version, &ctx) != 0)
+        return -1;
+    return ctx.found;
+}
+
 int gaudit_deb_installed_names(const char *status_file, const char *const *names, char *out,
                                size_t len, unsigned *count)
 {

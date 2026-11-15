@@ -59,6 +59,26 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
                                        const char *const *run_args, GauditFixedFn on_fixed,
                                        gpointer data, GDestroyNotify data_free);
 
+/* One step of a fix: the command as it runs (shown, copied, and run with
+ * run_args, which may be NULL for copy only), and what each part of it
+ * does in plain words (NULL-terminated, may be NULL), so the user knows
+ * what is done on their behalf. A run_args starting with "session" goes
+ * through the session as root (e.g. { "session", "run", "apt-update" }). */
+typedef struct {
+    const char *command;
+    const char *const *run_args;
+    const char *const *explain;
+} GauditFixStep;
+
+/* A fix page with one or more steps, each with its own field and buttons:
+ * never one compound command. on_fixed (may be NULL) is called after any
+ * step that ran and succeeded. */
+AdwNavigationPage *gaudit_fix_page_new_steps(const char *title, const char *problem,
+                                             const char *how, const GauditFixStep *steps,
+                                             gsize n_steps, const char *note,
+                                             GauditFixedFn on_fixed, gpointer data,
+                                             GDestroyNotify data_free);
+
 /* One way of writing gAudit's own configuration, through the helper:
  * label for the button and the confirmation, summary in plain language
  * (what is written where, what it does), command the session's run

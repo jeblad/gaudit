@@ -31,6 +31,7 @@
  * other gaudit processes and the root-owned log come later. */
 #include "config.h"
 
+#include "apt.h"
 #include "automatic.h"
 #include "integrity.h"
 #include "lease.h"
@@ -312,6 +313,19 @@ static void automatic_remove(void *ctx)
            gaudit_conf_result_name(gaudit_automatic_updates_remove(&system_env)));
 }
 
+/* --- apt, on request ---------------------------------------------------- */
+
+/* The packages of a "reinstall" command, checked in apt.c again before use. */
+static char *exec_packages[GAUDIT_APT_MAX_PACKAGES];
+static size_t n_exec_packages;
+
+static void apt_exec(void *ctx)
+{
+    const char *op = ctx;
+    int status = gaudit_apt_run(op, exec_packages, n_exec_packages);
+    printf("(exec (op \"%s\") (status %d))\n", op, status < 0 ? 255 : status > 255 ? 255 : status);
+}
+
 /* --- main ----------------------------------------------------------------- */
 
 /* PKEXEC_UID as set by pkexec, -1 if absent or not a plain number. Only
@@ -359,6 +373,26 @@ static const check_def automatic_remove_checks[] = {
     { "automatic-updates-remove", { .to_nobody = 0 }, automatic_remove, 0, 0 },
 };
 
+/* A system tool as root, as with sudo: no sandbox (apt needs the network,
+ * every capability and its maintainer scripts). The operations are fixed
+ * (apt.c), and an upgrade can take a long time. */
+#define APT_TIMEOUT_MS (45 * 60 * 1000L)
+static const check_def apt_update_checks[] = {
+    { "apt-update",        { .unconfined = 1 }, apt_exec, APT_TIMEOUT_MS, 0 },
+};
+static const check_def apt_upgrade_checks[] = {
+    { "apt-upgrade",       { .unconfined = 1 }, apt_exec, APT_TIMEOUT_MS, 0 },
+};
+static const check_def apt_upgrade_update_checks[] = {
+    { "apt-upgrade-update", { .unconfined = 1 }, apt_exec, APT_TIMEOUT_MS, 0 },
+};
+static const check_def apt_timers_checks[] = {
+    { "enable-apt-timers", { .unconfined = 1 }, apt_exec, APT_TIMEOUT_MS, 0 },
+};
+static const check_def apt_reinstall_checks[] = {
+    { "reinstall",         { .unconfined = 1 }, apt_exec, APT_TIMEOUT_MS, 0 },
+};
+
 /* Reading every package file takes time: half a minute on a fast disk,
  * several minutes on a slow one. */
 static const check_def integrity_checks[] = {
@@ -376,6 +410,11 @@ static const struct {
     { "integrity", integrity_checks, sizeof integrity_checks / sizeof integrity_checks[0] },
     { "automatic-updates-on", automatic_on_checks, 1 },
     { "automatic-updates-remove", automatic_remove_checks, 1 },
+    { "apt-update", apt_update_checks, 1 },
+    { "apt-upgrade", apt_upgrade_checks, 1 },
+    { "apt-upgrade-update", apt_upgrade_update_checks, 1 },
+    { "enable-apt-timers", apt_timers_checks, 1 },
+    { "reinstall", apt_reinstall_checks, 1 },
 };
 
 static int find_command(const char *name)
@@ -412,7 +451,8 @@ static int run_command(int i, long caller)
 
 /* --- Session ------------------------------------------------------------- */
 
-#define MAX_COMMAND 64
+/* A command and, for "reinstall" only, its package names. */
+#define MAX_COMMAND 4096
 
 /* One command line from stdin within timeout_ms, without the newline.
  * 1: a line; 0: timeout; -1: end of input, error, or a line too long. */
@@ -480,8 +520,21 @@ static int session(long caller)
             reason = "quit";
             break;
         }
-        int i = find_command(line);
-        if (i < 0) {
+        /* "reinstall <package> ..." is the only command with arguments:
+         * plain names of installed packages, checked here and again before
+         * apt is run. Anything else is a single word. */
+        n_exec_packages = 0;
+        char *save = NULL;
+        char *name = strtok_r(line, " ", &save);
+        int i = name != NULL ? find_command(name) : -1;
+        int bad = i < 0;
+        for (char *arg = strtok_r(NULL, " ", &save); !bad && arg != NULL; arg = strtok_r(NULL, " ", &save))
+            bad = strcmp(name, "reinstall") != 0 || n_exec_packages >= GAUDIT_APT_MAX_PACKAGES
+                  || !gaudit_apt_package_ok(arg, "/var/lib/dpkg/info")
+                  || !(exec_packages[n_exec_packages++] = arg);
+        if (!bad && strcmp(name, "reinstall") == 0 && n_exec_packages == 0)
+            bad = 1;
+        if (bad) {
             reason = "bad-command";
             status = 1;
             break;

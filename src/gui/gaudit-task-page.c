@@ -120,6 +120,52 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
     return page;
 }
 
+/* --- A fix in steps ------------------------------------------------------- */
+
+AdwNavigationPage *gaudit_fix_page_new_steps(const char *title, const char *problem,
+                                             const char *how, const GauditFixStep *steps,
+                                             gsize n_steps, const char *note,
+                                             GauditFixedFn on_fixed, gpointer data,
+                                             GDestroyNotify data_free)
+{
+    AdwNavigationPage *page = gaudit_fix_page_new(title, problem, how, NULL, note, NULL,
+                                                  NULL, NULL, NULL);
+    GtkWidget *box = g_object_get_data(G_OBJECT(page), "gaudit-fix-box");
+    GtkWidget *after = g_object_get_data(G_OBJECT(page), "gaudit-fix-how");
+    /* The page holds what the steps call back with. */
+    if (data_free != NULL)
+        g_object_set_data_full(G_OBJECT(page), "gaudit-fixed-data", data, data_free);
+    for (gsize i = 0; i < n_steps; i++) {
+        GtkWidget *step = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+        if (n_steps > 1) {
+            /* Translators: "Step 1 of 2". */
+            g_autofree char *heading = g_strdup_printf(_("Step %u of %u"), (unsigned)i + 1,
+                                                       (unsigned)n_steps);
+            GtkWidget *h = wrapped_label(heading);
+            gtk_widget_add_css_class(h, "heading");
+            gtk_box_append(GTK_BOX(step), h);
+        }
+        GtkWidget *field = gaudit_command_field_new_run(steps[i].command, steps[i].run_args);
+        for (GtkWidget *c = gtk_widget_get_first_child(field); c != NULL; c = gtk_widget_get_next_sibling(c))
+            for (GtkWidget *d = gtk_widget_get_first_child(c); d != NULL; d = gtk_widget_get_next_sibling(d))
+                if (g_object_get_data(G_OBJECT(d), "gaudit-run") != NULL && on_fixed != NULL) {
+                    g_object_set_data(G_OBJECT(d), "gaudit-fixed", (gpointer)on_fixed);
+                    g_object_set_data(G_OBJECT(d), "gaudit-fixed-data", data);
+                }
+        gtk_box_append(GTK_BOX(step), field);
+        /* What each part does, so pressing or copying is an informed choice. */
+        for (const char *const *e = steps[i].explain; e != NULL && *e != NULL; e++) {
+            g_autofree char *line = g_strdup_printf("• %s", *e);
+            GtkWidget *l = wrapped_label(line);
+            gtk_widget_add_css_class(l, "caption");
+            gtk_box_append(GTK_BOX(step), l);
+        }
+        gtk_box_insert_child_after(GTK_BOX(box), step, after);
+        after = step;
+    }
+    return page;
+}
+
 /* --- Changing configuration ------------------------------------------------ */
 
 typedef struct {
@@ -839,6 +885,38 @@ static void on_fix_done(gboolean broken, gpointer user_data)
     fix_run_free(r);
 }
 
+static void on_session_fix_done(gaudit_run_status status, const GauditRunResult *result,
+                                gpointer user_data)
+{
+    FixRun *r = user_data;
+    gboolean done = status == GAUDIT_RUN_OK && result != NULL
+                    && result->kind == GAUDIT_RESULT_EXEC && result->exec.status == 0;
+    if (r->result != NULL) {
+        g_autofree char *text = NULL;
+        if (done)
+            text = g_strdup(_("Done. It is checked again now."));
+        else if (status == GAUDIT_RUN_CANCELLED)
+            text = g_strdup(_("Cancelled, so nothing was run."));
+        else if (status == GAUDIT_RUN_DENIED)
+            text = g_strdup(_("The password was not accepted, so nothing was run."));
+        else if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_EXEC)
+            /* Translators: %d is a program's exit code. Unsigned packages,
+             * for one, stop apt: it never installs them from here. */
+            text = g_strdup_printf(_("It stopped with an error (exit code %d). Run the command in a "
+                                     "terminal to see what it says; apt stops, for one, rather than "
+                                     "install packages that are not signed."), result->exec.status);
+        else
+            text = g_strdup(_("It could not be run."));
+        gtk_label_set_text(GTK_LABEL(r->result), text);
+        gtk_widget_set_visible(r->result, TRUE);
+    }
+    if (r->button != NULL)
+        gtk_widget_set_sensitive(r->button, TRUE);
+    if (done && r->on_fixed != NULL && r->button != NULL)
+        r->on_fixed(r->data);
+    fix_run_free(r);
+}
+
 static void on_run_clicked(GtkButton *button, gpointer user_data)
 {
     GtkLabel *label = GTK_LABEL(user_data);
@@ -859,6 +937,23 @@ static void on_run_clicked(GtkButton *button, gpointer user_data)
     if (r->result != NULL)
         g_object_add_weak_pointer(G_OBJECT(r->result), (gpointer *)&r->result);
     gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+    if (args[0] != NULL && strcmp(args[0], "session") == 0) {
+        /* A system tool as root: through the session, waiting for the
+         * switch like any other run. Only the operation's name goes. */
+        g_autofree char *command = g_strjoinv(" ", (char **)args + 1);
+        if (r->result != NULL) {
+            gtk_label_set_text(GTK_LABEL(r->result),
+                _("Under way. It needs administrator rights: use the switch beside the title if asked."));
+            gtk_widget_set_visible(r->result, TRUE);
+        }
+        if (!gaudit_session_run(command, NULL, on_session_fix_done, r)) {
+            if (r->result != NULL)
+                gtk_label_set_text(GTK_LABEL(r->result), _("It is already under way."));
+            gtk_widget_set_sensitive(GTK_WIDGET(button), TRUE);
+            fix_run_free(r);
+        }
+        return;
+    }
     gaudit_orchestrator_start(args, 30, FALSE, on_fix_line, on_fix_done, r);
 }
 

@@ -160,6 +160,7 @@ int main(void)
           .shown = 2, .seconds = 44 } },
         { .type = GAUDIT_RUN_EVENT_CONF, .conf = { .template_id = "core.updates.automatic",
           .action = "on", .result = "written" } },
+        { .type = GAUDIT_RUN_EVENT_EXEC, .exec = { .op = "apt-upgrade-update", .status = 100 } },
         { .type = GAUDIT_RUN_EVENT_ELEVATED, .elevated = 0 },
         { .type = GAUDIT_RUN_EVENT_END, .status = GAUDIT_RUN_CANCELLED },
     };
@@ -178,7 +179,10 @@ int main(void)
               && strcmp(back.file.path, evs[i].file.path) == 0
               && strcmp(back.conf.template_id, evs[i].conf.template_id) == 0
               && strcmp(back.conf.action, evs[i].conf.action) == 0
-              && strcmp(back.conf.result, evs[i].conf.result) == 0);
+              && strcmp(back.conf.result, evs[i].conf.result) == 0
+              && strcmp(back.exec.op, evs[i].exec.op) == 0 && back.exec.status == evs[i].exec.status);
+    CHECK(gaudit_run_parse_line("(exec (op \"apt-update\") (status 256))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(exec (op \"a;b\") (status 0))", &ev) != 0);
     }
     /* A configuration write: only known actions and results, plain template ids. */
     CHECK(gaudit_run_parse_line("(conf (template \"t\") (action \"on\") (result \"deleted\"))", &ev) != 0);

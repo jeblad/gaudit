@@ -143,9 +143,9 @@
          (row 'warning (msg (G_ "Updates were last looked for {when}") (list 'when (ago (value f))))
               (msg (G_ "Updates published since then are not known here"))
               (cons 'look-now f)))
-        (else
-         (row 'ok (msg (G_ "Updates were last looked for {when}") (list 'when (ago (value f))))
-              (msg (G_ "Recently enough")) #f))))
+        ;; Recent enough: no row of its own; it says how fresh the status is
+        ;; (security-row's subtitle).
+        (else #f)))
 
 ;; --- Installing updates ---------------------------------------------------
 
@@ -178,11 +178,15 @@
               (msg (G_ "Recommended: let them install by themselves, unless there is a reason not to"))
               (cons 'automatic-on f)))))
 
-(define (security-row f)
+(define (security-row f index)
   (cond ((unknown? f) (unknown-row (G_ "Security updates waiting")))
         ((not (known? f)) #f)
         ((= (value f) 0)
-         (row 'ok (msg (G_ "No security updates are waiting")) (msg (G_ "As far as the last look for updates knows")) #f))
+         (row 'ok (msg (G_ "No security updates are waiting"))
+              (if (known? index)
+                  (msg (G_ "Looked for {when}") (list 'when (ago (value index))))
+                  (msg (G_ "As far as the last look for updates knows")))
+              #f))
         ;; Always a warning, automatic installation or not.
         (else
          (row 'warning (msgn (N_ "{n} security update is waiting" "{n} security updates are waiting")
@@ -408,10 +412,13 @@
          (leftover (get "sourceless-leftover")) (other (get "sourceless-other"))
          (expected (get "expected-missing")) (others (get "other-systems"))
          ;; The most important first: the title names the first warning.
-         (looking (list (check-days-row days) (check-timer-row check-timer days) (index-row index)))
-         (installing (list (security-row security)
-                           (pending-row pending security install change)
-                           (install-row install install-timer last own)))
+         ;; Two questions, not apt's two steps: is it up to date now, and
+         ;; does it keep itself up to date. Then where updates come from.
+         (now (list (security-row security index)
+                    (pending-row pending security install change)
+                    (index-row index)))
+         (setup (list (check-days-row days) (check-timer-row check-timer days)
+                      (install-row install install-timer last own)))
          (source (list (source-row official mirror)))
          (sourceless (sourceless-rows total above leftover other))
          (systems (systems-rows expected others))
@@ -420,7 +427,7 @@
          (files-head (if (pair? files) (list (car files)) '()))
          (all (keep (lambda (r) r)
                     ;; A missing package system first: nothing else can be checked then.
-                    (append (list (car systems)) looking installing source sourceless
+                    (append (list (car systems)) now setup source sourceless
                             files-head (cdr systems))))
          (warnings (keep (lambda (r) (eq? (row-verdict r) 'warning)) all))
          (unknowns (keep (lambda (r) (eq? (row-verdict r) 'unknown)) all))
@@ -451,23 +458,17 @@
          (list (list 'report (list 'verdict verdict) (list 'title title)
                      (list 'description description)))
          (home-rows all sourceless-problems total ok-title)
-         (section (G_ "Looking for updates")
-                  (G_ "New updates are only found when this computer looks for them.")
-                  looking)
-         (section (G_ "Installing updates")
-                  (G_ "Updates help only once they are installed. Security updates matter most.")
-                  installing)
-         (section (G_ "Where security updates come from")
-                  (G_ "Security updates should come straight from the distribution.")
-                  source)
-         (section (G_ "Software no source keeps up to date")
-                  (G_ "Installed packages that no software source offers get no updates.")
-                  sourceless)
+         (section (G_ "Status now")
+                  (G_ "What is waiting to be installed on this computer.")
+                  now)
+         (section (G_ "Keeps itself up to date")
+                  (G_ "Whether this computer looks for updates and installs them by itself.")
+                  setup)
+         (section (G_ "Where updates come from")
+                  (G_ "Security updates should come straight from the distribution, and every installed package from a software source.")
+                  (append source sourceless systems))
          (section (G_ "Package files")
                   (G_ "Every file a package installed, compared with the checksum it came with. Your own settings in /etc are not counted.")
                   files)
-         (section (G_ "Package systems")
-                  (G_ "Updates are checked for the packages of the package system found here.")
-                  systems)
          (integrity-notes entries)))))
 

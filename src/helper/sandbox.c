@@ -134,6 +134,12 @@ int gaudit_sandbox_enter(const gaudit_sandbox *spec)
     umask(077);
     if (chdir("/") != 0)
         return -1;
+    if (spec->unconfined) {
+        /* What a package manager needs: every capability, the network,
+         * its maintainer scripts. The operation itself is fixed. */
+        umask(022);
+        return 0;
+    }
 
     if (spec->to_nobody) {
         /* Empty the bounding set while still root, then become nobody; the

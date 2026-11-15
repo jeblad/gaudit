@@ -22,6 +22,7 @@ static const char *const key_names[GAUDIT_UPDATE_KEYS] = {
     [GAUDIT_UPDATE_LAST_CHANGE]        = "last-change",
     [GAUDIT_UPDATE_ADMIN_TOOLS]        = "admin-tools",
     [GAUDIT_UPDATE_OWN_SETTING]        = "own-setting",
+    [GAUDIT_UPDATE_UPGRADE_UPDATES]    = "upgrade-updates",
     [GAUDIT_UPDATE_INDEX_AGE]          = "index-age",
     [GAUDIT_UPDATE_PENDING]            = "pending",
     [GAUDIT_UPDATE_PENDING_SECURITY]   = "pending-security",

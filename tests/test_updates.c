@@ -29,7 +29,7 @@ static gaudit_backend_status settings(gaudit_update_settings *out)
                                      .check_timer = 1, .install_timer = 0,
                                      .last_install = NOW - 3600, .last_change = NOW - 7200,
                                      .admin_tools = 1, .admin_names = "synaptic",
-                                     .own_setting = 0 };
+                                     .own_setting = 0, .upgrade_updates = 1 };
     return GAUDIT_BACKEND_OK;
 }
 

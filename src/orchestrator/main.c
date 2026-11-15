@@ -39,6 +39,7 @@
 #include "fix-mode.h"
 #include "secrets-mode.h"
 #include "updates-mode.h"
+#include "apt-ops.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -104,10 +105,24 @@ static const struct {
     /* Writing gAudit's own configuration (conf-write.h), on request. */
     { "run automatic-updates-on",     "automatic-updates-on\n",     5 * 60 * 1000L },
     { "run automatic-updates-remove", "automatic-updates-remove\n", 5 * 60 * 1000L },
+    /* A system tool on request (common/apt-ops.h); an upgrade can take long.
+     * "run reinstall <package> ..." carries its packages (RUN_EXEC). */
+    { "run apt-update",         "apt-update\n",         50 * 60 * 1000L },
+    { "run apt-upgrade",        "apt-upgrade\n",        50 * 60 * 1000L },
+    { "run apt-upgrade-update", "apt-upgrade-update\n", 50 * 60 * 1000L },
+    { "run enable-apt-timers",  "enable-apt-timers\n",  50 * 60 * 1000L },
+    { "run reinstall",          NULL,                  50 * 60 * 1000L },
 };
-enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_ELEVATE, RUN_CONF_ON, RUN_CONF_REMOVE, RUN_KINDS };
+enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_ELEVATE, RUN_CONF_ON, RUN_CONF_REMOVE,
+       RUN_APT_UPDATE, RUN_APT_UPGRADE, RUN_APT_UPGRADE_UPDATE, RUN_APT_TIMERS, RUN_REINSTALL,
+       RUN_KINDS };
+
+static int is_exec_kind(int kind)
+{
+    return kind >= RUN_APT_UPDATE && kind <= RUN_REINSTALL;
+}
 #define MAX_HELPER_OUT   (256 * 1024)     /* over a whole session */
-#define MAX_LINE_LEN     1024
+#define MAX_LINE_LEN     4096  /* "run reinstall" carries its packages */
 
 static int emit(const gaudit_run_event *ev)
 {
@@ -190,6 +205,8 @@ typedef struct {
     gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
     unsigned n_files;
     gaudit_conf_report conf;
+    gaudit_exec_report exec;
+    char helper_line[4096];     /* what goes to the helper for this run */
 } session_state;
 
 static void close_helper_input(session_state *st)
@@ -363,6 +380,25 @@ static int on_helper_line(char *line, void *ctx)
         return -1;  /* nothing else comes unasked */
     if (st->kind == RUN_INTEGRITY)
         return on_integrity_line(st, line, &failed, summary);
+    if (is_exec_kind(st->kind)) {
+        gaudit_run_event ev;
+        if (!st->have_result && gaudit_run_parse_line(line, &ev) == 0
+            && ev.type == GAUDIT_RUN_EVENT_EXEC) {
+            st->have_result = 1;
+            st->exec = ev.exec;
+            return 0;
+        }
+        if (gaudit_sexpr_parse(line, "helper", summary, 4) != 0)
+            return -1;
+        st->running = 0;
+        if (failed == 0 && st->have_result) {
+            gaudit_run_event res = { .type = GAUDIT_RUN_EVENT_EXEC, .exec = st->exec };
+            if (emit(&res) != 0)
+                return -1;
+            return emit_end(GAUDIT_RUN_OK);
+        }
+        return emit_end(GAUDIT_RUN_FAILED);
+    }
     if (st->kind == RUN_CONF_ON || st->kind == RUN_CONF_REMOVE) {
         gaudit_run_event ev;
         if (!st->have_result && gaudit_run_parse_line(line, &ev) == 0
@@ -438,7 +474,7 @@ static int helper_gone(session_state *st, int broken)
          * asks for the password again. */
         st->queued = 0;
         if (start_helper(st) != 0
-            || (runs[st->kind].helper_cmd != NULL && send_helper(st, runs[st->kind].helper_cmd) != 0)) {
+            || (st->helper_line[0] != '\0' && send_helper(st, st->helper_line) != 0)) {
             st->running = 0;
             return emit_end(GAUDIT_RUN_FAILED) != 0 ? -1 : r;
         }
@@ -475,14 +511,40 @@ static int on_gui_line(char *line, void *ctx)
         return 0;
     }
     int kind = -1;
+    char helper_line[sizeof st->helper_line] = "";
     for (int i = 0; i < RUN_KINDS; i++)
-        if (strcmp(line, runs[i].request) == 0)
+        if (i != RUN_REINSTALL && strcmp(line, runs[i].request) == 0) {
             kind = i;
+            if (runs[i].helper_cmd != NULL)
+                snprintf(helper_line, sizeof helper_line, "%s", runs[i].helper_cmd);
+        }
+    /* "run reinstall <package> ...": plain names only, at most the
+     * helper's limit; the helper checks again that each is installed. */
+    static const char reinstall[] = "run reinstall ";
+    if (kind < 0 && strncmp(line, reinstall, sizeof reinstall - 1) == 0) {
+        char copy[sizeof st->helper_line];
+        snprintf(copy, sizeof copy, "%s", line + sizeof reinstall - 1);
+        size_t used = (size_t)snprintf(helper_line, sizeof helper_line, "reinstall");
+        unsigned n = 0;
+        int ok = 1;
+        char *save = NULL;
+        for (char *p = strtok_r(copy, " ", &save); ok && p != NULL; p = strtok_r(NULL, " ", &save)) {
+            ok = gaudit_apt_plain_package(p) && ++n <= GAUDIT_APT_MAX_PACKAGES
+                 && used + strlen(p) + 2 < sizeof helper_line;
+            if (ok)
+                used += (size_t)snprintf(helper_line + used, sizeof helper_line - used, " %s", p);
+        }
+        if (!ok || n == 0)
+            return -1;
+        snprintf(helper_line + used, sizeof helper_line - used, "\n");
+        kind = RUN_REINSTALL;
+    }
     if (kind < 0 || st->running)
         return -1;  /* unknown, or one run at a time */
     if (kind == RUN_ELEVATE && st->started && st->to_helper >= 0)
         return emit_end(GAUDIT_RUN_OK);  /* already root, and not leaving */
     st->kind = kind;
+    snprintf(st->helper_line, sizeof st->helper_line, "%s", helper_line);
     st->running = 1;
     st->overdue = 0;
     st->have_result = 0;
@@ -496,10 +558,10 @@ static int on_gui_line(char *line, void *ctx)
         st->running = 0;
         return emit_end(GAUDIT_RUN_FAILED);
     }
-    if (runs[st->kind].helper_cmd == NULL)
+    if (st->helper_line[0] == '\0')
         return 0;  /* only the helper: its (helper-start ...) ends the run */
     /* Waits in the pipe until the helper runs (after the password). */
-    if (send_helper(st, runs[st->kind].helper_cmd) != 0)
+    if (send_helper(st, st->helper_line) != 0)
         close_helper_input(st);  /* the helper's end reports the run */
     return 0;
 }

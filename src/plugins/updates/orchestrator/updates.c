@@ -88,7 +88,7 @@ int gaudit_updates_collect(const gaudit_pkg_backend *pkg, const gaudit_pkg_backe
     }
 
     /* How updates are looked for and installed. */
-    gaudit_update_settings set = { -1, -1, -1, -1, -1, -1, -1, -1, "", -1 };
+    gaudit_update_settings set = { -1, -1, -1, -1, -1, -1, -1, -1, "", -1, -1 };
     int have = 0;
     if (pkg->update_settings != NULL && pkg->update_settings(&set) == GAUDIT_BACKEND_OK) {
         have = 1;
@@ -123,6 +123,7 @@ int gaudit_updates_collect(const gaudit_pkg_backend *pkg, const gaudit_pkg_backe
         put(&s, GAUDIT_UPDATE_ADMIN_TOOLS, set.admin_tools < 0 ? GAUDIT_FACT_UNKNOWN : GAUDIT_FACT_KNOWN,
             set.admin_tools < 0 ? 0 : set.admin_tools, set.admin_tools < 0 ? NULL : set.admin_names);
     put_setting(&s, GAUDIT_UPDATE_OWN_SETTING, have, set.own_setting);
+    put_setting(&s, GAUDIT_UPDATE_UPGRADE_UPDATES, have, set.upgrade_updates);
 
     /* When updates were last looked for. */
     int64_t epoch = 0;

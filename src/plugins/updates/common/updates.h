@@ -31,6 +31,7 @@ typedef enum {
     GAUDIT_UPDATE_ADMIN_TOOLS,      /* admin tools installed that can set updates up;
                                        text: their package names */
     GAUDIT_UPDATE_OWN_SETTING,      /* 1: gAudit's own drop-in for automatic updates is there */
+    GAUDIT_UPDATE_UPGRADE_UPDATES,  /* 1: the upgrade command can fetch the lists itself */
     GAUDIT_UPDATE_INDEX_AGE,        /* seconds since updates were last looked for */
     GAUDIT_UPDATE_PENDING,          /* updates waiting to be installed */
     GAUDIT_UPDATE_PENDING_SECURITY, /* of those, security updates */

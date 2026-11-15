@@ -12,6 +12,9 @@
 #define GAUDIT_NOBODY_GID 65534
 
 typedef struct {
+    int unconfined;           /* 1: full root, as with sudo: only the environment is
+                                 cleared and descriptors closed. For the few fixed
+                                 operations that run a system tool (apt) on request */
     int to_nobody;            /* 1: become nobody, no capabilities at all */
     const cap_value_t *caps;  /* else: stay root with only these capabilities */
     size_t n_caps;

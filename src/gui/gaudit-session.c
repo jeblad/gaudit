@@ -10,7 +10,7 @@
 
 /* The orchestrator gives a run at most 20 minutes (the integrity check;
  * others less); this is the GUI's own limit on top. */
-#define RUN_WATCHDOG_S (21 * 60)
+#define RUN_WATCHDOG_S (52 * 60)  /* an upgrade may take 50 minutes */
 
 /* Someone else waiting for the same run (gaudit_session_attach). */
 typedef struct {
@@ -240,6 +240,13 @@ static gboolean on_line(const char *line, gpointer user_data)
         R->have_result = TRUE;
         R->result.kind = GAUDIT_RESULT_CONF;
         R->result.conf = ev.conf;
+        return TRUE;
+    case GAUDIT_RUN_EVENT_EXEC:
+        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0)
+            return FALSE;
+        R->have_result = TRUE;
+        R->result.kind = GAUDIT_RESULT_EXEC;
+        R->result.exec = ev.exec;
         return TRUE;
     case GAUDIT_RUN_EVENT_END:
         if (R == NULL)
@@ -686,6 +693,7 @@ gaudit_verdict gaudit_run_result_verdict(const GauditRunResult *result)
     case GAUDIT_RESULT_INTEGRITY: return result->integrity.verdict;
     case GAUDIT_RESULT_COLLECTION: return GAUDIT_VERDICT_UNKNOWN;
     case GAUDIT_RESULT_CONF:       return GAUDIT_VERDICT_UNKNOWN;
+    case GAUDIT_RESULT_EXEC:       return GAUDIT_VERDICT_UNKNOWN;
     }
     return GAUDIT_VERDICT_UNKNOWN;
 }

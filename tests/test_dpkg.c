@@ -268,6 +268,13 @@ int main(void)
         CHECK(gaudit_deb_installed_names(DATA "/no-such-status", names, found, sizeof found, &n) != 0);
     }
 
+    /* An installed package's version; one not installed is not found. */
+    {
+        char v[64];
+        CHECK(gaudit_deb_installed_version(DATA "/status", "c", v, sizeof v) == 1 && strcmp(v, "2.0") == 0);
+        CHECK(gaudit_deb_installed_version(DATA "/status", "zz", v, sizeof v) == 0);
+    }
+
     /* Security updates: a has a newer version in noble-security, and an
      * even newer one in noble-updates (Ubuntu puts security fixes there
      * too), so it counts; b is newer only in -updates; f's security update

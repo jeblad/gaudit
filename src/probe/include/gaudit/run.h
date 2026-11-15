@@ -7,6 +7,8 @@
  *   (integrity-file ...) one finding of the package integrity check (at most
  *                       GAUDIT_INTEGRITY_SHOWN, before the result)
  *   (integrity ...)     the package integrity result
+ *   (exec (op "...") (status N))  a system tool run on request (apt): the
+ *                       operation's name and its exit status
  *   (conf ...)          what writing a configuration did: its template, the
  *                       action (on, remove) and the result (conf-write.h's
  *                       names: written, unchanged, removed, not-there,
@@ -78,6 +80,11 @@ typedef struct {
     char result[16];
 } gaudit_conf_report;
 
+typedef struct {
+    char op[32];
+    int status;   /* the tool's exit status, 0 success; 255 could not be run */
+} gaudit_exec_report;
+
 /* 1 if result is one of the names a configuration write can give. */
 int gaudit_conf_result_known(const char *result);
 
@@ -87,6 +94,7 @@ typedef enum {
     GAUDIT_RUN_EVENT_INTEGRITY_FILE,
     GAUDIT_RUN_EVENT_INTEGRITY,
     GAUDIT_RUN_EVENT_CONF,
+    GAUDIT_RUN_EVENT_EXEC,
     GAUDIT_RUN_EVENT_END,
 } gaudit_run_event_type;
 
@@ -97,6 +105,7 @@ typedef struct {
     gaudit_integrity_file file;         /* _INTEGRITY_FILE */
     gaudit_integrity_report integrity;  /* _INTEGRITY */
     gaudit_conf_report conf;            /* _CONF */
+    gaudit_exec_report exec;            /* _EXEC */
     gaudit_run_status status;           /* _END */
 } gaudit_run_event;
 

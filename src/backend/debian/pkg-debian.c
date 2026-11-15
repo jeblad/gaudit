@@ -223,6 +223,12 @@ static gaudit_backend_status update_settings(gaudit_update_settings *out)
      * setting it made can be removed again from the app. */
     out->own_setting = lstat("/etc/apt/apt.conf.d/52gaudit-automatic-updates", &st) == 0 ? 1
                      : errno == ENOENT ? 0 : -1;
+    /* apt upgrade --update came with apt 2.7.0 (its changelog). */
+    char apt_version[64];
+    int got = gaudit_deb_installed_version("/var/lib/dpkg/status", "apt", apt_version,
+                                           sizeof apt_version);
+    out->upgrade_updates = got < 0 ? -1 : got == 0 ? 0
+                         : gaudit_deb_version_compare(apt_version, "2.7.0") >= 0;
     out->admin_tools = gaudit_deb_installed_names("/var/lib/dpkg/status", tools, out->admin_names,
                                                   sizeof out->admin_names, &n) == 0 ? (int)n : -1;
     return GAUDIT_BACKEND_OK;

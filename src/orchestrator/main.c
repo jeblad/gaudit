@@ -36,6 +36,7 @@
 
 #include "collector.h"
 #include "report.h"
+#include "fix-mode.h"
 #include "secrets-mode.h"
 
 #include <errno.h>
@@ -665,6 +666,8 @@ int main(int argc, char *argv[])
         return run_session();
     if (argc == 3 && strcmp(argv[1], "report") == 0)
         return gaudit_orchestrator_report(argv[2]);
+    if ((argc == 4 || argc == 5) && strcmp(argv[1], "fix") == 0)
+        return gaudit_private_files_fix(argv[2], argv[3], argc == 5 ? argv[4] : NULL);
     if (argc >= 3 && strcmp(argv[1], "secrets") == 0)
         return gaudit_private_files_secrets(argv[2], (const char *const *)argv + 3,
                                             (size_t)(argc - 3));
@@ -679,6 +682,6 @@ int main(int argc, char *argv[])
         return status_refresh();
     }
 #endif
-    fputs("usage: gaudit-orchestrator [session | packages | secrets quick|full [folder ...] | report <plugin-id>]\n", stderr);
+    fputs("usage: gaudit-orchestrator [session | packages | secrets quick|full [folder ...] | report <plugin-id> | fix <id> <root> [path]]\n", stderr);
     return 2;
 }

@@ -22,6 +22,12 @@ AdwNavigationPage *gaudit_missing_software_page_new(const gaudit_pkg_backend *pk
  * copy button. The text is copied. */
 GtkWidget *gaudit_command_field_new(const char *command);
 
+/* The same, with a button beside the copy button that runs the fix the
+ * command shows: run_args are the orchestrator's (a plugin's fixed
+ * operation, built from cached data, never from the shown text), run only
+ * while the field still shows command. NULL: no such button. */
+GtkWidget *gaudit_command_field_new_run(const char *command, const char *const *run_args);
+
 /* An explanation that starts as its own first line, cut off with "…", and
  * opens to the whole text. It reads as the start of something to read on,
  * not as "help", so a capable user is not talked down to. */
@@ -42,9 +48,11 @@ GtkWidget *gaudit_verdict_icon_new(gaudit_verdict verdict);
  * chevron on the row where the problem is, so the report itself stays a
  * report. problem says what is wrong, how what to do; command (may be
  * NULL) is the manual way, to copy and run; note (may be NULL) comes
- * last, small. All plain text. */
+ * last, small; run_args (may be NULL) let gAudit run the fix itself, from
+ * a button beside the copy button. All plain text. */
 AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, const char *how,
-                                       const char *command, const char *note);
+                                       const char *command, const char *note,
+                                       const char *const *run_args);
 
 /* Page 1 for a task: settings, or an explanation if software is missing. */
 AdwNavigationPage *gaudit_task_page_new(const GauditTaskInfo *task,

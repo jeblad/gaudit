@@ -68,6 +68,7 @@ AdwNavigationPage *gaudit_private_files_fix_page(const char *fix_id, GPtrArray *
         ? g_strdup_printf(P_("Every account on this computer can read %s."), shown)
         : g_strdup_printf(P_("Members of a group can read %s."), shown);
     g_autofree char *command = NULL;
+    g_auto(GStrv) run = NULL;  /* the same fix as a fixed operation, when it has one */
     const char *how, *note = NULL;
     if (!f.owned) {
         how = P_("It belongs to another account, so only that account or the administrator can "
@@ -76,6 +77,7 @@ AdwNavigationPage *gaudit_private_files_fix_page(const char *fix_id, GPtrArray *
         how = P_("Run this command in a terminal. Others can still see the names of your files, "
                  "but no longer change them.");
         command = g_strdup("chmod go-w ~");
+        run = g_strdupv((char *[]){ (char *)"fix", (char *)"close-home", area.path, NULL });
     } else if (!plain(f.path, f.exact) || (f.area > 0 && !plain(area.path, area.exact))) {
         how = P_("Its name has characters that cannot be shown exactly here, so no command is "
                  "given. In the file manager, open its properties and let only you read it.");
@@ -84,6 +86,7 @@ AdwNavigationPage *gaudit_private_files_fix_page(const char *fix_id, GPtrArray *
                  "it is.");
         command = f.area == 0 ? g_strdup_printf("chmod go-rwx -- ~/'%s'", f.path)
                               : g_strdup_printf("chmod go-rwx -- '%s/%s'", area.path, f.path);
+        run = g_strdupv((char *[]){ (char *)"fix", (char *)"make-private", area.path, f.path, NULL });
         note = area.remote
             ? P_("It is on a network folder: the server decides who can read it, so this may not "
                  "be enough. Check it on the server too.")
@@ -91,5 +94,5 @@ AdwNavigationPage *gaudit_private_files_fix_page(const char *fix_id, GPtrArray *
             : P_("Afterwards, check again: it should then be listed under the files only you can read.");
     }
     return gaudit_fix_page_new(home ? P_("Close Your Home Folder") : P_("Make It Private"),
-                               problem, how, command, note);
+                               problem, how, command, note, (const char *const *)run);
 }

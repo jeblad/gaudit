@@ -10,7 +10,7 @@ target_include_directories(gaudit_backend PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/bac
 target_sources(gaudit_probe PRIVATE common/secrets-io.c)
 target_include_directories(gaudit_probe PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/common
                                         PRIVATE ${PROJECT_SOURCE_DIR}/src/probe)
-target_sources(gaudit-orchestrator PRIVATE orchestrator/secrets.c)
+target_sources(gaudit-orchestrator PRIVATE orchestrator/secrets.c orchestrator/fix.c)
 target_include_directories(gaudit-orchestrator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/orchestrator
                                                    ${PROJECT_SOURCE_DIR}/src/probe)
 target_sources(gaudit PRIVATE plugin.c gaudit-private-files.c)

@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 00:58+0100\n"
+"POT-Creation-Date: 2026-11-15 01:34+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -416,11 +416,11 @@ msgstr "Sjekken kjøres på pluginens egen side"
 msgid "%s · checked at %s"
 msgstr "%s · sjekket kl. %s"
 
-#: src/gui/gaudit-window.c:804 src/gui/gaudit-task-page.c:518
+#: src/gui/gaudit-window.c:804 src/gui/gaudit-task-page.c:624
 msgid "Not available on this system"
 msgstr "Ikke tilgjengelig på dette systemet"
 
-#: src/gui/gaudit-window.c:805 src/gui/gaudit-task-page.c:478
+#: src/gui/gaudit-window.c:805 src/gui/gaudit-task-page.c:584
 msgid "Software is missing"
 msgstr "Programvare mangler"
 
@@ -579,129 +579,148 @@ msgstr "En annen sjekk kjører. Prøv igjen når den er ferdig"
 msgid "The check could not be completed"
 msgstr "Sjekken kunne ikke fullføres"
 
-#: src/gui/gaudit-task-page.c:45
+#: src/gui/gaudit-task-page.c:46
 msgid "OK"
 msgstr "OK"
 
-#: src/gui/gaudit-task-page.c:48
+#: src/gui/gaudit-task-page.c:49
 msgid "Needs attention"
 msgstr "Trenger oppmerksomhet"
 
-#: src/gui/gaudit-task-page.c:51
+#: src/gui/gaudit-task-page.c:52
 msgid "Serious"
 msgstr "Alvorlig"
 
-#: src/gui/gaudit-task-page.c:55 src/gui/gaudit-run-page.c:147
+#: src/gui/gaudit-task-page.c:56 src/gui/gaudit-run-page.c:147
 msgid "Unknown"
 msgstr "Ukjent"
 
-#: src/gui/gaudit-task-page.c:136
+#: src/gui/gaudit-task-page.c:138
 msgid "Opens a new page"
 msgstr "Åpner en ny side"
 
-#: src/gui/gaudit-task-page.c:203
+#: src/gui/gaudit-task-page.c:205
 msgid "No more folders can be added"
 msgstr "Det kan ikke legges til flere mapper"
 
-#: src/gui/gaudit-task-page.c:206
+#: src/gui/gaudit-task-page.c:208
 msgid "Already checked with your home folder"
 msgstr "Sjekkes alt sammen med hjemmemappen"
 
-#: src/gui/gaudit-task-page.c:217 src/gui/gaudit-task-page.c:265
-#: src/gui/gaudit-task-page.c:267
+#: src/gui/gaudit-task-page.c:219 src/gui/gaudit-task-page.c:267
+#: src/gui/gaudit-task-page.c:269
 msgid "Add a Folder to Search"
 msgstr "Legg til en mappe"
 
-#: src/gui/gaudit-task-page.c:239
+#: src/gui/gaudit-task-page.c:241
 msgid "From the file manager"
 msgstr "Fra filbehandleren"
 
-#: src/gui/gaudit-task-page.c:245 src/gui/gaudit-task-page.c:247
+#: src/gui/gaudit-task-page.c:247 src/gui/gaudit-task-page.c:249
 msgid "Remove from the List"
 msgstr "Fjern fra lista"
 
-#: src/gui/gaudit-task-page.c:259
+#: src/gui/gaudit-task-page.c:261
 msgid "Folders to Search"
 msgstr "Mapper som sjekkes"
 
-#: src/gui/gaudit-task-page.c:261
+#: src/gui/gaudit-task-page.c:263
 msgid "Everything under each folder is searched, within its own disk."
 msgstr "Alt under hver mappe søkes gjennom, innenfor dens egen disk."
 
-#: src/gui/gaudit-task-page.c:273
+#: src/gui/gaudit-task-page.c:275
 msgid "Your Home Folder"
 msgstr "Hjemmemappen din"
 
-#: src/gui/gaudit-task-page.c:274
+#: src/gui/gaudit-task-page.c:276
 msgid "Always searched"
 msgstr "Sjekkes alltid"
 
-#: src/gui/gaudit-task-page.c:318
+#: src/gui/gaudit-task-page.c:320
 #, c-format
 msgid "%u MiB"
 msgstr "%u MiB"
 
-#: src/gui/gaudit-task-page.c:319
+#: src/gui/gaudit-task-page.c:321
 #, c-format
 msgid "%u KiB"
 msgstr "%u KiB"
 
-#: src/gui/gaudit-task-page.c:325
+#: src/gui/gaudit-task-page.c:327
 msgid "Read Files Up To"
 msgstr "Les filer opp til"
 
-#: src/gui/gaudit-task-page.c:327
+#: src/gui/gaudit-task-page.c:329
 msgid ""
 "Smaller is faster on large disks. Larger files are recognised by name only."
 msgstr ""
 "Mindre går raskere på store disker. Større filer kjennes bare igjen på "
 "navnet."
 
-#: src/gui/gaudit-task-page.c:335
+#: src/gui/gaudit-task-page.c:337
 msgid "Search Caches Too"
 msgstr "Søk også i cacher"
 
-#: src/gui/gaudit-task-page.c:337
+#: src/gui/gaudit-task-page.c:339
 msgid ""
 "Caches are rebuilt by programs and seldom hold secrets, but take long on "
 "large disks."
 msgstr ""
-"Cacher bygges opp på nytt av programmene og har sjelden hemmeligheter, men tar lang tid på store disker."
+"Cacher bygges opp på nytt av programmene og har sjelden hemmeligheter, men "
+"tar lang tid på store disker."
 
-#: src/gui/gaudit-task-page.c:357
+#: src/gui/gaudit-task-page.c:359
 msgid "What to check"
 msgstr "Hva som skal sjekkes"
 
-#: src/gui/gaudit-task-page.c:378
+#: src/gui/gaudit-task-page.c:380
 msgid "Start"
 msgstr "Start"
 
-#: src/gui/gaudit-task-page.c:383
+#: src/gui/gaudit-task-page.c:385
 msgid "Applies to the full report only, not to Home"
 msgstr "Gjelder bare den fulle rapporten, ikke Home"
 
-#: src/gui/gaudit-task-page.c:414
+#: src/gui/gaudit-task-page.c:416
 msgid "The command shown has changed, so it was not copied"
 msgstr "Kommandoen som vises er endret, så den ble ikke kopiert"
 
-#: src/gui/gaudit-task-page.c:418
+#: src/gui/gaudit-task-page.c:420
 msgid "Command copied"
 msgstr "Kommandoen er kopiert"
 
-#: src/gui/gaudit-task-page.c:447 src/gui/gaudit-task-page.c:449
+#. Translators: %04o is the new permissions, e.g. 0600.
+#: src/gui/gaudit-task-page.c:467
+#, c-format
+msgid "Done: the permissions are now %04o."
+msgstr "Ferdig: rettighetene er nå %04o."
+
+#: src/gui/gaudit-task-page.c:469
+msgid "It could not be changed. Nothing was done."
+msgstr "Det kunne ikke endres. Ingenting ble gjort."
+
+#: src/gui/gaudit-task-page.c:484
+msgid "The command shown has changed, so it was not run"
+msgstr "Kommandoen som vises, er endret, så den ble ikke kjørt"
+
+#: src/gui/gaudit-task-page.c:529 src/gui/gaudit-task-page.c:531
 msgid "Copy command"
 msgstr "Kopier kommandoen"
 
-#: src/gui/gaudit-task-page.c:466
+#: src/gui/gaudit-task-page.c:543 src/gui/gaudit-task-page.c:545
+msgid "Run this command"
+msgstr "Kjør denne kommandoen"
+
+#: src/gui/gaudit-task-page.c:572
 msgid "Installing is not implemented yet."
 msgstr "Installering er ikke implementert ennå."
 
-#: src/gui/gaudit-task-page.c:481
+#: src/gui/gaudit-task-page.c:587
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr "Denne sjekken trenger programvare som ikke er installert: %s."
 
-#: src/gui/gaudit-task-page.c:487
+#: src/gui/gaudit-task-page.c:593
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
@@ -709,17 +728,17 @@ msgstr ""
 "Du kan installere den med knappen nedenfor, eller kopiere denne kommandoen "
 "og kjøre den i en terminal selv:"
 
-#: src/gui/gaudit-task-page.c:492
+#: src/gui/gaudit-task-page.c:598
 msgid "Install"
 msgstr "Installer"
 
-#: src/gui/gaudit-task-page.c:500
+#: src/gui/gaudit-task-page.c:606
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 "Installeringen bruker systemets programvaretjeneste og ber om passordet ditt."
 
-#: src/gui/gaudit-task-page.c:520
+#: src/gui/gaudit-task-page.c:626
 msgid "This check is not supported on this operating system yet."
 msgstr "Denne sjekken støttes ikke på dette operativsystemet ennå."
 

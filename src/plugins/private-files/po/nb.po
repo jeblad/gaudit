@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit-private-files\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 01:25+0100\n"
+"POT-Creation-Date: 2026-11-15 01:34+0100\n"
 "PO-Revision-Date: 2026-11-14 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -32,7 +32,7 @@ msgstr "Alle kontoer på denne datamaskinen kan lese %s."
 msgid "Members of a group can read %s."
 msgstr "Medlemmer av en gruppe kan lese %s."
 
-#: src/plugins/private-files/gaudit-private-files.c:73
+#: src/plugins/private-files/gaudit-private-files.c:74
 msgid ""
 "It belongs to another account, so only that account or the administrator can "
 "change who may read it."
@@ -40,7 +40,7 @@ msgstr ""
 "Den tilhører en annen konto, så bare den kontoen eller administratoren kan "
 "endre hvem som kan lese den."
 
-#: src/plugins/private-files/gaudit-private-files.c:76
+#: src/plugins/private-files/gaudit-private-files.c:77
 msgid ""
 "Run this command in a terminal. Others can still see the names of your "
 "files, but no longer change them."
@@ -48,7 +48,7 @@ msgstr ""
 "Kjør denne kommandoen i en terminal. Andre kan fortsatt se navnene på filene "
 "dine, men ikke lenger endre dem."
 
-#: src/plugins/private-files/gaudit-private-files.c:80
+#: src/plugins/private-files/gaudit-private-files.c:82
 msgid ""
 "Its name has characters that cannot be shown exactly here, so no command is "
 "given. In the file manager, open its properties and let only you read it."
@@ -56,7 +56,7 @@ msgstr ""
 "Navnet har tegn som ikke kan vises nøyaktig her, så ingen kommando blir "
 "gitt. Åpne egenskapene i filbehandleren og la bare deg selv lese den."
 
-#: src/plugins/private-files/gaudit-private-files.c:83
+#: src/plugins/private-files/gaudit-private-files.c:85
 msgid ""
 "Run this command in a terminal. Afterwards only you can read it; it stays "
 "where it is."
@@ -64,7 +64,7 @@ msgstr ""
 "Kjør denne kommandoen i en terminal. Etterpå kan bare du lese den; den blir "
 "liggende der den er."
 
-#: src/plugins/private-files/gaudit-private-files.c:88
+#: src/plugins/private-files/gaudit-private-files.c:91
 msgid ""
 "It is on a network folder: the server decides who can read it, so this may "
 "not be enough. Check it on the server too."
@@ -72,17 +72,17 @@ msgstr ""
 "Den ligger i en nettverksmappe: serveren bestemmer hvem som kan lese den, så "
 "dette er kanskje ikke nok. Sjekk den på serveren også."
 
-#: src/plugins/private-files/gaudit-private-files.c:91
+#: src/plugins/private-files/gaudit-private-files.c:94
 msgid ""
 "Afterwards, check again: it should then be listed under the files only you "
 "can read."
 msgstr "Sjekk etterpå igjen: da skal den stå blant filene bare du kan lese."
 
-#: src/plugins/private-files/gaudit-private-files.c:93
+#: src/plugins/private-files/gaudit-private-files.c:96
 msgid "Close Your Home Folder"
 msgstr "Steng hjemmemappen"
 
-#: src/plugins/private-files/gaudit-private-files.c:93
+#: src/plugins/private-files/gaudit-private-files.c:96
 msgid "Make It Private"
 msgstr "Gjør den privat"
 

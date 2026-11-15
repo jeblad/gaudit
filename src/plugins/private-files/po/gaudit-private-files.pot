@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 01:25+0100\n"
+"POT-Creation-Date: 2026-11-15 01:34+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,47 +33,47 @@ msgstr ""
 msgid "Members of a group can read %s."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:73
+#: src/plugins/private-files/gaudit-private-files.c:74
 msgid ""
 "It belongs to another account, so only that account or the administrator can "
 "change who may read it."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:76
+#: src/plugins/private-files/gaudit-private-files.c:77
 msgid ""
 "Run this command in a terminal. Others can still see the names of your "
 "files, but no longer change them."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:80
+#: src/plugins/private-files/gaudit-private-files.c:82
 msgid ""
 "Its name has characters that cannot be shown exactly here, so no command is "
 "given. In the file manager, open its properties and let only you read it."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:83
+#: src/plugins/private-files/gaudit-private-files.c:85
 msgid ""
 "Run this command in a terminal. Afterwards only you can read it; it stays "
 "where it is."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:88
+#: src/plugins/private-files/gaudit-private-files.c:91
 msgid ""
 "It is on a network folder: the server decides who can read it, so this may "
 "not be enough. Check it on the server too."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:91
+#: src/plugins/private-files/gaudit-private-files.c:94
 msgid ""
 "Afterwards, check again: it should then be listed under the files only you "
 "can read."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:93
+#: src/plugins/private-files/gaudit-private-files.c:96
 msgid "Close Your Home Folder"
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:93
+#: src/plugins/private-files/gaudit-private-files.c:96
 msgid "Make It Private"
 msgstr ""
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 00:58+0100\n"
+"POT-Creation-Date: 2026-11-15 01:34+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -417,11 +417,11 @@ msgstr ""
 msgid "%s · checked at %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:804 src/gui/gaudit-task-page.c:518
+#: src/gui/gaudit-window.c:804 src/gui/gaudit-task-page.c:624
 msgid "Not available on this system"
 msgstr ""
 
-#: src/gui/gaudit-window.c:805 src/gui/gaudit-task-page.c:478
+#: src/gui/gaudit-window.c:805 src/gui/gaudit-task-page.c:584
 msgid "Software is missing"
 msgstr ""
 
@@ -576,141 +576,159 @@ msgstr ""
 msgid "The check could not be completed"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:45
+#: src/gui/gaudit-task-page.c:46
 msgid "OK"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:48
+#: src/gui/gaudit-task-page.c:49
 msgid "Needs attention"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:51
+#: src/gui/gaudit-task-page.c:52
 msgid "Serious"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:55 src/gui/gaudit-run-page.c:147
+#: src/gui/gaudit-task-page.c:56 src/gui/gaudit-run-page.c:147
 msgid "Unknown"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:136
+#: src/gui/gaudit-task-page.c:138
 msgid "Opens a new page"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:203
+#: src/gui/gaudit-task-page.c:205
 msgid "No more folders can be added"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:206
+#: src/gui/gaudit-task-page.c:208
 msgid "Already checked with your home folder"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:217 src/gui/gaudit-task-page.c:265
-#: src/gui/gaudit-task-page.c:267
+#: src/gui/gaudit-task-page.c:219 src/gui/gaudit-task-page.c:267
+#: src/gui/gaudit-task-page.c:269
 msgid "Add a Folder to Search"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:239
+#: src/gui/gaudit-task-page.c:241
 msgid "From the file manager"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:245 src/gui/gaudit-task-page.c:247
+#: src/gui/gaudit-task-page.c:247 src/gui/gaudit-task-page.c:249
 msgid "Remove from the List"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:259
+#: src/gui/gaudit-task-page.c:261
 msgid "Folders to Search"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:261
+#: src/gui/gaudit-task-page.c:263
 msgid "Everything under each folder is searched, within its own disk."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:273
+#: src/gui/gaudit-task-page.c:275
 msgid "Your Home Folder"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:274
+#: src/gui/gaudit-task-page.c:276
 msgid "Always searched"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:318
+#: src/gui/gaudit-task-page.c:320
 #, c-format
 msgid "%u MiB"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:319
+#: src/gui/gaudit-task-page.c:321
 #, c-format
 msgid "%u KiB"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:325
+#: src/gui/gaudit-task-page.c:327
 msgid "Read Files Up To"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:327
+#: src/gui/gaudit-task-page.c:329
 msgid ""
 "Smaller is faster on large disks. Larger files are recognised by name only."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:335
+#: src/gui/gaudit-task-page.c:337
 msgid "Search Caches Too"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:337
+#: src/gui/gaudit-task-page.c:339
 msgid ""
 "Caches are rebuilt by programs and seldom hold secrets, but take long on "
 "large disks."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:357
+#: src/gui/gaudit-task-page.c:359
 msgid "What to check"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:378
+#: src/gui/gaudit-task-page.c:380
 msgid "Start"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:383
+#: src/gui/gaudit-task-page.c:385
 msgid "Applies to the full report only, not to Home"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:414
+#: src/gui/gaudit-task-page.c:416
 msgid "The command shown has changed, so it was not copied"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:418
+#: src/gui/gaudit-task-page.c:420
 msgid "Command copied"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:447 src/gui/gaudit-task-page.c:449
+#. Translators: %04o is the new permissions, e.g. 0600.
+#: src/gui/gaudit-task-page.c:467
+#, c-format
+msgid "Done: the permissions are now %04o."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:469
+msgid "It could not be changed. Nothing was done."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:484
+msgid "The command shown has changed, so it was not run"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:529 src/gui/gaudit-task-page.c:531
 msgid "Copy command"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:466
+#: src/gui/gaudit-task-page.c:543 src/gui/gaudit-task-page.c:545
+msgid "Run this command"
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:572
 msgid "Installing is not implemented yet."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:481
+#: src/gui/gaudit-task-page.c:587
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:487
+#: src/gui/gaudit-task-page.c:593
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:492
+#: src/gui/gaudit-task-page.c:598
 msgid "Install"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:500
+#: src/gui/gaudit-task-page.c:606
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:520
+#: src/gui/gaudit-task-page.c:626
 msgid "This check is not supported on this operating system yet."
 msgstr ""
 

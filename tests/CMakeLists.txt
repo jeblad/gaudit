@@ -170,3 +170,9 @@ add_executable(test_report test_report.c ${PROJECT_SOURCE_DIR}/src/gui/gaudit-re
 target_include_directories(test_report PRIVATE ${PROJECT_SOURCE_DIR}/src/gui)
 target_link_libraries(test_report PRIVATE PkgConfig::TEST_ADW gaudit_backend gaudit_model gaudit_config)
 add_test(NAME report COMMAND test_report ${CMAKE_CURRENT_SOURCE_DIR}/data/engine)
+
+# The Private Files fixes, compiled in from the orchestrator's mode.
+add_executable(test_fix test_fix.c ${PROJECT_SOURCE_DIR}/src/plugins/private-files/orchestrator/fix.c)
+target_compile_definitions(test_fix PRIVATE _GNU_SOURCE)
+target_include_directories(test_fix PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/private-files/orchestrator)
+add_test(NAME fix COMMAND test_fix)

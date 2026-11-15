@@ -53,6 +53,10 @@
          GNOME icon library's ⨯-button-symbolic, Jakub Steiner, CC0, under its
          own name. -->
     <file preprocess="xml-stripblanks" alias="gaudit-remove-symbolic.svg">icons/scalable/actions/gaudit-remove-symbolic.svg</file>
+    <!-- Running a fix gAudit can do itself, beside the copy button: the
+         GNOME icon library's pegged-wheels-symbolic, Jakub Steiner, CC0,
+         under its own name. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-run-symbolic.svg">icons/scalable/actions/gaudit-run-symbolic.svg</file>
     <!-- The Private Files plugin's sidebar icon: adwaita-icon-theme's
          dialog-password-symbolic (LGPL-3.0, as above), renamed. -->
     <file preprocess="xml-stripblanks" alias="gaudit-private-files-symbolic.svg">icons/scalable/actions/gaudit-private-files-symbolic.svg</file>

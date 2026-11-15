@@ -4,6 +4,7 @@
 #include <glib/gi18n.h>
 #include <string.h>
 
+#include "gaudit-orchestrator.h"
 #include "gaudit-run-page.h"
 #include "gaudit-task-page.h"
 
@@ -65,7 +66,8 @@ GtkWidget *gaudit_verdict_icon_new(gaudit_verdict verdict)
 }
 
 AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, const char *how,
-                                       const char *command, const char *note)
+                                       const char *command, const char *note,
+                                       const char *const *run_args)
 {
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
     gtk_widget_set_margin_top(box, 24);
@@ -77,7 +79,7 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
     gtk_box_append(GTK_BOX(box), what);
     gtk_box_append(GTK_BOX(box), wrapped_label(how));
     if (command != NULL)
-        gtk_box_append(GTK_BOX(box), gaudit_command_field_new(command));
+        gtk_box_append(GTK_BOX(box), gaudit_command_field_new_run(command, run_args));
     if (note != NULL) {
         GtkWidget *small = wrapped_label(note);
         gtk_widget_add_css_class(small, "dim-label");
@@ -418,7 +420,87 @@ static void on_copy_clicked(GtkButton *button, gpointer user_data)
     show_toast(GTK_WIDGET(button), _("Command copied"));
 }
 
+/* --- Running a fix ---------------------------------------------------------
+ *
+ * The button beside the copy button runs the fix the command shows, after
+ * the same check as copying: the field must still show the command it was
+ * made from. What runs is never that text: it is a fixed operation of the
+ * plugin's (its arguments built from the cached collection), done by the
+ * orchestrator as the user. */
+
+typedef struct {
+    GtkWidget *button;   /* weak */
+    GtkWidget *result;   /* weak: the line under the field */
+    gboolean fixed;
+    guint mode;
+} FixRun;
+
+static void fix_run_free(FixRun *r)
+{
+    if (r->button != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(r->button), (gpointer *)&r->button);
+    if (r->result != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(r->result), (gpointer *)&r->result);
+    g_free(r);
+}
+
+static gboolean on_fix_line(const char *line, gpointer user_data)
+{
+    FixRun *r = user_data;
+    unsigned mode;
+    char end;
+    if (r->fixed || sscanf(line, "(fixed (mode %u)%c", &mode, &end) != 2 || end != ')'
+        || mode > 07777)
+        return FALSE;
+    r->fixed = TRUE;
+    r->mode = mode;
+    return TRUE;
+}
+
+static void on_fix_done(gboolean broken, gpointer user_data)
+{
+    FixRun *r = user_data;
+    if (r->result != NULL) {
+        g_autofree char *text = NULL;
+        if (!broken && r->fixed)
+            /* Translators: %04o is the new permissions, e.g. 0600. */
+            text = g_strdup_printf(_("Done: the permissions are now %04o."), r->mode);
+        gtk_label_set_text(GTK_LABEL(r->result),
+                           text != NULL ? text : _("It could not be changed. Nothing was done."));
+        gtk_widget_set_visible(r->result, TRUE);
+    }
+    if (r->button != NULL)
+        gtk_widget_set_sensitive(r->button, !(r->fixed && !broken));
+    fix_run_free(r);
+}
+
+static void on_run_clicked(GtkButton *button, gpointer user_data)
+{
+    GtkLabel *label = GTK_LABEL(user_data);
+    const char *shown = gtk_label_get_text(label);
+    const char *expected = g_object_get_data(G_OBJECT(button), "gaudit-command");
+    if (shown == NULL || g_strcmp0(shown, expected) != 0) {
+        g_warning("gaudit: the command field no longer shows its command; not run");
+        show_toast(GTK_WIDGET(button), _("The command shown has changed, so it was not run"));
+        return;
+    }
+    const char *const *args = g_object_get_data(G_OBJECT(button), "gaudit-run");
+    FixRun *r = g_new0(FixRun, 1);
+    r->button = GTK_WIDGET(button);
+    g_object_add_weak_pointer(G_OBJECT(button), (gpointer *)&r->button);
+    r->result = g_object_get_data(G_OBJECT(button), "gaudit-result");
+    if (r->result != NULL)
+        g_object_add_weak_pointer(G_OBJECT(r->result), (gpointer *)&r->result);
+    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+    gaudit_orchestrator_start(args, 30, FALSE, on_fix_line, on_fix_done, r);
+}
+
 GtkWidget *gaudit_command_field_new(const char *command_text)
+{
+    return gaudit_command_field_new_run(command_text, NULL);
+}
+
+GtkWidget *gaudit_command_field_new_run(const char *command_text, const char *const *run_args)
 {
     char *command = g_strdup(command_text);
     /* The command field: read-only, selectable, always left-to-right.
@@ -451,7 +533,31 @@ GtkWidget *gaudit_command_field_new(const char *command_text)
     /* The label lives as long as the button: both are children of field. */
     g_signal_connect(copy, "clicked", G_CALLBACK(on_copy_clicked), cmd_label);
     gtk_box_append(GTK_BOX(field), copy);
-    return field;
+    if (run_args == NULL)
+        return field;
+
+    GtkWidget *run = gtk_button_new_from_icon_name("gaudit-run-symbolic");
+    gtk_widget_add_css_class(run, "flat");
+    gtk_widget_set_valign(run, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_end(run, 6);
+    gtk_widget_set_tooltip_text(run, _("Run this command"));
+    gtk_accessible_update_property(GTK_ACCESSIBLE(run),
+                                   GTK_ACCESSIBLE_PROPERTY_LABEL, _("Run this command"), -1);
+    g_object_set_data_full(G_OBJECT(run), "gaudit-command", g_strdup(command_text), g_free);
+    g_object_set_data_full(G_OBJECT(run), "gaudit-run", g_strdupv((char **)run_args),
+                           (GDestroyNotify)g_strfreev);
+    g_signal_connect(run, "clicked", G_CALLBACK(on_run_clicked), cmd_label);
+    gtk_box_append(GTK_BOX(field), run);
+
+    /* The field and, under it, what running it did. */
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
+    gtk_box_append(GTK_BOX(box), field);
+    GtkWidget *result = wrapped_label("");
+    gtk_widget_add_css_class(result, "dim-label");
+    gtk_widget_set_visible(result, FALSE);
+    gtk_box_append(GTK_BOX(box), result);
+    g_object_set_data(G_OBJECT(run), "gaudit-result", result);
+    return box;
 }
 
 

@@ -17,7 +17,7 @@ gboolean gaudit_private_files_line(const char *line, gboolean *last)
     gaudit_secrets_summary s;
     int kind = gaudit_secrets_parse_line(line, &f, &s);
     *last = kind == 2;
-    return kind == 1 || kind == 2 || kind == 3;
+    return kind >= 1 && kind <= 5;
 }
 
 /* Text that may go into a command as it is: sent unchanged, valid UTF-8,
@@ -87,7 +87,8 @@ AdwNavigationPage *gaudit_private_files_fix_page(const char *fix_id, GPtrArray *
         note = area.remote
             ? P_("It is on a network folder: the server decides who can read it, so this may not "
                  "be enough. Check it on the server too.")
-            : P_("If you no longer need it, deleting it is safer still.");
+            /* Never advice to delete: tighten the access, and check it took. */
+            : P_("Afterwards, check again: it should then be listed under the files only you can read.");
     }
     return gaudit_fix_page_new(home ? P_("Close Your Home Folder") : P_("Make It Private"),
                                problem, how, command, note);

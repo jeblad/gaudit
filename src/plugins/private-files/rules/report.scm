@@ -7,6 +7,8 @@
 ;;   (input (system (host "...") (distro "...") (backend "..."))
 ;;          (level "quick"|"full")
 ;;          (collection (area (index I) (path "...") (status S) (remote 0|1) (exact 0|1)) ...
+;;                      (area-stats (index I) (entries N) (seconds T) (truncated 0|1) (caches C)) ...
+;;                      (read-limit (bytes N))
 ;;                      (secret (area I) (path "...") (reason "...") (mode M) (reach R)
 ;;                              (owned 0|1) (exact 0|1)) ...
 ;;                      (secrets (status S) (count N) (shown M) (others A)
@@ -29,6 +31,12 @@
 (define (field item key)
   (let ((entry (assq key (cdr item))))
     (and entry (cadr entry))))
+
+;; A count that may be missing (a collection from before a field was
+;; added): 0, so one note cannot cost the whole report.
+(define (count-field item key)
+  (let ((v (field item key)))
+    (if (number? v) v 0)))
 
 (define (section-of input key)
   (let ((entry (assq key (cdr input))))
@@ -211,16 +219,69 @@
        ;; those not searched (they carry index 0).
        (keep (lambda (a) (or (> (field a 'index) 0) (not (= (field a 'status) 0)))) areas)))
 
-(define (notes summary)
-  (append
-   (if (< (field summary 'shown) (field summary 'count))
-       (list (list 'note (msg (G_ "Showing {shown} of {count} files.")
-                              (list 'shown (field summary 'shown))
-                              (list 'count (field summary 'count)))))
-       '())
-   (if (= (field summary 'truncated) 1)
-       (list (list 'note (msg (G_ "Your home folder has more files than the search goes through, so it stopped before the end."))))
-       '())))
+;; How each folder's search went (full collection): the one where it
+;; stopped at the limit is named, and so is a large or slow one, which the
+;; user may want off the list. The thresholds are a judgement, so here.
+(define large-entries 250000)
+(define slow-seconds 600)
+
+(define (stats-notes areas stats)
+  (define (where s)
+    (let ((a (area-of areas (field s 'index))))
+      (cond ((= (field s 'index) 0) "~")
+            (a (field a 'path))
+            (else "?"))))
+  (apply append
+         (map (lambda (s)
+                (let ((path (list 'path (where s)))
+                      (n (field s 'entries))
+                      (minutes (quotient (+ (field s 'seconds) 59) 60)))
+                  (cond ((= (field s 'truncated) 1)
+                         (list (list 'note (msg (G_ "{path} has more files than the search goes through, so it stopped there.") path))))
+                        ((and (> (field s 'index) 0)
+                              (or (>= n large-entries) (>= (field s 'seconds) slow-seconds)))
+                         (list (list 'note (msg (G_ "{path} is large: {entries} files and folders, {minutes} min. Take it off the list if it need not be checked every time.")
+                                                path (list 'entries n) (list 'minutes minutes)))))
+                        (else '()))))
+              stats)))
+
+;; Said when the user chose another read limit than the default.
+(define default-read-limit 65536)
+
+;; Caches left out (unless the user asked for them): how many, in all.
+(define (caches-notes stats)
+  (let ((n (apply + (map (lambda (s) (count-field s 'caches)) stats))))
+    (if (> n 0)
+        (list (list 'note (msgn (N_ "{n} cache folder was not checked."
+                                    "{n} cache folders were not checked.")
+                                n (list 'n n))))
+        '())))
+
+(define (read-limit-notes entries)
+  (let ((r (first-with 'read-limit entries)))
+    (if (and r (not (= (field r 'bytes) default-read-limit)))
+        (list (list 'note (msg (G_ "Files over {size} KiB were recognised by name only.")
+                               (list 'size (quotient (field r 'bytes) 1024)))))
+        '())))
+
+(define (notes summary stats shown-problems)
+  (let ((shown (list 'shown (field summary 'shown)))
+        (count (list 'count (field summary 'count)))
+        (reachable (+ (field summary 'others) (field summary 'groups))))
+    (append
+     ;; Those others can reach come first, so when all of them are shown,
+     ;; the rest are only the user's: say so, not just that some are missing.
+     (cond ((not (< (field summary 'shown) (field summary 'count))) '())
+           ((>= shown-problems reachable)
+            (list (list 'note (msg (G_ "Showing {shown} of the {count} secrets found. Those not shown can only be read by you.")
+                                   shown count))))
+           (else
+            (list (list 'note (msg (G_ "Showing {shown} of the {count} secrets found. Some that others can read are not shown: fix these first, then check again.")
+                                   shown count)))))
+     ;; Without stats (an older collection), the stop is still said.
+     (if (and (null? stats) (= (field summary 'truncated) 1))
+         (list (list 'note (msg (G_ "Your home folder has more files than the search goes through, so it stopped before the end."))))
+         '()))))
 
 (define (report input)
   (let* ((entries (numbered (section-of input 'collection)))
@@ -230,6 +291,7 @@
          ;; are areas findings belong to.
          (searched (keep (lambda (a) (= (field a 'status) 0)) areas))
          (findings (keep (lambda (e) (eq? (car (cdr e)) 'secret)) entries))
+         (stats (map cdr (keep (lambda (e) (eq? (car (cdr e)) 'area-stats)) entries)))
          (far (lambda (item) (and (problem? item) (remote? searched item))))
          (far-problems (count-of far findings)))
     (if (not summary)
@@ -253,4 +315,7 @@
                   (G_ "Only you can read these")
                   (G_ "This is how secrets should be kept. Listed so you know where they are."))
          (area-notes areas)
-         (notes summary)))))
+         (stats-notes searched stats)
+         (read-limit-notes entries)
+         (caches-notes stats)
+         (notes summary stats (count-of problem? findings))))))

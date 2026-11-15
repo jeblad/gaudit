@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit-private-files\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-14 22:56+0100\n"
+"POT-Creation-Date: 2026-11-15 01:25+0100\n"
 "PO-Revision-Date: 2026-11-14 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -69,168 +69,171 @@ msgid ""
 "It is on a network folder: the server decides who can read it, so this may "
 "not be enough. Check it on the server too."
 msgstr ""
-"Den ligger i en nettverksmappe: serveren bestemmer hvem som kan lese den, så dette er kanskje ikke nok. Sjekk den på serveren også."
+"Den ligger i en nettverksmappe: serveren bestemmer hvem som kan lese den, så "
+"dette er kanskje ikke nok. Sjekk den på serveren også."
 
-#: src/plugins/private-files/gaudit-private-files.c:90
-msgid "If you no longer need it, deleting it is safer still."
-msgstr "Trenger du den ikke lenger, er det enda tryggere å slette den."
+#: src/plugins/private-files/gaudit-private-files.c:91
+msgid ""
+"Afterwards, check again: it should then be listed under the files only you "
+"can read."
+msgstr "Sjekk etterpå igjen: da skal den stå blant filene bare du kan lese."
 
-#: src/plugins/private-files/gaudit-private-files.c:92
+#: src/plugins/private-files/gaudit-private-files.c:93
 msgid "Close Your Home Folder"
 msgstr "Steng hjemmemappen"
 
-#: src/plugins/private-files/gaudit-private-files.c:92
+#: src/plugins/private-files/gaudit-private-files.c:93
 msgid "Make It Private"
 msgstr "Gjør den privat"
 
-#: src/plugins/private-files/rules/report.scm:62
+#: src/plugins/private-files/rules/report.scm:70
 msgid "Your home folder can be changed by others"
 msgstr "Andre kan endre innholdet i hjemmemappen din"
 
-#: src/plugins/private-files/rules/report.scm:63
+#: src/plugins/private-files/rules/report.scm:71
 msgid "Permissions SSH or GnuPG refuse"
 msgstr "Tilganger som SSH eller GnuPG ikke godtar"
 
-#: src/plugins/private-files/rules/report.scm:64
+#: src/plugins/private-files/rules/report.scm:72
 msgid "Stored passwords or keys"
 msgstr "Lagrede passord eller nøkler"
 
-#: src/plugins/private-files/rules/report.scm:65
+#: src/plugins/private-files/rules/report.scm:73
 msgid "SSH private key"
 msgstr "Privat SSH-nøkkel"
 
-#: src/plugins/private-files/rules/report.scm:66
+#: src/plugins/private-files/rules/report.scm:74
 msgid "Private key"
 msgstr "Privat nøkkel"
 
-#: src/plugins/private-files/rules/report.scm:67
+#: src/plugins/private-files/rules/report.scm:75
 msgid "PGP private key"
 msgstr "Privat PGP-nøkkel"
 
-#: src/plugins/private-files/rules/report.scm:68
+#: src/plugins/private-files/rules/report.scm:76
 msgid "PuTTY private key"
 msgstr "Privat PuTTY-nøkkel"
 
-#: src/plugins/private-files/rules/report.scm:69
+#: src/plugins/private-files/rules/report.scm:77
 msgid "GnuPG private key"
 msgstr "Privat GnuPG-nøkkel"
 
-#: src/plugins/private-files/rules/report.scm:70
+#: src/plugins/private-files/rules/report.scm:78
 msgid "Old GnuPG secret keyring"
 msgstr "Gammel hemmelig GnuPG-nøkkelring"
 
-#: src/plugins/private-files/rules/report.scm:71
+#: src/plugins/private-files/rules/report.scm:79
 msgid "Certificate with private key"
 msgstr "Sertifikat med privat nøkkel"
 
-#: src/plugins/private-files/rules/report.scm:72
+#: src/plugins/private-files/rules/report.scm:80
 msgid "Java keystore"
 msgstr "Java-nøkkellager"
 
-#: src/plugins/private-files/rules/report.scm:73
+#: src/plugins/private-files/rules/report.scm:81
 msgid "KeePass password database"
 msgstr "KeePass-passorddatabase"
 
-#: src/plugins/private-files/rules/report.scm:74
+#: src/plugins/private-files/rules/report.scm:82
 msgid "Password store entry"
 msgstr "Oppføring i passordlager"
 
-#: src/plugins/private-files/rules/report.scm:75
+#: src/plugins/private-files/rules/report.scm:83
 msgid "GNOME keyring"
 msgstr "GNOME-nøkkelring"
 
-#: src/plugins/private-files/rules/report.scm:76
+#: src/plugins/private-files/rules/report.scm:84
 msgid "KDE wallet"
 msgstr "KDE-lommebok"
 
-#: src/plugins/private-files/rules/report.scm:77
+#: src/plugins/private-files/rules/report.scm:85
 msgid "Saved browser passwords"
 msgstr "Lagrede nettleserpassord"
 
-#: src/plugins/private-files/rules/report.scm:78
+#: src/plugins/private-files/rules/report.scm:86
 msgid "Cryptocurrency wallet"
 msgstr "Kryptovaluta-lommebok"
 
-#: src/plugins/private-files/rules/report.scm:79
+#: src/plugins/private-files/rules/report.scm:87
 msgid "Stored logins (.netrc)"
 msgstr "Lagrede innlogginger (.netrc)"
 
-#: src/plugins/private-files/rules/report.scm:80
+#: src/plugins/private-files/rules/report.scm:88
 msgid "PostgreSQL passwords"
 msgstr "PostgreSQL-passord"
 
-#: src/plugins/private-files/rules/report.scm:81
+#: src/plugins/private-files/rules/report.scm:89
 msgid "MySQL login"
 msgstr "MySQL-innlogging"
 
-#: src/plugins/private-files/rules/report.scm:82
+#: src/plugins/private-files/rules/report.scm:90
 msgid "Git passwords"
 msgstr "Git-passord"
 
-#: src/plugins/private-files/rules/report.scm:83
+#: src/plugins/private-files/rules/report.scm:91
 msgid "AWS keys"
 msgstr "AWS-nøkler"
 
-#: src/plugins/private-files/rules/report.scm:84
+#: src/plugins/private-files/rules/report.scm:92
 msgid "Kubernetes credentials"
 msgstr "Kubernetes-legitimasjon"
 
-#: src/plugins/private-files/rules/report.scm:85
+#: src/plugins/private-files/rules/report.scm:93
 msgid "Docker logins"
 msgstr "Docker-innlogginger"
 
-#: src/plugins/private-files/rules/report.scm:86
+#: src/plugins/private-files/rules/report.scm:94
 msgid "GitHub login"
 msgstr "GitHub-innlogging"
 
-#: src/plugins/private-files/rules/report.scm:87
+#: src/plugins/private-files/rules/report.scm:95
 msgid "Cloud storage logins (rclone)"
 msgstr "Innlogginger til skylagring (rclone)"
 
-#: src/plugins/private-files/rules/report.scm:132
+#: src/plugins/private-files/rules/report.scm:140
 msgid "{kind} · {mode} · on a network folder"
 msgstr "{kind} · {mode} · i en nettverksmappe"
 
-#: src/plugins/private-files/rules/report.scm:133
+#: src/plugins/private-files/rules/report.scm:141
 msgid "{kind} · {mode}"
 msgstr "{kind} · {mode}"
 
-#: src/plugins/private-files/rules/report.scm:172
+#: src/plugins/private-files/rules/report.scm:180
 msgid "{n} secret can be read by others"
 msgid_plural "{n} secrets can be read by others"
 msgstr[0] "{n} hemmelighet kan leses av andre"
 msgstr[1] "{n} hemmeligheter kan leses av andre"
 
-#: src/plugins/private-files/rules/report.scm:176
+#: src/plugins/private-files/rules/report.scm:184
 msgid "{n} secret on a network folder may be readable by others"
 msgid_plural "{n} secrets on network folders may be readable by others"
 msgstr[0] "{n} hemmelighet i en nettverksmappe kan være lesbar for andre"
 msgstr[1] "{n} hemmeligheter i nettverksmapper kan være lesbare for andre"
 
-#: src/plugins/private-files/rules/report.scm:180
+#: src/plugins/private-files/rules/report.scm:188
 msgid "The usual places for secrets are closed"
 msgstr "De vanlige stedene for hemmeligheter er lukket"
 
-#: src/plugins/private-files/rules/report.scm:182
+#: src/plugins/private-files/rules/report.scm:190
 msgid "No secrets found outside the usual places"
 msgstr "Ingen hemmeligheter funnet utenfor de vanlige stedene"
 
-#: src/plugins/private-files/rules/report.scm:184
+#: src/plugins/private-files/rules/report.scm:192
 msgid "{n} secret found, only you can read it"
 msgid_plural "{n} secrets found, only you can read them"
 msgstr[0] "{n} hemmelighet funnet, bare du kan lese den"
 msgstr[1] "{n} hemmeligheter funnet, bare du kan lese dem"
 
-#: src/plugins/private-files/rules/report.scm:188
+#: src/plugins/private-files/rules/report.scm:196
 msgid "The search stopped before the end"
 msgstr "Søket stoppet før det var ferdig"
 
-#: src/plugins/private-files/rules/report.scm:189
-#: src/plugins/private-files/rules/report.scm:237
+#: src/plugins/private-files/rules/report.scm:197
+#: src/plugins/private-files/rules/report.scm:299
 msgid "Your home folder could not be searched"
 msgstr "Hjemmemappen kunne ikke gjennomsøkes"
 
-#: src/plugins/private-files/rules/report.scm:192
+#: src/plugins/private-files/rules/report.scm:200
 msgid ""
 "Only the places where programs usually keep secrets were checked. The "
 "thorough report searches your whole home folder."
@@ -238,7 +241,7 @@ msgstr ""
 "Bare stedene der programmer vanligvis lagrer hemmeligheter, er sjekket. Den "
 "grundige rapporten søker gjennom hele hjemmemappen."
 
-#: src/plugins/private-files/rules/report.scm:194
+#: src/plugins/private-files/rules/report.scm:202
 msgid ""
 "Secrets only you can read are normal. This means none were found that others "
 "can read, not that every secret was found."
@@ -246,7 +249,7 @@ msgstr ""
 "Hemmeligheter som bare du kan lese, er normalt. Dette betyr at ingen ble "
 "funnet som andre kan lese, ikke at alle hemmeligheter ble funnet."
 
-#: src/plugins/private-files/rules/report.scm:196
+#: src/plugins/private-files/rules/report.scm:204
 msgid ""
 "Anyone who can use these accounts can copy them. Open each one marked with a "
 "warning to see how to close it."
@@ -254,34 +257,71 @@ msgstr ""
 "Alle som kan bruke disse kontoene, kan kopiere dem. Åpne hver av dem som er "
 "merket med en advarsel, for å se hvordan du stenger den."
 
-#: src/plugins/private-files/rules/report.scm:198
+#: src/plugins/private-files/rules/report.scm:206
 msgid ""
 "On a network folder the server decides who can read a file, and what this "
 "computer shows may not say so. Check them on the server."
-msgstr "Serveren bestemmer hvem som kan lese en fil i en nettverksmappe, og det denne datamaskinen viser, sier kanskje ikke det. Sjekk dem på serveren."
+msgstr ""
+"Serveren bestemmer hvem som kan lese en fil i en nettverksmappe, og det "
+"denne datamaskinen viser, sier kanskje ikke det. Sjekk dem på serveren."
 
-#: src/plugins/private-files/rules/report.scm:199
-#: src/plugins/private-files/rules/report.scm:238
+#: src/plugins/private-files/rules/report.scm:207
+#: src/plugins/private-files/rules/report.scm:300
 msgid "Nothing is known about the files that were not searched."
 msgstr "Ingenting er kjent om filene som ikke ble gjennomsøkt."
 
-#: src/plugins/private-files/rules/report.scm:207
+#: src/plugins/private-files/rules/report.scm:215
 msgid "Also searched: {path}"
 msgstr "Sjekket også: {path}"
 
-#: src/plugins/private-files/rules/report.scm:208
+#: src/plugins/private-files/rules/report.scm:216
 msgid "Not searched again, it overlaps a folder already searched: {path}"
 msgstr "Ikke sjekket på nytt, overlapper en mappe som alt er sjekket: {path}"
 
-#: src/plugins/private-files/rules/report.scm:209
+#: src/plugins/private-files/rules/report.scm:217
 msgid "Could not be searched: {path}"
 msgstr "Kunne ikke sjekkes: {path}"
 
-#: src/plugins/private-files/rules/report.scm:217
-msgid "Showing {shown} of {count} files."
-msgstr "Viser {shown} av {count} filer."
+#: src/plugins/private-files/rules/report.scm:240
+msgid ""
+"{path} has more files than the search goes through, so it stopped there."
+msgstr "{path} har flere filer enn søket går gjennom, så det stoppet der."
 
-#: src/plugins/private-files/rules/report.scm:222
+#: src/plugins/private-files/rules/report.scm:243
+msgid ""
+"{path} is large: {entries} files and folders, {minutes} min. Take it off the "
+"list if it need not be checked every time."
+msgstr ""
+"{path} er stor: {entries} filer og mapper, {minutes} min. Ta den ut av lista "
+"hvis den ikke trenger å sjekkes hver gang."
+
+#: src/plugins/private-files/rules/report.scm:255
+msgid "{n} cache folder was not checked."
+msgid_plural "{n} cache folders were not checked."
+msgstr[0] "{n} cache-mappe ble ikke sjekket."
+msgstr[1] "{n} cache-mapper ble ikke sjekket."
+
+#: src/plugins/private-files/rules/report.scm:263
+msgid "Files over {size} KiB were recognised by name only."
+msgstr "Filer over {size} KiB ble bare kjent igjen på navnet."
+
+#: src/plugins/private-files/rules/report.scm:276
+msgid ""
+"Showing {shown} of the {count} secrets found. Those not shown can only be "
+"read by you."
+msgstr ""
+"Viser {shown} av de {count} hemmelighetene som ble funnet. De som ikke "
+"vises, kan bare du lese."
+
+#: src/plugins/private-files/rules/report.scm:279
+msgid ""
+"Showing {shown} of the {count} secrets found. Some that others can read are "
+"not shown: fix these first, then check again."
+msgstr ""
+"Viser {shown} av de {count} hemmelighetene som ble funnet. Noen som andre "
+"kan lese, vises ikke: rett disse først, og sjekk så igjen."
+
+#: src/plugins/private-files/rules/report.scm:283
 msgid ""
 "Your home folder has more files than the search goes through, so it stopped "
 "before the end."
@@ -289,11 +329,11 @@ msgstr ""
 "Hjemmemappen din har flere filer enn søket går gjennom, så det stoppet før "
 "det var ferdig."
 
-#: src/plugins/private-files/rules/report.scm:243
+#: src/plugins/private-files/rules/report.scm:305
 msgid "Every account can read these"
 msgstr "Alle kontoer kan lese disse"
 
-#: src/plugins/private-files/rules/report.scm:244
+#: src/plugins/private-files/rules/report.scm:306
 msgid ""
 "Any other account on this computer can read them, including programs running "
 "as those accounts."
@@ -301,11 +341,11 @@ msgstr ""
 "Alle andre kontoer på denne datamaskinen kan lese dem, også programmer som "
 "kjører som de kontoene."
 
-#: src/plugins/private-files/rules/report.scm:247
+#: src/plugins/private-files/rules/report.scm:309
 msgid "Members of a group can read these"
 msgstr "Medlemmer av en gruppe kan lese disse"
 
-#: src/plugins/private-files/rules/report.scm:248
+#: src/plugins/private-files/rules/report.scm:310
 msgid ""
 "Accounts in a group that has access to the file, or to a folder on the way, "
 "can read them."
@@ -313,21 +353,25 @@ msgstr ""
 "Kontoer i en gruppe som har tilgang til filen, eller til en mappe på veien, "
 "kan lese dem."
 
-#: src/plugins/private-files/rules/report.scm:250
+#: src/plugins/private-files/rules/report.scm:312
 msgid "On network folders, perhaps readable by others"
 msgstr "Nettverksmapper: kanskje lesbare for andre"
 
-#: src/plugins/private-files/rules/report.scm:251
+#: src/plugins/private-files/rules/report.scm:313
 msgid ""
 "This computer shows them as readable by others, but on a network folder the "
 "server decides."
 msgstr ""
-"Denne datamaskinen viser dem som lesbare for andre, men i en nettverksmappe er det serveren som bestemmer."
+"Denne datamaskinen viser dem som lesbare for andre, men i en nettverksmappe "
+"er det serveren som bestemmer."
 
-#: src/plugins/private-files/rules/report.scm:253
+#: src/plugins/private-files/rules/report.scm:315
 msgid "Only you can read these"
 msgstr "Bare du kan lese disse"
 
-#: src/plugins/private-files/rules/report.scm:254
+#: src/plugins/private-files/rules/report.scm:316
 msgid "This is how secrets should be kept. Listed so you know where they are."
 msgstr "Slik skal hemmeligheter oppbevares. De listes så du vet hvor de er."
+
+#~ msgid "If you no longer need it, deleting it is safer still."
+#~ msgstr "Trenger du den ikke lenger, er det enda tryggere å slette den."

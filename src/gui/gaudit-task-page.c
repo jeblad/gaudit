@@ -286,6 +286,62 @@ static AdwPreferencesGroup *folders_group(const GauditTaskInfo *task)
     return group;
 }
 
+/* --- Page 1: how much of each file is read -------------------------------- */
+
+static void on_read_limit(GObject *row, GParamSpec *pspec, gpointer user_data)
+{
+    (void)pspec;
+    static const guint sizes[] = GAUDIT_TASK_READ_LIMITS;
+    guint i = adw_combo_row_get_selected(ADW_COMBO_ROW(row));
+    if (i < G_N_ELEMENTS(sizes))
+        gaudit_task_set_read_limit(user_data, sizes[i]);
+}
+
+static void on_caches(GObject *row, GParamSpec *pspec, gpointer user_data)
+{
+    (void)pspec;
+    gaudit_task_set_with_caches(user_data, adw_switch_row_get_active(ADW_SWITCH_ROW(row)));
+}
+
+/* Smaller is faster on large, slow disks; the smallest still holds every
+ * real key file, so the search never misses one by its size. Caches are
+ * left out unless asked for: rebuildable, seldom a key, but a known list
+ * is also where something could hide one. */
+static AdwPreferencesGroup *read_limit_group(const GauditTaskInfo *task)
+{
+    static const guint sizes[] = GAUDIT_TASK_READ_LIMITS;
+    AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+    GtkStringList *names = gtk_string_list_new(NULL);
+    guint now = gaudit_task_read_limit(task), selected = 0;
+    for (guint i = 0; i < G_N_ELEMENTS(sizes); i++) {
+        g_autofree char *name = sizes[i] >= 1048576
+            ? g_strdup_printf(_("%u MiB"), sizes[i] / 1048576)
+            : g_strdup_printf(_("%u KiB"), sizes[i] / 1024);
+        gtk_string_list_append(names, name);
+        if (sizes[i] == now)
+            selected = i;
+    }
+    AdwComboRow *row = ADW_COMBO_ROW(adw_combo_row_new());
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), _("Read Files Up To"));
+    adw_action_row_set_subtitle(ADW_ACTION_ROW(row),
+        _("Smaller is faster on large disks. Larger files are recognised by name only."));
+    adw_combo_row_set_model(row, G_LIST_MODEL(names));
+    g_object_unref(names);
+    adw_combo_row_set_selected(row, selected);
+    g_signal_connect(row, "notify::selected", G_CALLBACK(on_read_limit), (gpointer)task);
+    adw_preferences_group_add(group, GTK_WIDGET(row));
+    if (task->param_caches) {
+        AdwSwitchRow *caches = ADW_SWITCH_ROW(adw_switch_row_new());
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(caches), _("Search Caches Too"));
+        adw_action_row_set_subtitle(ADW_ACTION_ROW(caches),
+            _("Caches are rebuilt by programs and seldom hold secrets, but take long on large disks."));
+        adw_switch_row_set_active(caches, gaudit_task_with_caches(task));
+        g_signal_connect(caches, "notify::active", G_CALLBACK(on_caches), (gpointer)task);
+        adw_preferences_group_add(group, GTK_WIDGET(caches));
+    }
+    return group;
+}
+
 /* --- Page 1: settings ----------------------------------------------------- */
 
 static GtkWidget *build_settings(const GauditTaskInfo *task)
@@ -314,12 +370,14 @@ static GtkWidget *build_settings(const GauditTaskInfo *task)
         g_object_unref(g_object_ref_sink(params));  /* nothing to set */
     if (task->param_folders)
         adw_preferences_page_add(page, folders_group(task));
+    if (task->param_read_limit)
+        adw_preferences_page_add(page, read_limit_group(task));
 
     AdwPreferencesGroup *actions = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
     /* Opens page 2; the page's one action, so the default. */
     GtkWidget *start = gaudit_action_button_new(_("Start"), TRUE, TRUE);
     g_signal_connect(start, "clicked", G_CALLBACK(on_start_clicked), (gpointer)task);
-    if (task->n_params > 0 || task->param_folders) {
+    if (task->n_params > 0 || task->param_folders || task->param_read_limit || task->param_caches) {
         /* Home runs without parameters, every time the same. */
         GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
         GtkWidget *note = gtk_label_new(_("Applies to the full report only, not to Home"));

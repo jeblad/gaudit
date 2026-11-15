@@ -1,0 +1,6 @@
+(report (verdict warning) (title (msgn "{n} secret can be read by others" "{n} secrets can be read by others" 1 (n 1))) (description (msg "Anyone who can use these accounts can copy them. Open each one marked with a warning to see how to close it.")))
+(section (title (msg "Every account can read these")) (description (msg "Any other account on this computer can read them, including programs running as those accounts.")))
+(row (verdict warning) (title (text "~/a.kdbx")) (subtitle (msg "{kind} · {mode}" (kind (msg "KeePass password database")) (mode "0644"))) (fix make-private (item 1)))
+(section (title (msg "Only you can read these")) (description (msg "This is how secrets should be kept. Listed so you know where they are.")))
+(row (verdict ok) (title (text "~/b.kdbx")) (subtitle (msg "{kind} · {mode}" (kind (msg "KeePass password database")) (mode "0600"))))
+(note (msg "Showing {shown} of the {count} secrets found. Those not shown can only be read by you." (shown 2) (count 5)))

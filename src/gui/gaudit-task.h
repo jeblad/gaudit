@@ -47,6 +47,8 @@ typedef struct {
     gboolean (*collection_line)(const char *line, gboolean *last);
     const char *text_domain;  /* the plugin's own, for its report and fix pages */
     gboolean param_folders;   /* takes folders to search besides the home folder */
+    gboolean param_read_limit;  /* takes the size up to which files are read */
+    gboolean param_caches;    /* takes whether caches are searched too */
     /* The page for a fix a report row names: item is the position of the
      * collection line it is about, in lines (the validated cache). NULL: no
      * fixes. */
@@ -87,6 +89,24 @@ GSettings *gaudit_task_settings(const GauditTaskInfo *task);
 #define GAUDIT_TASK_MAX_FOLDERS 15
 GStrv gaudit_task_folders(const GauditTaskInfo *task);
 GStrv gaudit_task_folders_split(const GauditTaskInfo *task, GStrv *places);
+
+/* The sizes the read limit may be, smallest first; the smallest still holds
+ * every real key file. */
+#define GAUDIT_TASK_READ_LIMITS { 16384, 65536, 262144, 1048576 }
+#define GAUDIT_TASK_READ_LIMIT_DEFAULT 65536
+
+/* The task's read limit as kept in its settings, checked against the list
+ * (the default otherwise). */
+guint gaudit_task_read_limit(const GauditTaskInfo *task);
+void gaudit_task_set_read_limit(const GauditTaskInfo *task, guint bytes);
+
+/* Whether caches are searched too (default no). */
+gboolean gaudit_task_with_caches(const GauditTaskInfo *task);
+void gaudit_task_set_with_caches(const GauditTaskInfo *task, gboolean on);
+
+/* The full run's parameters as arguments: caches, the read limit (when
+ * the task takes them), then the folders. Never NULL. */
+GStrv gaudit_task_run_args(const GauditTaskInfo *task);
 
 /* Adds a folder (and gives back a place taken off before), or takes one
  * off: a folder the user added is forgotten, a place is remembered as

@@ -1,0 +1,7 @@
+(report (verdict unknown) (title (msg "The search stopped before the end")) (description (msg "Nothing is known about the files that were not searched.")))
+(note (msg "Also searched: {path}" (path "/mnt/backup")))
+(note (msg "Also searched: {path}" (path "/mnt/photos")))
+(note (msg "Also searched: {path}" (path "/mnt/small")))
+(note (msg "{path} has more files than the search goes through, so it stopped there." (path "/mnt/backup")))
+(note (msg "{path} is large: {entries} files and folders, {minutes} min. Take it off the list if it need not be checked every time." (path "/mnt/photos") (entries 260000) (minutes 2)))
+(note (msgn "{n} cache folder was not checked." "{n} cache folders were not checked." 12340 (n 12340)))

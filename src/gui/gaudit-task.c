@@ -243,6 +243,51 @@ GStrv gaudit_task_folders(const GauditTaskInfo *task)
     return gaudit_task_folders_split(task, NULL);
 }
 
+guint gaudit_task_read_limit(const GauditTaskInfo *task)
+{
+    static const guint allowed[] = GAUDIT_TASK_READ_LIMITS;
+    g_autoptr(GSettings) settings = task->param_read_limit ? gaudit_task_settings(task) : NULL;
+    guint v = settings != NULL ? g_settings_get_uint(settings, "read-limit") : 0;
+    for (gsize i = 0; i < G_N_ELEMENTS(allowed); i++)
+        if (allowed[i] == v)
+            return v;
+    return GAUDIT_TASK_READ_LIMIT_DEFAULT;
+}
+
+void gaudit_task_set_read_limit(const GauditTaskInfo *task, guint bytes)
+{
+    g_autoptr(GSettings) settings = gaudit_task_settings(task);
+    if (settings != NULL)
+        g_settings_set_uint(settings, "read-limit", bytes);
+}
+
+gboolean gaudit_task_with_caches(const GauditTaskInfo *task)
+{
+    g_autoptr(GSettings) settings = task->param_caches ? gaudit_task_settings(task) : NULL;
+    return settings != NULL && g_settings_get_boolean(settings, "with-caches");
+}
+
+void gaudit_task_set_with_caches(const GauditTaskInfo *task, gboolean on)
+{
+    g_autoptr(GSettings) settings = gaudit_task_settings(task);
+    if (settings != NULL)
+        g_settings_set_boolean(settings, "with-caches", on);
+}
+
+GStrv gaudit_task_run_args(const GauditTaskInfo *task)
+{
+    g_autoptr(GStrvBuilder) b = g_strv_builder_new();
+    if (gaudit_task_with_caches(task))
+        g_strv_builder_add(b, "--with-caches");
+    if (task->param_read_limit) {
+        g_autofree char *opt = g_strdup_printf("--read-limit=%u", gaudit_task_read_limit(task));
+        g_strv_builder_add(b, opt);
+    }
+    g_auto(GStrv) folders = gaudit_task_folders(task);
+    g_strv_builder_addv(b, (const char **)folders);
+    return g_strv_builder_end(b);
+}
+
 /* list with item added (if missing) or taken away. */
 static void update(GSettings *settings, const char *key, const char *item, gboolean add)
 {

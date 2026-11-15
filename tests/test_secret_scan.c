@@ -148,6 +148,28 @@ int main(void)
     dir(".local/share/Trash/files", 0700);
     file(".local/share/Trash/files/id_rsa", PEM, 0600);
 
+    /* A copied home folder (from Linux and Windows), deep down: its caches
+     * are skipped like the real ones, its credentials found like them. */
+    dir("old", 0700);
+    dir("old/home", 0700);
+    dir("old/home/.var", 0700);
+    dir("old/home/.var/app", 0700);
+    dir("old/home/.var/app/org.example", 0700);
+    dir("old/home/.var/app/org.example/cache", 0700);
+    file("old/home/.var/app/org.example/cache/k.pem", PEM, 0600);
+    dir("old/home/.aws", 0700);
+    file("old/home/.aws/credentials", "[default]\naws_access_key_id = x\n", 0600);
+    dir("old/AppData", 0700);
+    dir("old/AppData/Firefox", 0700);
+    dir("old/AppData/Firefox/cache2", 0700);
+    file("old/AppData/Firefox/cache2/k.pem", PEM, 0600);
+    dir("old/AppData/Chrome", 0700);
+    dir("old/AppData/Chrome/Code Cache", 0700);
+    file("old/AppData/Chrome/Code Cache/k.pem", PEM, 0600);
+    dir("old/AppData/Chrome/Cache", 0700);
+    dir("old/AppData/Chrome/Cache/Cache_Data", 0700);
+    file("old/AppData/Chrome/Cache/Cache_Data/k.pem", PEM, 0600);
+
     /* Symlinks are never followed. */
     char target[2048], link[2048];
     snprintf(target, sizeof target, "%s/Downloads", base);
@@ -182,8 +204,24 @@ int main(void)
     CHECK(reason_of("proj/.git/key.pem", NULL) == NULL);
     CHECK(reason_of("loop/server.key", NULL) == NULL);
     CHECK(reason_of("linked.key", NULL) == NULL);
-    CHECK(n_hits == 11);
-    CHECK(st.skipped == 2);  /* .cache and proj/.git */
+    CHECK(is("old/home/.aws/credentials", "aws-credentials", GAUDIT_REACH_OWNER));
+    CHECK(reason_of("old/home/.var/app/org.example/cache/k.pem", NULL) == NULL);
+    CHECK(reason_of("old/AppData/Firefox/cache2/k.pem", NULL) == NULL);
+    CHECK(reason_of("old/AppData/Chrome/Code Cache/k.pem", NULL) == NULL);
+    CHECK(reason_of("old/AppData/Chrome/Cache/Cache_Data/k.pem", NULL) == NULL);
+    CHECK(n_hits == 12);
+    /* .cache, proj/.git, and in the copy .var/app/…/cache, cache2, Code Cache,
+     * Cache_Data */
+    CHECK(st.skipped == 6);
+    CHECK(st.caches == 5);  /* all but proj/.git */
+
+    /* Asked to, the caches are searched too, and their keys found. */
+    n_hits = 0;
+    gaudit_secret_scan_set_caches(1);
+    CHECK(gaudit_secret_scan(base, getuid(), collect, NULL, &st) == 0);
+    gaudit_secret_scan_set_caches(0);
+    CHECK(n_hits == 17 && st.caches == 0 && st.skipped == 1);
+    CHECK(reason_of("old/AppData/Firefox/cache2/k.pem", NULL) != NULL);
     CHECK(!st.truncated);
 
     CHECK(gaudit_secret_scan("relative", getuid(), collect, NULL, &st) == -1);

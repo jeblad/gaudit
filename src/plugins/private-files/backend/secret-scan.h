@@ -36,6 +36,7 @@ typedef struct {
     unsigned files;
     unsigned read;       /* files whose start was read */
     unsigned skipped;    /* folders left out (noise, other filesystems, depth) */
+    unsigned caches;     /* of them, caches (searched only on request) */
     int truncated;       /* stopped at the entry limit */
 } gaudit_secret_stats;
 
@@ -50,5 +51,24 @@ int gaudit_secret_scan(const char *home, uid_t uid, gaudit_secret_fn fn, void *c
  * within its filesystem; reach also takes the folders above it into
  * account, from "/" down (looked at with stat, never listed). rel is then
  * relative to root. */
+/* The files whose start is read to recognise a key: up to this size (one
+ * of GAUDIT_SECRET_READ_LIMITS; the smallest still holds every real key
+ * file). Larger files are judged by name only. */
+#define GAUDIT_SECRET_READ_LIMITS { 16384, 65536, 262144, 1048576 }
+#define GAUDIT_SECRET_READ_LIMIT_DEFAULT 65536
+#define GAUDIT_SECRET_READ_LIMIT_MAX 1048576
+/* 0, or -1 for a size not in the list (nothing changes then). */
+int gaudit_secret_scan_set_read_limit(size_t bytes);
+size_t gaudit_secret_scan_read_limit(void);
+
+/* Whether caches are searched too (default: left out). */
+void gaudit_secret_scan_set_caches(int search);
+
+/* Called now and then during a scan with the entries looked at in the
+ * folder being walked (every 256) and the folder it is in, relative to the
+ * root ("" for the root), so a caller can show it is alive and where. */
+typedef void (*gaudit_secret_progress_fn)(unsigned long entries, const char *rel, void *ctx);
+void gaudit_secret_scan_set_progress(gaudit_secret_progress_fn fn, void *ctx);
+
 int gaudit_secret_scan_area(const char *root, uid_t uid, gaudit_secret_fn fn, void *ctx,
                             gaudit_secret_stats *stats);

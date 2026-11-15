@@ -1,0 +1,6 @@
+(input (system (host "test") (distro "Ubuntu 26.04 LTS") (backend "debian"))
+       (level "full")
+       (collection
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (secret (area 0) (path "a.kdbx") (reason "keepass") (mode 420) (reach 3) (owned 1) (exact 1))
+        (secrets (status 0) (count 5) (shown 1) (others 3) (groups 0) (truncated 0))))

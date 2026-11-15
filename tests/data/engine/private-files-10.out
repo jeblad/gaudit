@@ -1,0 +1,2 @@
+(report (verdict ok) (title (msg "No secrets found outside the usual places")) (description (msg "Secrets only you can read are normal. This means none were found that others can read, not that every secret was found.")))
+(note (msg "Files over {size} KiB were recognised by name only." (size 16)))

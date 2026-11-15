@@ -35,6 +35,6 @@ add_executable(gaudit
   gaudit-task.c
   gaudit-task-page.c
 )
-target_include_directories(gaudit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(gaudit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src/backend)
 target_link_libraries(gaudit PRIVATE PkgConfig::ADWAITA gaudit_model gaudit_backend gaudit_probe gaudit_config)
 install(TARGETS gaudit RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

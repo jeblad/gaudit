@@ -17,6 +17,9 @@ typedef struct {
     AdwStatusPage *status;  /* weak: the page may be left while the run goes on */
     const GauditTaskInfo *task;
     GStrv args;             /* the run's parameters (the plugin's folders) */
+    guint tick_id;          /* shows the progress of a run as the user */
+    gint64 next_ask;        /* when to ask whether to go on (monotonic, µs) */
+    GtkWidget *ask;         /* weak: the "keep going?" buttons, while shown */
     gaudit_firewall_report firewall;
 } RunJob;
 
@@ -247,6 +250,10 @@ static void on_progress(gpointer user_data)
 
 static void job_free(RunJob *job)
 {
+    if (job->tick_id != 0)
+        g_source_remove(job->tick_id);
+    if (job->ask != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(job->ask), (gpointer *)&job->ask);
     if (job->status != NULL)
         g_object_remove_weak_pointer(G_OBJECT(job->status), (gpointer *)&job->status);
     g_strfreev(job->args);
@@ -302,6 +309,12 @@ static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
                         gpointer user_data)
 {
     RunJob *job = user_data;
+    if (job->tick_id != 0) {
+        g_source_remove(job->tick_id);
+        job->tick_id = 0;
+    }
+    if (job->status != NULL && job->ask != NULL)
+        adw_status_page_set_child(job->status, NULL);
     if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_COLLECTION) {
         /* The plugin's rule script makes the report from what was collected. */
         if (job->status != NULL) {
@@ -319,6 +332,9 @@ static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
     } else if (status == GAUDIT_RUN_OK && result != NULL
                && result->kind == GAUDIT_RESULT_INTEGRITY) {
         show_integrity(job, result);
+    } else if (status == GAUDIT_RUN_CANCELLED && !job->task->needs_admin) {
+        show(job, "dialog-information-symbolic", _("The search was stopped"),
+             _("Nothing is known from this run. Run it again, perhaps with fewer folders."));
     } else if (status == GAUDIT_RUN_CANCELLED) {
         show(job, "dialog-information-symbolic", _("The check was cancelled"),
              _("No password was given, so nothing was checked."));
@@ -330,6 +346,85 @@ static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
              _("Nothing is known from this run."));
     }
     job_free(job);
+}
+
+/* --- A long run as the user ---------------------------------------------
+ *
+ * It reports how far it has come, so the user sees it is alive, and after
+ * a while page 2 asks whether to go on: the search goes on meanwhile, and
+ * Keep Going asks again later. No hard limit for the full run. */
+
+#define ASK_AFTER_US (10 * 60 * G_USEC_PER_SEC)
+
+static void on_keep_going(GtkButton *button, gpointer user_data)
+{
+    (void)button;
+    RunJob *job = user_data;
+    job->next_ask = g_get_monotonic_time() + ASK_AFTER_US;
+    if (job->status != NULL) {
+        adw_status_page_set_child(job->status, NULL);
+        adw_status_page_set_title(job->status, _(job->task->run_running));  /* searching again */
+    }
+}
+
+static void on_stop(GtkButton *button, gpointer user_data)
+{
+    (void)user_data;
+    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+    gaudit_session_cancel();  /* on_run_done says it was stopped */
+}
+
+static gboolean on_tick(gpointer user_data)
+{
+    RunJob *job = user_data;
+    if (job->status == NULL || gaudit_session_running() == NULL) {
+        job->tick_id = 0;
+        return G_SOURCE_REMOVE;
+    }
+    const char *where = NULL;
+    guint64 n = gaudit_session_progress(&where);
+    if (n > 0) {
+        /* Translators: %s is a number, e.g. "1 234 567". */
+        g_autofree char *count = g_strdup_printf("%'" G_GUINT64_FORMAT, n);
+        g_autofree char *shown = where != NULL ? g_utf8_make_valid(where, -1) : NULL;
+        /* The status page's description is markup: the folder comes from the
+         * system, so it is escaped. */
+        g_autofree char *safe = shown != NULL ? g_markup_escape_text(shown, -1) : NULL;
+        g_autofree char *text = safe != NULL
+            /* Translators: "<count> … · now in <folder>", e.g. "/mnt/backup". */
+            ? g_strdup_printf(_("Looked at %s files and folders so far · now in %s"), count, safe)
+            : g_strdup_printf(_("Looked at %s files and folders so far."), count);
+        adw_status_page_set_description(job->status, text);
+    }
+    if (job->ask == NULL && g_get_monotonic_time() >= job->next_ask) {
+        adw_status_page_set_title(job->status, _("The search is taking a long time. Keep going?"));
+        /* Side by side, as a dialog's buttons. */
+        GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+        gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
+        gtk_box_set_homogeneous(GTK_BOX(box), TRUE);
+        GtkWidget *go = gaudit_action_button_new(_("Keep Going"), FALSE, TRUE);
+        gtk_widget_set_halign(go, GTK_ALIGN_FILL);
+        g_signal_connect(go, "clicked", G_CALLBACK(on_keep_going), job);
+        GtkWidget *stop = gaudit_action_button_new(_("Stop"), FALSE, FALSE);
+        gtk_widget_add_css_class(stop, "destructive-action");
+        gtk_widget_set_halign(stop, GTK_ALIGN_FILL);
+        g_signal_connect(stop, "clicked", G_CALLBACK(on_stop), job);
+        gtk_box_append(GTK_BOX(box), stop);
+        gtk_box_append(GTK_BOX(box), go);
+        adw_status_page_set_child(job->status, box);
+        job->ask = box;
+        g_object_add_weak_pointer(G_OBJECT(box), (gpointer *)&job->ask);
+    }
+    return G_SOURCE_CONTINUE;
+}
+
+/* While a run as the user goes on: its progress, every second. */
+static void watch_progress(RunJob *job)
+{
+    if (job->task->needs_admin || job->tick_id != 0)
+        return;
+    job->next_ask = g_get_monotonic_time() + ASK_AFTER_US;
+    job->tick_id = g_timeout_add_seconds(1, on_tick, job);
 }
 
 /* --- A run already under way --------------------------------------------
@@ -384,7 +479,9 @@ static void start_or_ask(RunJob *job)
                                      on_progress, on_run_done, job)) {
             show(job, "dialog-warning-symbolic", _("The check could not be started"), NULL);
             job_free(job);
+            return;
         }
+        watch_progress(job);
         return;
     }
     if (gaudit_session_running_is(job->task->run_command, (const char *const *)job->args)) {
@@ -395,6 +492,7 @@ static void start_or_ask(RunJob *job)
                 _("This check was already running. Its result is shown here when it is done."));
         }
         gaudit_session_attach(NULL, on_run_done, job);
+        watch_progress(job);
         return;
     }
     if (job->status != NULL) {
@@ -402,8 +500,10 @@ static void start_or_ask(RunJob *job)
         adw_status_page_set_description(job->status,
             _("Another check is still running. Stop it and start this one, or wait until it "
               "has finished; this one starts then."));
-        GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+        /* Side by side, as a dialog's buttons. */
+        GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
         gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
+        gtk_box_set_homogeneous(GTK_BOX(box), TRUE);
         GtkWidget *restart = gaudit_action_button_new(_("Stop and Restart"), FALSE, FALSE);
         gtk_widget_add_css_class(restart, "destructive-action");
         gtk_widget_set_halign(restart, GTK_ALIGN_FILL);
@@ -411,8 +511,8 @@ static void start_or_ask(RunJob *job)
         GtkWidget *wait = gaudit_action_button_new(_("Wait"), FALSE, FALSE);
         gtk_widget_set_halign(wait, GTK_ALIGN_FILL);
         g_signal_connect(wait, "clicked", G_CALLBACK(on_wait_clicked), job);
-        gtk_box_append(GTK_BOX(box), restart);
         gtk_box_append(GTK_BOX(box), wait);
+        gtk_box_append(GTK_BOX(box), restart);
         adw_status_page_set_child(job->status, box);
     }
     gaudit_session_attach(NULL, on_other_done, job);
@@ -427,7 +527,11 @@ AdwNavigationPage *gaudit_cached_report_page_new(const GauditTaskInfo *task)
     AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
     adw_status_page_set_icon_name(status, "content-loading-symbolic");
     adw_status_page_set_title(status, _("Writing the report…"));
-    AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status), _("Report"), "report");
+    /* Home's collections give simplified reports; Run on Parameters the report. */
+    AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status),
+                                               gaudit_cache_full(task) ? _("Report")
+                                                                       : _("Simplified Report"),
+                                               "report");
     RunJob *job = g_new0(RunJob, 1);
     job->status = status;
     job->task = task;
@@ -460,7 +564,7 @@ AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)
     job->status = status;
     job->task = task;
     /* The parameters as they are now: changing them later is another run. */
-    job->args = gaudit_task_folders(task);
+    job->args = gaudit_task_run_args(task);
     g_object_add_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
     start_or_ask(job);
     return page;

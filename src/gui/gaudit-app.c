@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 #include "config.h"
 
+#include <glib-unix.h>
 #include <glib/gi18n.h>
+#include <signal.h>
 #include <string.h>
 
 #include "gaudit-app.h"
@@ -393,7 +395,7 @@ static void on_session_result(const char *command, const GauditRunResult *result
     for (gsize i = found; i == found; i++) {
         if (result->kind == GAUDIT_RESULT_COLLECTION) {
             /* Kept for the session; the plugin's report on it decides. */
-            gaudit_cache_store(&tasks[i], command, result->lines);
+            gaudit_cache_store(&tasks[i], command, result->lines, result->full);
             CachedReport *c = g_new0(CachedReport, 1);
             c->app = g_object_ref(self);
             c->task = i;
@@ -419,13 +421,28 @@ static void on_window_removed(GtkApplication *app, GtkWindow *window, gpointer u
 {
     (void)window;
     (void)user_data;
-    if (gtk_application_get_windows(app) == NULL)
+    /* The last window gone: the app ends. Runs under way stop (the close
+     * dialog asked first if one was heavy), and with them the holds they
+     * keep on the app. */
+    if (gtk_application_get_windows(app) == NULL) {
+        gaudit_session_cancel();
         gaudit_session_end();
+    }
+}
+
+/* Ctrl-C in the terminal, or a plain kill: end at once, no questions. The
+ * orchestrators die with the app (PR_SET_PDEATHSIG). */
+static gboolean on_quit_signal(gpointer app)
+{
+    g_application_quit(G_APPLICATION(app));
+    return G_SOURCE_CONTINUE;
 }
 
 static void gaudit_app_startup(GApplication *app)
 {
     G_APPLICATION_CLASS(gaudit_app_parent_class)->startup(app);
+    g_unix_signal_add(SIGINT, on_quit_signal, app);
+    g_unix_signal_add(SIGTERM, on_quit_signal, app);
 
     /* A selectable label (the command fields) must not select all of its
      * text when it gets focus: the user expects to select it, finds it

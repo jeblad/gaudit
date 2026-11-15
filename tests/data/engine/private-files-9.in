@@ -1,0 +1,12 @@
+(input (system (host "test") (distro "Ubuntu 26.04 LTS") (backend "debian"))
+       (level "full")
+       (collection
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (area-stats (index 0) (entries 300000) (seconds 900) (truncated 0) (caches 0))
+        (area (index 1) (path "/mnt/backup") (status 0) (remote 0) (exact 1))
+        (area-stats (index 1) (entries 500001) (seconds 2400) (truncated 1) (caches 12340))
+        (area (index 2) (path "/mnt/photos") (status 0) (remote 0) (exact 1))
+        (area-stats (index 2) (entries 260000) (seconds 120) (truncated 0) (caches 0))
+        (area (index 3) (path "/mnt/small") (status 0) (remote 0) (exact 1))
+        (area-stats (index 3) (entries 1200) (seconds 3) (truncated 0) (caches 0))
+        (secrets (status 0) (count 0) (shown 0) (others 0) (groups 0) (truncated 1))))

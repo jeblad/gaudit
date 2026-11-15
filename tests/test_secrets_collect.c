@@ -106,7 +106,7 @@ int main(void)
         for (char *line = strtok(buf, "\n"); line != NULL; line = strtok(NULL, "\n")) {
             gaudit_secret_finding one;
             int r = gaudit_secrets_parse_line(line, &one, &sum);
-            CHECK(r == 1 || r == 2 || r == 3);
+            CHECK(r >= 1 && r <= 5);
             if (r == 1 && n < 64)
                 f[n++] = one;
             if (r == 2)

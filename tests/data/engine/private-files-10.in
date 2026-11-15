@@ -1,0 +1,7 @@
+(input (system (host "test") (distro "Ubuntu 26.04 LTS") (backend "debian"))
+       (level "full")
+       (collection
+        (read-limit (bytes 16384))
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (area-stats (index 0) (entries 1000) (seconds 2) (truncated 0) (caches 0))
+        (secrets (status 0) (count 0) (shown 0) (others 0) (groups 0) (truncated 0))))

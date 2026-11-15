@@ -37,6 +37,14 @@
     </key>
     <!-- Places from the file manager the user took off the list; they are
          offered there again only if the user adds them back. -->
+    <key name="read-limit" type="u">
+      <default>65536</default>
+      <summary>Files up to this size have their start read</summary>
+    </key>
+    <key name="with-caches" type="b">
+      <default>false</default>
+      <summary>Search caches too</summary>
+    </key>
     <key name="removed-places" type="as">
       <default>[]</default>
       <summary>File manager places not searched</summary>

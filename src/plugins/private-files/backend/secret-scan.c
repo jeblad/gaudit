@@ -13,21 +13,60 @@
 
 #define MAX_DEPTH    12
 #define MAX_ENTRIES  500000
-#define MAX_SNIFF    (64 * 1024)  /* key files are small; larger files are only judged by name */
+/* Files up to the read limit are opened and their start read; larger ones
+ * are only judged by name. Key files are small, so the limit only trades
+ * speed (on large, slow disks) against keys pasted into large files. */
+#define MAX_SNIFF    GAUDIT_SECRET_READ_LIMIT_MAX
+static size_t read_limit = GAUDIT_SECRET_READ_LIMIT_DEFAULT;
+
+size_t gaudit_secret_scan_read_limit(void)
+{
+    return read_limit;
+}
+
+int gaudit_secret_scan_set_read_limit(size_t bytes)
+{
+    static const size_t allowed[] = GAUDIT_SECRET_READ_LIMITS;
+    for (size_t i = 0; i < sizeof allowed / sizeof allowed[0]; i++)
+        if (allowed[i] == bytes) {
+            read_limit = bytes;
+            return 0;
+        }
+    return -1;
+}
 
 /* Folders that are large, rebuilt by tools, and practically never hold
  * secrets of their own. Trash is deliberately not here: a discarded key is
  * still a key. */
+/* Program code and packages: always left out (installed software, not the
+ * user's data). */
 static const char *const skip_dirs[] = {
-    ".cache", "node_modules", ".git", ".hg", ".svn", ".npm", ".cargo/registry",
+    "node_modules", ".git", ".hg", ".svn", ".npm", ".cargo/registry",
     ".rustup", ".m2/repository", ".gradle/caches", "go/pkg", ".local/share/flatpak",
-    ".var/app/*/cache", "snap/*/*/.cache", ".local/share/Steam/steamapps",
+    ".local/share/Steam/steamapps",
     ".steam", ".wine/drive_c/windows", ".local/lib/python*", ".pyenv", ".nvm",
-    ".vscode/extensions", ".mozilla/firefox/*/cache2", ".config/*/Cache",
-    ".config/*/Code Cache", ".config/*/GPUCache", "site-packages", "__pycache__",
+    ".vscode/extensions", "site-packages", "__pycache__",
     ".rbenv", ".poetry", ".local/share/pypoetry", ".local/share/containers/storage",
     ".flatpak-builder",
 };
+
+/* Caches: rebuildable, and seldom hold a key, so left out unless the full
+ * run asks for them (a known list is also where something could hide one).
+ * Names of their own match anywhere, also in copies of home folders from
+ * Linux, Windows and macOS. */
+static const char *const cache_dirs[] = {
+    ".cache", ".var/app/*/cache", "snap/*/*/.cache", ".mozilla/firefox/*/cache2",
+    ".config/*/Cache", ".config/*/Code Cache", ".config/*/GPUCache",
+    "cache2", "Cache_Data", "Code Cache", "GPUCache", "DawnCache", "GrShaderCache", "ShaderCache",
+    "Service Worker", "INetCache", "Temporary Internet Files", "CachedData",
+};
+
+static int with_caches;
+
+void gaudit_secret_scan_set_caches(int search)
+{
+    with_caches = search != 0;
+}
 
 /* Never read by content: code, documentation, media and build output. A
  * key pasted into source code is out of scope here; keys kept as files
@@ -82,6 +121,15 @@ static const struct { const char *prefix; const char *reason; } by_start[] = {
     { "(11:private-key",           "gnupg-private-key" },
 };
 
+static gaudit_secret_progress_fn progress_fn;
+static void *progress_ctx;
+
+void gaudit_secret_scan_set_progress(gaudit_secret_progress_fn fn, void *ctx)
+{
+    progress_fn = fn;
+    progress_ctx = ctx;
+}
+
 typedef struct {
     uid_t uid;
     dev_t dev;
@@ -92,16 +140,32 @@ typedef struct {
     char rel[PATH_MAX];
 } walker;
 
+/* A pattern without '/' is matched against the name, anywhere. One with
+ * '/' against the path, from the root or from any folder boundary in it,
+ * so the Flatpak cache pattern also catches a copied home folder's, however
+ * deep the copy lies (fnmatch has no double star). */
 static int matches(const char *pattern, const char *rel, const char *name)
 {
-    return fnmatch(pattern, strchr(pattern, '/') != NULL ? rel : name, FNM_PATHNAME) == 0;
+    if (strchr(pattern, '/') == NULL)
+        return fnmatch(pattern, name, FNM_PATHNAME) == 0;
+    for (const char *p = rel; p != NULL; p = strchr(p, '/')) {
+        if (*p == '/')
+            p++;
+        if (fnmatch(pattern, p, FNM_PATHNAME) == 0)
+            return 1;
+    }
+    return 0;
 }
 
+/* 1 program code or packages, 2 a cache left out, 0 searched. */
 static int skipped_dir(const char *rel, const char *name)
 {
     for (size_t i = 0; i < sizeof skip_dirs / sizeof skip_dirs[0]; i++)
         if (matches(skip_dirs[i], rel, name))
             return 1;
+    for (size_t i = 0; !with_caches && i < sizeof cache_dirs / sizeof cache_dirs[0]; i++)
+        if (matches(cache_dirs[i], rel, name))
+            return 2;
     return 0;
 }
 
@@ -204,8 +268,8 @@ static const char *content_reason(int at_fd, const char *name, unsigned *read_co
     static char buf[MAX_SNIFF];
     size_t used = 0;
     if (fstat(fd, &sb) == 0 && S_ISREG(sb.st_mode)) {
-        while (used < sizeof buf) {
-            ssize_t n = read(fd, buf + used, sizeof buf - used);
+        while (used < read_limit) {
+            ssize_t n = read(fd, buf + used, read_limit - used);
             if (n < 0 && errno == EINTR)
                 continue;
             if (n <= 0)
@@ -249,7 +313,16 @@ static void walk(walker *w, int dir_fd, size_t rel_len, int depth, int group_pat
         const char *name = de->d_name;
         if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
             continue;
-        if (++w->entries > MAX_ENTRIES) {
+        /* Often enough to move steadily on a slow disk; the caller only
+         * passes it on every two seconds. */
+        if ((++w->entries & 255) == 0 && progress_fn != NULL)
+        {
+            char saved = w->rel[rel_len];
+            w->rel[rel_len] = '\0';  /* the folder, not the entry in it */
+            progress_fn(w->entries, w->rel, progress_ctx);
+            w->rel[rel_len] = saved;
+        }
+        if (w->entries > MAX_ENTRIES) {
             w->stats->truncated = 1;
             break;
         }
@@ -263,8 +336,11 @@ static void walk(walker *w, int dir_fd, size_t rel_len, int depth, int group_pat
         if (fstatat(dirfd(d), name, &sb, AT_SYMLINK_NOFOLLOW) != 0)
             continue;
         if (S_ISDIR(sb.st_mode)) {
-            if (sb.st_dev != w->dev || depth >= MAX_DEPTH || skipped_dir(w->rel, name)) {
+            int skip = sb.st_dev != w->dev || depth >= MAX_DEPTH ? 1 : skipped_dir(w->rel, name);
+            if (skip != 0) {
                 w->stats->skipped++;
+                if (skip == 2)
+                    w->stats->caches++;
                 continue;
             }
             int fd = openat(dirfd(d), name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
@@ -277,7 +353,7 @@ static void walk(walker *w, int dir_fd, size_t rel_len, int depth, int group_pat
             continue;
         w->stats->files++;
         const char *reason = name_reason(w->rel, name);
-        if (reason == NULL && sb.st_size > 0 && sb.st_size <= MAX_SNIFF && !no_sniff_name(name))
+        if (reason == NULL && sb.st_size > 0 && (size_t)sb.st_size <= read_limit && !no_sniff_name(name))
             reason = content_reason(dirfd(d), name, &w->stats->read);
         if (reason == NULL)
             continue;

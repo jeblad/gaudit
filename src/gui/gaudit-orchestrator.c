@@ -15,6 +15,7 @@ struct _GauditOrchestrator {
     GCancellable *cancel;  /* stops reading at the timeout */
     GByteArray *pending;   /* bytes after the last complete line */
     gsize total;
+    gsize max_output;
     guint timeout_id;
     gboolean broken;
     GauditOrchestratorLineFn on_line;
@@ -86,7 +87,7 @@ static void on_read(GObject *source, GAsyncResult *res, gpointer user_data)
     if (n > 0) {
         run->total += n;
         g_byte_array_append(run->pending, g_bytes_get_data(bytes, NULL), (guint)n);
-        if (run->total > MAX_OUTPUT || !take_lines(run)) {
+        if (run->total > run->max_output || !take_lines(run)) {
             run->broken = TRUE;
             g_subprocess_force_exit(run->proc);
         }
@@ -105,7 +106,18 @@ GauditOrchestrator *gaudit_orchestrator_start(const char *const *args, guint tim
                                               GauditOrchestratorLineFn on_line,
                                               GauditOrchestratorDoneFn on_done, gpointer user_data)
 {
+    return gaudit_orchestrator_start_limit(args, timeout_s, interactive, MAX_OUTPUT,
+                                           on_line, on_done, user_data);
+}
+
+GauditOrchestrator *gaudit_orchestrator_start_limit(const char *const *args, guint timeout_s,
+                                                    gboolean interactive, gsize max_output,
+                                                    GauditOrchestratorLineFn on_line,
+                                                    GauditOrchestratorDoneFn on_done,
+                                                    gpointer user_data)
+{
     Run *run = g_new0(Run, 1);
+    run->max_output = max_output;
     run->on_line = on_line;
     run->on_done = on_done;
     run->user_data = user_data;

@@ -24,6 +24,8 @@ typedef struct {
     gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
     unsigned n_files;
     GPtrArray *lines;  /* COLLECTION: its lines (char *), each checked by the plugin */
+    gboolean full;     /* started with the plugin's parameters (Run on Parameters);
+                          FALSE for Home's runs, whose reports are simplified */
 } GauditRunResult;
 
 /* The verdict of a result (unknown for a collection: its report decides). */
@@ -47,15 +49,25 @@ typedef void (*GauditRunProgressFn)(gpointer user_data);
 gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress,
                             GauditRunDoneFn on_done, gpointer user_data);
 
-/* The same, with the run's parameters as arguments (NULL-terminated, may
- * be NULL), passed on as they are; only for runs as the user ("user ..."),
- * e.g. the folders a collection searches. */
+/* The same, with the run's parameters as arguments (NULL-terminated; NULL
+ * for none), passed on as they are; only for runs as the user ("user ..."),
+ * e.g. the folders a collection searches. A run given its parameters (even
+ * an empty list) is the full one; without, it is Home's, simplified. */
 gboolean gaudit_session_run_args(const char *command, const char *const *args,
                                  GauditRunProgressFn on_progress, GauditRunDoneFn on_done,
                                  gpointer user_data);
 
 /* The command of the run under way (e.g. "user secrets quick"), or NULL. */
 const char *gaudit_session_running(void);
+
+/* Whether a run is under way and has gone on for more than 10 seconds: a
+ * heavy one, worth asking about before closing. */
+gboolean gaudit_session_running_long(void);
+
+/* How far the run under way has come: entries looked at, from its
+ * progress lines (0 for none, or a run that does not report it), and in
+ * *where (may be NULL) the folder it is in, as data from the run. */
+guint64 gaudit_session_progress(const char **where);
 
 /* Whether the run under way is command with exactly these arguments (the
  * same parameters). */

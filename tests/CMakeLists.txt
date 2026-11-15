@@ -93,7 +93,8 @@ add_executable(test_secrets_collect test_secrets_collect.c
                ${PROJECT_SOURCE_DIR}/src/plugins/private-files/orchestrator/secrets.c)
 target_compile_definitions(test_secrets_collect PRIVATE _GNU_SOURCE)
 target_include_directories(test_secrets_collect PRIVATE
-                           ${PROJECT_SOURCE_DIR}/src/plugins/private-files/orchestrator)
+                           ${PROJECT_SOURCE_DIR}/src/plugins/private-files/orchestrator
+                           ${PROJECT_SOURCE_DIR}/src/probe)
 target_link_libraries(test_secrets_collect PRIVATE gaudit_probe)
 add_test(NAME secrets-collect COMMAND test_secrets_collect)
 

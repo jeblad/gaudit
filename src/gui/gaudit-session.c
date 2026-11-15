@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 #include "config.h"
 
+#include "collector.h"
 #include "gaudit-orchestrator.h"
 #include "gaudit-session.h"
 #include "gaudit-task.h"
@@ -30,6 +31,9 @@ typedef struct {
     gboolean wants_result;  /* FALSE for "elevate", which only starts the helper */
     gboolean user;          /* runs as the user, not through the session */
     gboolean (*collection_line)(const char *line, gboolean *last);  /* user runs */
+    guint64 progress;       /* entries looked at, from its progress lines */
+    gint64 started;         /* monotonic, µs */
+    char where[256];        /* the folder being searched, from them */
     gboolean have_result;
     GauditRunResult result;
 } Run;
@@ -142,8 +146,12 @@ static gboolean on_line(const char *line, gpointer user_data)
 
 /* --- Runs as the user ------------------------------------------------------ */
 
-/* The deep scan takes about 10 s on a large home. */
-#define USER_RUN_TIMEOUT_S 120
+/* Home's runs are kept short; the full run (with the plugin's parameters,
+ * e.g. large or network folders) has no limit here: page 2 asks now and
+ * then whether to go on, and it can always be stopped. Progress lines make
+ * a long run's output larger, so its limit is too. */
+#define HOME_RUN_TIMEOUT_S (5 * 60)
+#define USER_RUN_MAX_OUTPUT (1024 * 1024)
 
 /* A line of a collection, checked by the plugin it belongs to; nothing
  * may come after the last. */
@@ -153,6 +161,21 @@ static gboolean on_user_line(const char *line, gpointer user_data)
 {
     Run *run = user_data;
     gboolean last = FALSE;
+    /* "(progress (count N) (where "..."))": shown while it runs, not
+     * collected. */
+    if (g_str_has_prefix(line, "(progress ")) {
+        long long count;
+        char where[sizeof run->where];
+        const gaudit_sexpr_field fields[] = {
+            { .key = "count", .value = &count, .max = 100000000000LL },
+            { .key = "where", .text = where, .text_len = sizeof where },
+        };
+        if (S.run != run || run->have_result || gaudit_sexpr_parse(line, "progress", fields, 2) != 0)
+            return FALSE;
+        run->progress = (guint64)count;
+        g_strlcpy(run->where, where, sizeof run->where);
+        return TRUE;
+    }
     if (S.run != run || run->have_result || run->result.lines->len >= MAX_COLLECTION_LINES
         || !run->collection_line(line, &last))
         return FALSE;
@@ -212,10 +235,12 @@ gboolean gaudit_session_run_args(const char *command, const char *const *extra,
     Run *run = g_new0(Run, 1);
     run->command = g_strdup(command);
     run->args = extra != NULL ? g_strdupv((char **)extra) : g_new0(char *, 1);
+    run->result.full = extra != NULL;
     run->on_progress = on_progress;
     run->on_done = on_done_fn;
     run->user_data = user_data;
     run->wants_result = g_strcmp0(command, "elevate") != 0;
+    run->started = g_get_monotonic_time();
     run->observers = g_array_new(FALSE, FALSE, sizeof(Observer));
     S.run = run;
 
@@ -243,9 +268,9 @@ gboolean gaudit_session_run_args(const char *command, const char *const *extra,
         g_auto(GStrv) args = g_strv_builder_end(b);
         if (on_progress != NULL)
             on_progress(user_data);  /* no password to wait for */
-        GauditOrchestrator *orch = gaudit_orchestrator_start((const char *const *)args,
-                                                             USER_RUN_TIMEOUT_S, FALSE,
-                                                             on_user_line, on_user_done, run);
+        GauditOrchestrator *orch = gaudit_orchestrator_start_limit(
+            (const char *const *)args, run->result.full ? 0 : HOME_RUN_TIMEOUT_S, FALSE,
+            USER_RUN_MAX_OUTPUT, on_user_line, on_user_done, run);
         if (S.run == run)  /* it may already have ended, if it could not start */
             run->user_orch = orch;
         return TRUE;
@@ -271,6 +296,19 @@ gboolean gaudit_session_run_args(const char *command, const char *const *extra,
 const char *gaudit_session_running(void)
 {
     return S.run != NULL ? S.run->command : NULL;
+}
+
+gboolean gaudit_session_running_long(void)
+{
+    return S.run != NULL && S.run->wants_result
+           && g_get_monotonic_time() - S.run->started > 10 * G_USEC_PER_SEC;
+}
+
+guint64 gaudit_session_progress(const char **where)
+{
+    if (where != NULL)
+        *where = S.run != NULL && S.run->where[0] != '\0' ? S.run->where : NULL;
+    return S.run != NULL ? S.run->progress : 0;
 }
 
 gboolean gaudit_session_running_is(const char *command, const char *const *args)

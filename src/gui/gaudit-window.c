@@ -56,6 +56,7 @@ struct _GauditWindow {
     GtkListBox *folder_list;      /* weak: the open folder's list */
     int folder;                   /* the task whose folder is open, -1 for none */
     gboolean syncing;             /* the two views are being brought in line */
+    gboolean close_confirmed;     /* the user chose to stop a heavy run and close */
     AdwNavigationView *content;
 
     const gaudit_pkg_backend *pkg;
@@ -94,6 +95,7 @@ static void navigate(GauditWindow *self, int index, gboolean show_content);
 static guint home_level(GauditWindow *self);
 static void fill_check_row(GauditWindow *self, gsize i);
 static void fill_check_rows(GauditWindow *self);
+static void update_report_label(GauditWindow *self);
 
 /* Whether every check that needs the password at the chosen level has run
  * and passed in this session (the status-ok shield); the others count in
@@ -835,6 +837,7 @@ void gaudit_window_task_report(GauditWindow *self, gsize task_index, gaudit_verd
     g_strlcpy(self->results[task_index].when, when != NULL ? when : "",
               sizeof self->results[task_index].when);
     fill_check_row(self, task_index);
+    update_report_label(self);  /* a new collection may have come with it */
 }
 
 static AdwNavigationPage *build_home(GauditWindow *self)
@@ -1005,6 +1008,29 @@ static void on_folder_row_activated(GtkListBox *box, GtkListBoxRow *row, gpointe
 static GtkWidget *sidebar_row(const char *icon, const char *title, const char *subtitle);
 static GtkWidget *primary_menu_button(void);
 
+/* What the folder's report entry holds: the report after Run on
+ * Parameters, the simplified one Home made, or (nothing cached) a run of
+ * the report. */
+static const char *report_label(const GauditTaskInfo *task)
+{
+    return gaudit_cache_lines(task, NULL) == NULL || gaudit_cache_full(task)
+           ? _("Report") : _("Simplified Report");
+}
+
+/* The open folder's report entry follows the cache. */
+static void update_report_label(GauditWindow *self)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    GtkListBoxRow *row = self->folder_list != NULL
+        ? gtk_list_box_get_row_at_index(self->folder_list, 1) : NULL;
+    if (row == NULL || self->folder < 0 || (gsize)self->folder >= n_tasks)
+        return;
+    GtkLabel *label = g_object_get_data(G_OBJECT(row), "gaudit-title");
+    if (label != NULL)
+        gtk_label_set_text(label, report_label(&tasks[self->folder]));
+}
+
 /* The plugin's folder in the sidebar: its parameters first, then its
  * reports (for now one, until the plugin gives the list itself). No title
  * and no administrator switch, a back button; the primary menu stays. */
@@ -1013,7 +1039,7 @@ static AdwNavigationPage *folder_page(GauditWindow *self, const GauditTaskInfo *
     GtkListBox *list = GTK_LIST_BOX(gtk_list_box_new());
     gtk_widget_add_css_class(GTK_WIDGET(list), "navigation-sidebar");
     gtk_list_box_append(list, sidebar_row("preferences-system-symbolic", _("Parameters"), NULL));
-    gtk_list_box_append(list, sidebar_row("gaudit-documents-symbolic", _("Report"), NULL));
+    gtk_list_box_append(list, sidebar_row("gaudit-documents-symbolic", report_label(task), NULL));
     g_signal_connect(list, "row-activated", G_CALLBACK(on_folder_row_activated), self);
     set_weak(&self->folder_list, list);
 
@@ -1136,6 +1162,7 @@ static GtkWidget *sidebar_row(const char *icon, const char *title, const char *s
 
     GtkWidget *row = gtk_list_box_row_new();
     gtk_list_box_row_set_child(GTK_LIST_BOX_ROW(row), box);
+    g_object_set_data(G_OBJECT(row), "gaudit-title", label);
     return row;
 }
 
@@ -1192,10 +1219,38 @@ static void on_drop_clicked(GtkButton *button, gpointer user_data)
     gaudit_session_drop();
 }
 
+static void on_close_answer(AdwAlertDialog *dialog, const char *response, gpointer user_data)
+{
+    (void)dialog;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    if (g_strcmp0(response, "stop") != 0)
+        return;
+    self->close_confirmed = TRUE;
+    gaudit_session_cancel();
+    gtk_window_close(GTK_WINDOW(self));
+}
+
 static gboolean on_close_request(GtkWindow *window, gpointer user_data)
 {
     (void)user_data;
     GauditWindow *self = GAUDIT_WINDOW(window);
+    /* A heavy run under way, in the last window: ask first. Otherwise the
+     * window closes, and with the last one the app ends. */
+    GtkApplication *app = gtk_window_get_application(window);
+    gboolean last = app == NULL || g_list_length(gtk_application_get_windows(app)) <= 1;
+    if (!self->close_confirmed && last && gaudit_session_running_long()) {
+        AdwDialog *dialog = adw_alert_dialog_new(_("Stop the Check and Close?"),
+            _("A check is still running. Closing stops it, and what it has found so far is lost."));
+        adw_alert_dialog_add_responses(ADW_ALERT_DIALOG(dialog), "cancel", _("_Cancel"),
+                                       "stop", _("_Stop and Close"), NULL);
+        adw_alert_dialog_set_response_appearance(ADW_ALERT_DIALOG(dialog), "stop",
+                                                 ADW_RESPONSE_DESTRUCTIVE);
+        adw_alert_dialog_set_default_response(ADW_ALERT_DIALOG(dialog), "cancel");
+        adw_alert_dialog_set_close_response(ADW_ALERT_DIALOG(dialog), "cancel");
+        g_signal_connect(dialog, "response", G_CALLBACK(on_close_answer), self);
+        adw_dialog_present(dialog, GTK_WIDGET(window));
+        return TRUE;  /* not yet */
+    }
     if (self->settings != NULL) {
         int width = 0, height = 0;
         gtk_window_get_default_size(window, &width, &height);

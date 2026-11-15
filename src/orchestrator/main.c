@@ -653,6 +653,12 @@ static int status_refresh(void)
 
 int main(int argc, char *argv[])
 {
+    /* Dies with the GUI that started it, however the GUI ends (window
+     * closed, Ctrl-C, killed), so no search is left running without an
+     * owner. Its own children die with it in turn. */
+    pid_t parent = getppid();
+    if (prctl(PR_SET_PDEATHSIG, SIGTERM) != 0 || getppid() != parent || parent == 1)
+        return 1;
     if (argc == 1)
         return status_refresh();
     if (argc == 2 && strcmp(argv[1], "session") == 0)

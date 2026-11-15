@@ -5,7 +5,9 @@
  * receiving side. Never any content: path, why it looks secret, mode and
  * who can reach it.
  *
- *   (area (index I) (path "...") (status S) (remote 0|1) (exact 0|1))  first, one per area
+ *   (area (index I) (path "...") (status S) (remote 0|1) (exact 0|1))  before its search
+ *   (area-stats (index I) (entries N) (seconds T) (truncated 0|1) (caches C))  after it, full only
+ *   (read-limit (bytes N))                       full only: files up to N had their start read
  *   (secret (area I) (path "...") (reason "...") (mode M) (reach R) (owned 0|1) (exact 0|1))
  *   (secrets (status S) (count N) (shown M) (others A) (groups B) (truncated 0|1))  last
  *
@@ -81,8 +83,21 @@ int gaudit_secrets_format_summary(const gaudit_secrets_summary *s, char *buf, si
 
 int gaudit_secrets_format_area(const gaudit_secret_area *a, char *buf, size_t len);
 
+/* How an area's search went: entries looked at, how long, and whether it
+ * stopped at the limit, so a report can name a large or slow folder. */
+typedef struct {
+    unsigned index;
+    unsigned long entries;
+    unsigned seconds;
+    int truncated;
+    unsigned long caches;  /* cache folders left out */
+} gaudit_secret_area_stats;
+
+int gaudit_secrets_format_area_stats(const gaudit_secret_area_stats *a, char *buf, size_t len);
+
 /* One line, strictly: 1 a finding (in *f), 2 the summary (in *s), -1
- * anything else. An area line is 3, read with gaudit_secrets_parse_area. */
+ * anything else. An area line is 3, read with gaudit_secrets_parse_area;
+ * an area-stats line 4, a read-limit line 5. */
 int gaudit_secrets_parse_line(const char *line, gaudit_secret_finding *f, gaudit_secrets_summary *s);
 
 /* An area line, strictly: 0 (in *a), -1 anything else. */

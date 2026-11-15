@@ -17,8 +17,14 @@
 G_BEGIN_DECLS
 
 /* Keeps lines (a reference is taken) as task's latest collection, made by
- * command (its last word is the collection's level, e.g. "quick"). */
-void gaudit_cache_store(const GauditTaskInfo *task, const char *command, GPtrArray *lines);
+ * command (its last word is the collection's level, e.g. "quick"); full:
+ * made with the plugin's parameters (Run on Parameters), not for Home. */
+void gaudit_cache_store(const GauditTaskInfo *task, const char *command, GPtrArray *lines,
+                        gboolean full);
+
+/* Whether task's cached collection is a full one: its report is then the
+ * report, otherwise the simplified one Home made. */
+gboolean gaudit_cache_full(const GauditTaskInfo *task);
 
 /* task's latest collection (borrowed; NULL for none) and when it was
  * made ("14:32"). */

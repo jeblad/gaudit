@@ -38,7 +38,9 @@ const GauditTaskInfo gaudit_plugin_private_files = {
     .collection_line = gaudit_private_files_line,
     .text_domain = GAUDIT_PRIVATE_FILES_DOMAIN,
     .param_folders = TRUE,
+    .param_read_limit = TRUE,
+    .param_caches = TRUE,
     .fix_page = gaudit_private_files_fix_page,
     .run_waiting = N_("Searching your home folder…"),
-    .run_running = N_("Searching your home folder… This takes a few seconds."),
+    .run_running = N_("Searching… Large folders can take a long time."),
 };

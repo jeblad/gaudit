@@ -35,6 +35,15 @@ int gaudit_secrets_format_area(const gaudit_secret_area *a, char *buf, size_t le
     return n > 0 && (size_t)n < len ? 0 : -1;
 }
 
+int gaudit_secrets_format_area_stats(const gaudit_secret_area_stats *a, char *buf, size_t len)
+{
+    if (a == NULL || buf == NULL || a->index >= GAUDIT_SECRETS_MAX_AREAS)
+        return -1;
+    int n = snprintf(buf, len, "(area-stats (index %u) (entries %lu) (seconds %u) (truncated %d) (caches %lu))\n",
+                     a->index, a->entries, a->seconds, a->truncated ? 1 : 0, a->caches);
+    return n > 0 && (size_t)n < len ? 0 : -1;
+}
+
 int gaudit_secrets_parse_area(const char *line, gaudit_secret_area *out)
 {
     if (line == NULL || out == NULL)
@@ -117,6 +126,22 @@ int gaudit_secrets_parse_line(const char *line, gaudit_secret_finding *f, gaudit
         *f = hit;
         return 1;
     }
+    long long index, entries, seconds, cut, caches;
+    const gaudit_sexpr_field stats[] = {
+        { .key = "index",     .value = &index,   .max = GAUDIT_SECRETS_MAX_AREAS - 1 },
+        { .key = "entries",   .value = &entries, .max = 100000000000LL },
+        { .key = "seconds",   .value = &seconds, .max = 100000000 },
+        { .key = "truncated", .value = &cut,     .max = 1 },
+        { .key = "caches",    .value = &caches,  .max = 100000000000LL },
+    };
+    if (gaudit_sexpr_parse(copy, "area-stats", stats, 5) == 0)
+        return 4;
+    long long bytes;
+    const gaudit_sexpr_field limit[] = {
+        { .key = "bytes", .value = &bytes, .min = 16384, .max = 1048576 },
+    };
+    if (gaudit_sexpr_parse(copy, "read-limit", limit, 1) == 0)
+        return 5;
     if (strncmp(copy, "(area ", 6) == 0) {
         gaudit_secret_area a;
         return gaudit_secrets_parse_area(copy, &a) == 0 ? 3 : -1;

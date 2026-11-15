@@ -31,6 +31,14 @@ GauditOrchestrator *gaudit_orchestrator_start(const char *const *args, guint tim
                                               GauditOrchestratorLineFn on_line,
                                               GauditOrchestratorDoneFn on_done, gpointer user_data);
 
+/* The same, with its own limit on the output instead of 64 KiB (a long run
+ * that reports its progress now and then). */
+GauditOrchestrator *gaudit_orchestrator_start_limit(const char *const *args, guint timeout_s,
+                                                    gboolean interactive, gsize max_output,
+                                                    GauditOrchestratorLineFn on_line,
+                                                    GauditOrchestratorDoneFn on_done,
+                                                    gpointer user_data);
+
 /* Writes text (lines ending in a newline) to its stdin. FALSE on failure. */
 gboolean gaudit_orchestrator_send(GauditOrchestrator *orch, const char *text);
 

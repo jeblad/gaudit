@@ -216,14 +216,17 @@ static const char *conf_result_text(const char *result)
     return _("It could not be done, so nothing was changed.");
 }
 
-/* Apply while gAudit's setting is not in place, undo while it is. */
+/* Both always in view, apart, so undoing takes moving the pointer, and
+ * Undo being there promises that it can be undone; each greyed out while
+ * there is nothing for it to do: apply once it is in place, undo until
+ * then and again once it has been undone. */
 static void conf_show(ConfPage *c, gboolean applied)
 {
     gboolean both = c->apply_button != NULL && c->undo_button != NULL;
     if (c->apply_button != NULL)
-        gtk_widget_set_visible(c->apply_button, !both || !applied);
+        gtk_widget_set_sensitive(c->apply_button, !both || !applied);
     if (c->undo_button != NULL)
-        gtk_widget_set_visible(c->undo_button, !both || applied);
+        gtk_widget_set_sensitive(c->undo_button, !both || applied);
 }
 
 static void conf_say(ConfPage *c, const char *text)
@@ -329,7 +332,7 @@ AdwNavigationPage *gaudit_fix_page_new_conf(const char *title, const char *probl
     if (undo != NULL)
         c->undo = *undo;
 
-    /* At the end, as a dialog's default; one at a time. */
+    /* At the end, as a dialog's buttons: Undo first, apply at the end. */
     GtkWidget *buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
     gtk_widget_set_halign(buttons, GTK_ALIGN_END);
     const GauditConfAction *which[] = { undo != NULL ? &c->undo : NULL,

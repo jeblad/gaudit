@@ -494,13 +494,13 @@ static void on_session_result(const char *command, const GauditRunResult *result
         return;
     for (gsize i = found; i == found; i++) {
         if (result->kind == GAUDIT_RESULT_COLLECTION) {
-            /* Kept for the session; the plugin's report on it decides. */
+            /* Kept for the session; the plugin's report on it decides. Every
+             * watcher hears of it: Home makes its rows (on_cache_changed),
+             * and a report page open behind a fix page makes itself again,
+             * so checking again after a fix shows where it is seen. */
             gaudit_cache_store(&tasks[i], command, result->lines, result->full,
                                (const char *const *)result->args);
-            CachedReport *c = g_new0(CachedReport, 1);
-            c->app = g_object_ref(self);
-            c->task = i;
-            gaudit_report_run(&tasks[i], command, result->lines, on_cached_report, c);
+            gaudit_cache_changed(&tasks[i]);
             continue;
         }
         g_autofree char *title = gaudit_run_result_title(result);

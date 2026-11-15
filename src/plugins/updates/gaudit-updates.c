@@ -133,6 +133,9 @@ static gsize apt_explain(const char *op, const char **out)
     }
     out[n++] = P_("sudo runs it with administrator rights. From this page, the switch beside the "
                   "title asks for the password.");
+    if (strcmp(op, "apt-update") != 0)
+        out[n++] = P_("It cannot be undone from here: what it changes is up to the tool and the "
+                      "packages, and not all of it can be known beforehand.");
     out[n] = NULL;
     return n;
 }
@@ -198,23 +201,26 @@ static AdwNavigationPage *automatic_page(GPtrArray *lines, gboolean on, const co
            "still as gAudit wrote it. Settings made elsewhere are not touched."),
         "run automatic-updates-remove",
     };
-    if (on && mine)
+    /* Set up by gAudit: its own setting, which it can take away again;
+     * once taken away, it can be switched on here again. */
+    if (debian && on && mine)
         return gaudit_fix_page_new_conf(
             P_("Install Updates Automatically"),
             P_("gAudit has set this computer up to install updates by itself."),
             P_("It is gAudit's own setting, and it can be taken away again here. Then the "
                "computer's other settings decide."),
-            NULL, NULL, &u, recollect, NULL, NULL);
+            NULL, &a, &u, TRUE, recollect, NULL, NULL);
     if (debian && have_tools && tools.value == 0)
         return gaudit_fix_page_new_conf(
             P_("Install Updates Automatically"),
             P_("Updates are not installed by themselves on this computer, so it is only as up to "
                "date as the last time someone installed them."),
             P_("gAudit can switch it on with a setting of its own: security updates are then "
-               "installed by themselves. You are asked to confirm first."),
+               "installed by themselves. You are asked to confirm first, and it can be taken "
+               "away again here."),
             P_("If it is off on purpose, for example because changes must be planned, keep it off "
                "and install the updates regularly yourself."),
-            &a, mine ? &u : NULL, recollect, NULL, NULL);
+            &a, &u, mine, recollect, NULL, NULL);
     g_autofree char *with_tool = have_tools && tools.value > 0
         /* Translators: %s is a list of programs, e.g. "update-manager, synaptic". */
         ? g_strdup_printf(P_("Switch it on in your update program (%s): choose to install security "

@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit-updates\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 20:32+0100\n"
+"POT-Creation-Date: 2026-11-15 20:45+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -19,7 +19,9 @@ msgstr ""
 msgid ""
 "apt-get update fetches the newest lists of updates from your software "
 "sources. Nothing is installed."
-msgstr "apt-get update henter de nyeste listene over oppdateringer fra programvarekildene dine. Ingenting blir installert."
+msgstr ""
+"apt-get update henter de nyeste listene over oppdateringer fra "
+"programvarekildene dine. Ingenting blir installert."
 
 #: src/plugins/updates/gaudit-updates.c:113
 msgid "--update first fetches the newest lists of updates."
@@ -33,13 +35,17 @@ msgstr "upgrade installerer oppdateringene som venter."
 msgid ""
 "--with-new-pkgs may also install new packages an update needs; it never "
 "removes any."
-msgstr "--with-new-pkgs kan også installere nye pakker en oppdatering trenger; den fjerner aldri noen."
+msgstr ""
+"--with-new-pkgs kan også installere nye pakker en oppdatering trenger; den "
+"fjerner aldri noen."
 
 #: src/plugins/updates/gaudit-updates.c:120
 msgid ""
 "install --reinstall installs these packages again, which puts their own "
 "files back."
-msgstr "install --reinstall installerer disse pakkene på nytt, og det legger pakkenes egne filer tilbake."
+msgstr ""
+"install --reinstall installerer disse pakkene på nytt, og det legger "
+"pakkenes egne filer tilbake."
 
 #: src/plugins/updates/gaudit-updates.c:124
 msgid "-y answers yes on your behalf, so it does not stop to ask."
@@ -49,11 +55,14 @@ msgstr "-y svarer ja på dine vegne, så den stopper ikke for å spørre."
 msgid ""
 "The two --force-conf options: where you have changed a settings file and the "
 "package brings a new one, your version is kept."
-msgstr "De to --force-conf-valgene: der du har endret en innstillingsfil og pakken har med en ny, beholdes din versjon."
+msgstr ""
+"De to --force-conf-valgene: der du har endret en innstillingsfil og pakken "
+"har med en ny, beholdes din versjon."
 
 #: src/plugins/updates/gaudit-updates.c:127
 msgid "Packages that are not signed are never installed: apt stops instead."
-msgstr "Pakker som ikke er signert, blir aldri installert: apt stopper i stedet."
+msgstr ""
+"Pakker som ikke er signert, blir aldri installert: apt stopper i stedet."
 
 #: src/plugins/updates/gaudit-updates.c:130
 msgid "enable --now switches the jobs on now, and at every start."
@@ -63,19 +72,29 @@ msgstr "enable --now slår jobbene på nå, og ved hver oppstart."
 msgid ""
 "apt-daily.timer looks for updates every day; apt-daily-upgrade.timer "
 "installs them, as set up."
-msgstr "apt-daily.timer ser etter oppdateringer hver dag; apt-daily-upgrade.timer installerer dem, slik det er satt opp."
+msgstr ""
+"apt-daily.timer ser etter oppdateringer hver dag; apt-daily-upgrade.timer "
+"installerer dem, slik det er satt opp."
 
 #: src/plugins/updates/gaudit-updates.c:134
 msgid ""
 "sudo runs it with administrator rights. From this page, the switch beside "
 "the title asks for the password."
-msgstr "sudo kjører den med administratorrettigheter. Fra denne siden er det bryteren ved siden av tittelen som spør om passordet."
+msgstr ""
+"sudo kjører den med administratorrettigheter. Fra denne siden er det "
+"bryteren ved siden av tittelen som spør om passordet."
 
-#: src/plugins/updates/gaudit-updates.c:189
+#: src/plugins/updates/gaudit-updates.c:137
+msgid ""
+"It cannot be undone from here: what it changes is up to the tool and the "
+"packages, and not all of it can be known beforehand."
+msgstr "Det kan ikke angres herfra: hva det endrer, avhenger av verktøyet og pakkene, og ikke alt kan vites på forhånd."
+
+#: src/plugins/updates/gaudit-updates.c:192
 msgid "Switch On"
 msgstr "Slå på"
 
-#: src/plugins/updates/gaudit-updates.c:190
+#: src/plugins/updates/gaudit-updates.c:193
 msgid ""
 "Writes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates: "
 "this computer then looks for updates every day and installs them as "
@@ -87,11 +106,11 @@ msgstr ""
 "unattended-upgrades er satt opp (for Debian og Ubuntu: "
 "sikkerhetsoppdateringer). Den kan fjernes igjen her."
 
-#: src/plugins/updates/gaudit-updates.c:196
+#: src/plugins/updates/gaudit-updates.c:199
 msgid "Remove gAudit's Setting"
 msgstr "Fjern gAudits innstilling"
 
-#: src/plugins/updates/gaudit-updates.c:197
+#: src/plugins/updates/gaudit-updates.c:200
 msgid ""
 "Removes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates, if "
 "it is still as gAudit wrote it. Settings made elsewhere are not touched."
@@ -100,17 +119,17 @@ msgstr ""
 "hvis den fortsatt er slik gAudit skrev den. Innstillinger gjort andre steder "
 "røres ikke."
 
-#: src/plugins/updates/gaudit-updates.c:203
-#: src/plugins/updates/gaudit-updates.c:210
-#: src/plugins/updates/gaudit-updates.c:225
+#: src/plugins/updates/gaudit-updates.c:208
+#: src/plugins/updates/gaudit-updates.c:215
+#: src/plugins/updates/gaudit-updates.c:231
 msgid "Install Updates Automatically"
 msgstr "Installer oppdateringer automatisk"
 
-#: src/plugins/updates/gaudit-updates.c:204
+#: src/plugins/updates/gaudit-updates.c:209
 msgid "gAudit has set this computer up to install updates by itself."
 msgstr "gAudit har satt opp datamaskinen til å installere oppdateringer selv."
 
-#: src/plugins/updates/gaudit-updates.c:205
+#: src/plugins/updates/gaudit-updates.c:210
 msgid ""
 "It is gAudit's own setting, and it can be taken away again here. Then the "
 "computer's other settings decide."
@@ -118,8 +137,8 @@ msgstr ""
 "Det er gAudits egen innstilling, og den kan tas bort igjen her. Da bestemmer "
 "datamaskinens andre innstillinger."
 
-#: src/plugins/updates/gaudit-updates.c:211
-#: src/plugins/updates/gaudit-updates.c:226
+#: src/plugins/updates/gaudit-updates.c:216
+#: src/plugins/updates/gaudit-updates.c:232
 msgid ""
 "Updates are not installed by themselves on this computer, so it is only as "
 "up to date as the last time someone installed them."
@@ -127,16 +146,15 @@ msgstr ""
 "Oppdateringer installeres ikke av seg selv på denne datamaskinen, så den er "
 "bare så oppdatert som sist noen installerte dem."
 
-#: src/plugins/updates/gaudit-updates.c:213
+#: src/plugins/updates/gaudit-updates.c:218
 msgid ""
 "gAudit can switch it on with a setting of its own: security updates are then "
-"installed by themselves. You are asked to confirm first."
-msgstr ""
-"gAudit kan slå det på med en egen innstilling: sikkerhetsoppdateringer "
-"installeres da av seg selv. Du blir bedt om å bekrefte først."
+"installed by themselves. You are asked to confirm first, and it can be taken "
+"away again here."
+msgstr "gAudit kan slå det på med en egen innstilling: sikkerhetsoppdateringer installeres da av seg selv. Du blir bedt om å bekrefte først, og det kan tas bort igjen her."
 
-#: src/plugins/updates/gaudit-updates.c:215
-#: src/plugins/updates/gaudit-updates.c:232
+#: src/plugins/updates/gaudit-updates.c:221
+#: src/plugins/updates/gaudit-updates.c:238
 msgid ""
 "If it is off on purpose, for example because changes must be planned, keep "
 "it off and install the updates regularly yourself."
@@ -145,7 +163,7 @@ msgstr ""
 "det være av og installer oppdateringene jevnlig selv."
 
 #. Translators: %s is a list of programs, e.g. "update-manager, synaptic".
-#: src/plugins/updates/gaudit-updates.c:220
+#: src/plugins/updates/gaudit-updates.c:226
 #, c-format
 msgid ""
 "Switch it on in your update program (%s): choose to install security updates "
@@ -154,7 +172,7 @@ msgstr ""
 "Slå det på i oppdateringsprogrammet (%s): velg at sikkerhetsoppdateringer "
 "skal installeres automatisk. Andre oppdateringer kan fortsatt vente på deg."
 
-#: src/plugins/updates/gaudit-updates.c:229
+#: src/plugins/updates/gaudit-updates.c:235
 msgid ""
 "In your system's settings for software updates, choose to install security "
 "updates automatically. Other updates can still wait for you."
@@ -163,7 +181,7 @@ msgstr ""
 "innstillinger for programvareoppdateringer. Andre oppdateringer kan fortsatt "
 "vente på deg."
 
-#: src/plugins/updates/gaudit-updates.c:278
+#: src/plugins/updates/gaudit-updates.c:284
 msgid ""
 "Files installed by packages were changed or are gone. It may be harmless, "
 "such as a program changing its own file, but nothing should change installed "
@@ -173,7 +191,7 @@ msgstr ""
 "for eksempel at et program endrer sin egen fil, men ingenting skal endre "
 "installerte filer."
 
-#: src/plugins/updates/gaudit-updates.c:282
+#: src/plugins/updates/gaudit-updates.c:288
 msgid ""
 "Not every package is in the command: only those listed in the report, with "
 "plain names. Check again afterwards to see what is left."
@@ -181,34 +199,38 @@ msgstr ""
 "Ikke alle pakkene er med i kommandoen, bare de som er listet i rapporten og "
 "har vanlige navn. Sjekk igjen etterpå for å se hva som er igjen."
 
-#: src/plugins/updates/gaudit-updates.c:284
+#: src/plugins/updates/gaudit-updates.c:290
 msgid "Afterwards, it is checked again: the files should then match."
 msgstr "Etterpå sjekkes det på nytt: filene skal da stemme."
 
-#: src/plugins/updates/gaudit-updates.c:289
-#: src/plugins/updates/gaudit-updates.c:293
+#: src/plugins/updates/gaudit-updates.c:295
+#: src/plugins/updates/gaudit-updates.c:299
 msgid "Put the Package Files Back"
 msgstr "Legg pakkefilene tilbake"
 
-#: src/plugins/updates/gaudit-updates.c:290
+#: src/plugins/updates/gaudit-updates.c:296
 msgid ""
 "If you did not change them yourself, reinstall the packages: it puts their "
 "own files back, and keeps your settings in /etc."
-msgstr "Har du ikke endret dem selv, installer pakkene på nytt: det legger pakkenes egne filer tilbake og beholder innstillingene dine i /etc."
+msgstr ""
+"Har du ikke endret dem selv, installer pakkene på nytt: det legger pakkenes "
+"egne filer tilbake og beholder innstillingene dine i /etc."
 
-#: src/plugins/updates/gaudit-updates.c:294
+#: src/plugins/updates/gaudit-updates.c:300
 msgid ""
 "If you did not change them yourself, reinstall the packages with your "
 "package manager."
-msgstr "Har du ikke endret dem selv, installer pakkene på nytt med pakkesystemet ditt."
+msgstr ""
+"Har du ikke endret dem selv, installer pakkene på nytt med pakkesystemet "
+"ditt."
 
-#: src/plugins/updates/gaudit-updates.c:312
-#: src/plugins/updates/gaudit-updates.c:322
+#: src/plugins/updates/gaudit-updates.c:318
+#: src/plugins/updates/gaudit-updates.c:328
 msgid "Look for Updates"
 msgstr "Se etter oppdateringer"
 
-#: src/plugins/updates/gaudit-updates.c:313
-#: src/plugins/updates/gaudit-updates.c:323
+#: src/plugins/updates/gaudit-updates.c:319
+#: src/plugins/updates/gaudit-updates.c:329
 msgid ""
 "This computer never looks for updates, so it never finds security updates "
 "either."
@@ -216,19 +238,21 @@ msgstr ""
 "Denne datamaskinen ser aldri etter oppdateringer, så den finner heller aldri "
 "sikkerhetsoppdateringer."
 
-#: src/plugins/updates/gaudit-updates.c:314
+#: src/plugins/updates/gaudit-updates.c:320
 msgid ""
 "In your system's settings for software updates, choose to look for updates "
 "every day. Until then, you can look once yourself."
-msgstr "Velg at det skal ses etter oppdateringer hver dag, i systemets innstillinger for programvareoppdateringer. Inntil da kan du se etter selv én gang."
+msgstr ""
+"Velg at det skal ses etter oppdateringer hver dag, i systemets innstillinger "
+"for programvareoppdateringer. Inntil da kan du se etter selv én gang."
 
-#: src/plugins/updates/gaudit-updates.c:317
-#: src/plugins/updates/gaudit-updates.c:327
+#: src/plugins/updates/gaudit-updates.c:323
+#: src/plugins/updates/gaudit-updates.c:333
 msgid "Looking once is not enough: updates come out all the time."
 msgstr ""
 "Det holder ikke å se etter én gang: det kommer oppdateringer hele tiden."
 
-#: src/plugins/updates/gaudit-updates.c:324
+#: src/plugins/updates/gaudit-updates.c:330
 msgid ""
 "In your system's settings for software updates, choose to look for updates "
 "every day. Until then, you can look once yourself with this command in a "
@@ -238,13 +262,13 @@ msgstr ""
 "for programvareoppdateringer. Inntil da kan du se etter selv én gang med "
 "denne kommandoen i en terminal."
 
-#: src/plugins/updates/gaudit-updates.c:337
-#: src/plugins/updates/gaudit-updates.c:348
+#: src/plugins/updates/gaudit-updates.c:343
+#: src/plugins/updates/gaudit-updates.c:354
 msgid "Switch On the Daily Jobs"
 msgstr "Slå på de daglige jobbene"
 
-#: src/plugins/updates/gaudit-updates.c:338
-#: src/plugins/updates/gaudit-updates.c:349
+#: src/plugins/updates/gaudit-updates.c:344
+#: src/plugins/updates/gaudit-updates.c:355
 msgid ""
 "The jobs that look for and install updates every day are switched off, so "
 "the settings for updates have no effect."
@@ -252,29 +276,29 @@ msgstr ""
 "Jobbene som ser etter og installerer oppdateringer hver dag, er slått av, så "
 "innstillingene for oppdateringer virker ikke."
 
-#: src/plugins/updates/gaudit-updates.c:340
+#: src/plugins/updates/gaudit-updates.c:346
 msgid "Switch them on again:"
 msgstr "Slå dem på igjen:"
 
-#: src/plugins/updates/gaudit-updates.c:342
+#: src/plugins/updates/gaudit-updates.c:348
 msgid "Afterwards, it is checked again: the jobs should then be listed as on."
 msgstr "Etterpå sjekkes det på nytt: jobbene skal da stå som på."
 
-#: src/plugins/updates/gaudit-updates.c:351
+#: src/plugins/updates/gaudit-updates.c:357
 msgid "Run this command in a terminal to switch them on again."
 msgstr "Kjør denne kommandoen i en terminal for å slå dem på igjen."
 
-#: src/plugins/updates/gaudit-updates.c:353
+#: src/plugins/updates/gaudit-updates.c:359
 msgid "Afterwards, check again: the jobs should then be listed as on."
 msgstr "Sjekk igjen etterpå: jobbene skal da stå som på."
 
-#: src/plugins/updates/gaudit-updates.c:359
-#: src/plugins/updates/gaudit-updates.c:368
+#: src/plugins/updates/gaudit-updates.c:365
+#: src/plugins/updates/gaudit-updates.c:374
 msgid "Look for Updates Now"
 msgstr "Se etter oppdateringer nå"
 
-#: src/plugins/updates/gaudit-updates.c:360
-#: src/plugins/updates/gaudit-updates.c:369
+#: src/plugins/updates/gaudit-updates.c:366
+#: src/plugins/updates/gaudit-updates.c:375
 msgid ""
 "This computer has not looked for updates for a long time, so it does not "
 "know about updates published since."
@@ -282,13 +306,15 @@ msgstr ""
 "Denne datamaskinen har ikke sett etter oppdateringer på lenge, så den "
 "kjenner ikke til oppdateringer som er kommet siden."
 
-#: src/plugins/updates/gaudit-updates.c:362
+#: src/plugins/updates/gaudit-updates.c:368
 msgid ""
 "Look for them now. If it keeps happening, check that the computer looks for "
 "updates by itself."
-msgstr "Se etter dem nå. Skjer det igjen, sjekk at datamaskinen ser etter oppdateringer selv."
+msgstr ""
+"Se etter dem nå. Skjer det igjen, sjekk at datamaskinen ser etter "
+"oppdateringer selv."
 
-#: src/plugins/updates/gaudit-updates.c:372
+#: src/plugins/updates/gaudit-updates.c:378
 msgid ""
 "Run this command in a terminal. If it keeps happening, check that the "
 "computer looks for updates by itself."
@@ -296,19 +322,19 @@ msgstr ""
 "Kjør denne kommandoen i en terminal. Skjer det igjen, sjekk at datamaskinen "
 "ser etter oppdateringer selv."
 
-#: src/plugins/updates/gaudit-updates.c:374
+#: src/plugins/updates/gaudit-updates.c:380
 msgid ""
 "Install the updates with the command below; it looks for new ones first."
 msgstr ""
 "Installer oppdateringene med kommandoen nedenfor; den ser etter nye først."
 
-#: src/plugins/updates/gaudit-updates.c:391
-#: src/plugins/updates/gaudit-updates.c:405
+#: src/plugins/updates/gaudit-updates.c:397
+#: src/plugins/updates/gaudit-updates.c:411
 msgid "Install the Updates"
 msgstr "Installer oppdateringene"
 
-#: src/plugins/updates/gaudit-updates.c:393
-#: src/plugins/updates/gaudit-updates.c:407
+#: src/plugins/updates/gaudit-updates.c:399
+#: src/plugins/updates/gaudit-updates.c:413
 msgid ""
 "Security updates are waiting. Until they are installed, the problems they "
 "fix stay open on this computer."
@@ -316,21 +342,21 @@ msgstr ""
 "Sikkerhetsoppdateringer venter. Til de er installert, står problemene de "
 "retter, åpne på denne datamaskinen."
 
-#: src/plugins/updates/gaudit-updates.c:395
-#: src/plugins/updates/gaudit-updates.c:409
+#: src/plugins/updates/gaudit-updates.c:401
+#: src/plugins/updates/gaudit-updates.c:415
 msgid "Updates are waiting, and some of them may be security updates."
 msgstr "Oppdateringer venter, og noen av dem kan være sikkerhetsoppdateringer."
 
-#: src/plugins/updates/gaudit-updates.c:396
+#: src/plugins/updates/gaudit-updates.c:402
 msgid "Install them with your system's software updater, or here:"
 msgstr "Installer dem med systemets program for oppdateringer, eller her:"
 
-#: src/plugins/updates/gaudit-updates.c:398
-#: src/plugins/updates/gaudit-updates.c:413
+#: src/plugins/updates/gaudit-updates.c:404
+#: src/plugins/updates/gaudit-updates.c:419
 msgid "Installing updates automatically keeps this from building up again."
 msgstr "Installeres oppdateringene automatisk, hoper de seg ikke opp igjen."
 
-#: src/plugins/updates/gaudit-updates.c:410
+#: src/plugins/updates/gaudit-updates.c:416
 msgid ""
 "Install them with your system's software updater, or run this command in a "
 "terminal."
@@ -339,7 +365,7 @@ msgstr ""
 "kommandoen i en terminal."
 
 #. Translators: %s is a host name, e.g. no.archive.ubuntu.com.
-#: src/plugins/updates/gaudit-updates.c:419
+#: src/plugins/updates/gaudit-updates.c:425
 #, c-format
 msgid ""
 "Security updates come from %s, a mirror. A mirror may lag behind, and "
@@ -348,11 +374,11 @@ msgstr ""
 "Sikkerhetsoppdateringer kommer fra %s, en speiling. En speiling kan henge "
 "etter, og sikkerhetsoppdateringer bør ikke vente."
 
-#: src/plugins/updates/gaudit-updates.c:422
+#: src/plugins/updates/gaudit-updates.c:428
 msgid "Get Security Updates from the Source"
 msgstr "Hent sikkerhetsoppdateringer fra kilden"
 
-#: src/plugins/updates/gaudit-updates.c:423
+#: src/plugins/updates/gaudit-updates.c:429
 msgid ""
 "In your system's settings for software sources, let security updates come "
 "from the distribution's own server. Mirrors are fine for the other updates."
@@ -362,7 +388,7 @@ msgstr ""
 "andre oppdateringene."
 
 #. Translators: %s is a list of package systems, e.g. "rpm, Nix".
-#: src/plugins/updates/gaudit-updates.c:431
+#: src/plugins/updates/gaudit-updates.c:437
 #, c-format
 msgid ""
 "Packages managed by %s are on this computer. gAudit does not check them, so "
@@ -371,11 +397,11 @@ msgstr ""
 "Denne datamaskinen har pakker som styres av %s. gAudit sjekker dem ikke, så "
 "den kan ikke si om de får oppdateringer."
 
-#: src/plugins/updates/gaudit-updates.c:434
+#: src/plugins/updates/gaudit-updates.c:440
 msgid "Other Package Systems"
 msgstr "Andre pakkesystemer"
 
-#: src/plugins/updates/gaudit-updates.c:435
+#: src/plugins/updates/gaudit-updates.c:441
 msgid ""
 "Keep them up to date with their own tools. If they are left over and nothing "
 "uses them any more, they still need updates as long as they are installed."

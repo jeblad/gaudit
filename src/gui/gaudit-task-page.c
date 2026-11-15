@@ -171,6 +171,7 @@ AdwNavigationPage *gaudit_fix_page_new_steps(const char *title, const char *prob
 typedef struct {
     GtkWidget *result;     /* weak: says what happened */
     GtkWidget *buttons;    /* weak: insensitive while a run is under way */
+    GtkWidget *apply_button, *undo_button;  /* weak: one shown at a time */
     GauditConfAction apply, undo;
     GauditFixedFn after;
     gpointer data;
@@ -187,6 +188,10 @@ static void conf_page_unref(gpointer p)
         g_object_remove_weak_pointer(G_OBJECT(c->result), (gpointer *)&c->result);
     if (c->buttons != NULL)
         g_object_remove_weak_pointer(G_OBJECT(c->buttons), (gpointer *)&c->buttons);
+    if (c->apply_button != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(c->apply_button), (gpointer *)&c->apply_button);
+    if (c->undo_button != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(c->undo_button), (gpointer *)&c->undo_button);
     if (c->data_free != NULL && c->data != NULL)
         c->data_free(c->data);
     g_free(c);
@@ -211,6 +216,16 @@ static const char *conf_result_text(const char *result)
     return _("It could not be done, so nothing was changed.");
 }
 
+/* Apply while gAudit's setting is not in place, undo while it is. */
+static void conf_show(ConfPage *c, gboolean applied)
+{
+    gboolean both = c->apply_button != NULL && c->undo_button != NULL;
+    if (c->apply_button != NULL)
+        gtk_widget_set_visible(c->apply_button, !both || !applied);
+    if (c->undo_button != NULL)
+        gtk_widget_set_visible(c->undo_button, !both || applied);
+}
+
 static void conf_say(ConfPage *c, const char *text)
 {
     if (c->result == NULL)
@@ -232,6 +247,11 @@ static void on_conf_done(gaudit_run_status status, const GauditRunResult *result
         conf_say(c, _("It could not be done, so nothing was changed."));
     else {
         conf_say(c, conf_result_text(result->conf.result));
+        const char *r = result->conf.result;
+        if (g_strcmp0(r, "written") == 0 || g_strcmp0(r, "unchanged") == 0)
+            conf_show(c, TRUE);
+        else if (g_strcmp0(r, "removed") == 0 || g_strcmp0(r, "not-there") == 0)
+            conf_show(c, FALSE);
         if ((g_strcmp0(result->conf.result, "written") == 0
              || g_strcmp0(result->conf.result, "removed") == 0) && c->after != NULL)
             c->after(c->data);
@@ -270,9 +290,14 @@ static void on_conf_clicked(GtkButton *button, gpointer user_data)
 {
     ConfPage *c = user_data;
     const GauditConfAction *action = g_object_get_data(G_OBJECT(button), "gaudit-action");
+    gboolean undo = g_object_get_data(G_OBJECT(button), "gaudit-undo") != NULL;
+    /* The heading says in full what happens; the button as on the page. */
     AdwDialog *dialog = adw_alert_dialog_new(action->label, action->summary);
     adw_alert_dialog_add_responses(ADW_ALERT_DIALOG(dialog), "cancel", _("_Cancel"),
-                                   "apply", action->label, NULL);
+                                   "apply", undo ? _("Undo") : action->label, NULL);
+    if (!undo)
+        adw_alert_dialog_set_response_appearance(ADW_ALERT_DIALOG(dialog), "apply",
+                                                 ADW_RESPONSE_SUGGESTED);
     adw_alert_dialog_set_default_response(ADW_ALERT_DIALOG(dialog), "cancel");
     adw_alert_dialog_set_close_response(ADW_ALERT_DIALOG(dialog), "cancel");
     ConfAsk *ask = g_new0(ConfAsk, 1);
@@ -286,7 +311,7 @@ static void on_conf_clicked(GtkButton *button, gpointer user_data)
 AdwNavigationPage *gaudit_fix_page_new_conf(const char *title, const char *problem,
                                             const char *how, const char *note,
                                             const GauditConfAction *apply,
-                                            const GauditConfAction *undo,
+                                            const GauditConfAction *undo, gboolean applied,
                                             GauditFixedFn after, gpointer data,
                                             GDestroyNotify data_free)
 {
@@ -304,24 +329,37 @@ AdwNavigationPage *gaudit_fix_page_new_conf(const char *title, const char *probl
     if (undo != NULL)
         c->undo = *undo;
 
-    /* Side by side, as a dialog's buttons: undo first, apply at the end. */
+    /* At the end, as a dialog's default; one at a time. */
     GtkWidget *buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
-    gtk_widget_set_halign(buttons, GTK_ALIGN_START);
+    gtk_widget_set_halign(buttons, GTK_ALIGN_END);
     const GauditConfAction *which[] = { undo != NULL ? &c->undo : NULL,
                                         apply != NULL ? &c->apply : NULL };
     for (gsize i = 0; i < G_N_ELEMENTS(which); i++) {
         if (which[i] == NULL)
             continue;
-        GtkWidget *b = gtk_button_new_with_label(which[i]->label);
-        if (i == 1)
+        /* Apply carries its own label and the accent; undo is a plain
+         * "Undo", never the default, with what it undoes as its tooltip:
+         * short labels get read, long ones avoided. */
+        GtkWidget *b = gtk_button_new_with_label(i == 1 ? which[i]->label : _("Undo"));
+        if (i == 1) {
             gtk_widget_add_css_class(b, "suggested-action");
+        } else {
+            gtk_widget_set_tooltip_text(b, which[i]->label);
+            gtk_accessible_update_property(GTK_ACCESSIBLE(b), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                           which[i]->label, -1);
+        }
         gtk_widget_add_css_class(b, "pill");
+        g_object_set_data(G_OBJECT(b), "gaudit-undo", GINT_TO_POINTER(i == 0));
         g_object_set_data(G_OBJECT(b), "gaudit-action", (gpointer)which[i]);
         c->refs++;
         g_signal_connect_data(b, "clicked", G_CALLBACK(on_conf_clicked), c,
                               (GClosureNotify)(void (*)(void))conf_page_unref, 0);
         gtk_box_append(GTK_BOX(buttons), b);
+        GtkWidget **slot = i == 1 ? &c->apply_button : &c->undo_button;
+        *slot = b;
+        g_object_add_weak_pointer(G_OBJECT(b), (gpointer *)slot);
     }
+    conf_show(c, applied);
     GtkWidget *result = wrapped_label("");
     gtk_widget_set_visible(result, FALSE);
     c->buttons = buttons;

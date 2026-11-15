@@ -89,16 +89,22 @@ typedef struct {
     const char *command;
 } GauditConfAction;
 
-/* A fix page that changes configuration: problem and how as on any fix
- * page, then the buttons for apply and undo (either may be NULL), each
- * confirmed with its summary first. The run waits for administrator
- * rights like any other (the switch); the page then says what happened.
- * after (may be NULL) is called once something was written or removed,
- * to check again. */
+/* A fix page that changes configuration with gAudit's own operation:
+ * problem and how as on any fix page, then the button for apply or undo
+ * (either may be NULL), each confirmed with its summary first. applied:
+ * gAudit's setting is in place, so undo shows; after either has run, the
+ * other takes its place. The run waits for administrator rights like any
+ * other (the switch); the page then says what happened. after (may be
+ * NULL) is called once something was written or removed, to check again.
+ * Only gAudit's own operations have an undo: what a system tool changes
+ * cannot be known in full. The standard for such pages: apply carries its
+ * label and the accent, as the default; undo is a plain "Undo", never the
+ * default, with undo->label (e.g. "Remove gAudit's Setting") as its
+ * tooltip and as the confirmation's heading. */
 AdwNavigationPage *gaudit_fix_page_new_conf(const char *title, const char *problem,
                                             const char *how, const char *note,
                                             const GauditConfAction *apply,
-                                            const GauditConfAction *undo,
+                                            const GauditConfAction *undo, gboolean applied,
                                             GauditFixedFn after, gpointer data,
                                             GDestroyNotify data_free);
 

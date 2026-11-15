@@ -96,7 +96,49 @@ case "$distro" in
         image=docker.io/library/debian:stable
         install='apt-get update && apt-get -y install build-essential cmake pkg-config gettext
                  desktop-file-utils libgtk-4-dev libadwaita-1-dev libflatpak-dev libjson-glib-dev
-                 zlib1g-dev liblz4-dev liblzma-dev libzstd-dev libcap-dev libseccomp-dev'
+                 zlib1g-dev liblz4-dev liblzma-dev libzstd-dev libcap-dev libseccomp-dev
+                 guile-3.0-dev'
+        # Automatic updates as Debian sets them up: unattended-upgrades, and
+        # its setting switched on the way dpkg-reconfigure does (20auto-upgrades).
+        prepare='DEBIAN_FRONTEND=noninteractive apt-get -y install unattended-upgrades >/dev/null
+                 && printf "APT::Periodic::Update-Package-Lists \"1\";\nAPT::Periodic::Unattended-Upgrade \"1\";\n"
+                    > /etc/apt/apt.conf.d/20auto-upgrades
+                 && echo "== prepared: unattended-upgrades installed, 20auto-upgrades on";
+                 down=no;
+                 for p in $(dpkg-query -W -f "\${Package}\n"); do
+                   case "$p" in libc6|libc-bin|base-files|dpkg|apt|libapt*|bash|coreutils|perl-base|libssl*|openssl|libgcc*|libstdc*|gcc*|cpp*|g++*|libc6-dev|linux-libc-dev) continue;; esac;
+                   m=$(apt-cache madison "$p" 2>/dev/null);
+                   sec=$(echo "$m" | grep -- "-security" | head -n 1 | cut -d "|" -f 2 | tr -d " ");
+                   [ -n "$sec" ] || continue;
+                   [ "$sec" = "$(dpkg-query -W -f "\${Version}" "$p")" ] || continue;
+                   old=$(echo "$m" | grep -v -- "-security" | grep -v -- "-updates" | head -n 1 | cut -d "|" -f 2 | tr -d " ");
+                   [ -n "$old" ] && [ "$old" != "$sec" ] || continue;
+                   if DEBIAN_FRONTEND=noninteractive apt-get -y -q --allow-downgrades --no-remove install "$p=$old" >/dev/null 2>&1;
+                   then echo "== prepared: $p downgraded from $sec (security) to $old"; down=yes; break; fi;
+                 done;
+                 [ "$down" = yes ] || echo "== prepared: no package from the security suite to downgrade"'
+        # apt's own view, for comparison with the Updates collection (test
+        # only; the product never parses tool output).
+        compare='echo "== apt-config: APT::Periodic"
+                 apt-config dump | grep "^APT::Periodic" || true
+                 echo "== timers.target.wants and masks"
+                 ls -l /etc/systemd/system/timers.target.wants/ 2>/dev/null || echo "(none)"
+                 ls -l /etc/systemd/system/apt-daily*.timer 2>/dev/null || echo "(no masks)"
+                 ls /usr/lib/systemd/system/apt-daily*.timer /lib/systemd/system/apt-daily*.timer 2>/dev/null || true
+                 echo "== the stamps apt.systemd.daily touches"
+                 grep -o "[A-Za-z_-]*-stamp" /usr/lib/apt/apt.systemd.daily | sort -u || true
+                 echo "== /var/lib/apt/periodic"
+                 ls -l /var/lib/apt/periodic/ 2>/dev/null || echo "(none)"
+                 echo "== apt: upgradable / from a security suite"
+                 apt-get -s -q upgrade 2>/dev/null | grep -c "^Inst" || true
+                 apt-get -s -q upgrade 2>/dev/null | grep "^Inst" | grep -c -- "-security" || true
+                 apt-get -s -q upgrade 2>/dev/null | grep "^Inst" || true
+                 echo "== gaudit-orchestrator updates quick (root)"
+                 sh -c "/build/src/orchestrator/gaudit-orchestrator updates quick; true"
+                 echo "== gaudit-orchestrator updates quick (nobody)"
+                 runuser -u nobody -- /build/src/orchestrator/gaudit-orchestrator updates quick || echo "exit $?"
+                 echo "== gaudit-helper integrity (root), last lines"
+                 /build/src/helper/gaudit-helper integrity | tail -n 4 || echo "exit $?"'
         ;;
     *)
         usage
@@ -117,7 +159,9 @@ src=$(cd "$(dirname "$0")/.." && pwd)
 
 echo "== $distro: $image"
 status=0
-podman run --rm --pull=newer \
+# The package integrity check runs as root with CAP_DAC_READ_SEARCH only,
+# which rootless podman does not give by default.
+podman run --rm --pull=newer --cap-add=DAC_READ_SEARCH \
     --volume "$src:/src:ro,Z" \
     "$image" \
     sh -euc "

@@ -208,6 +208,59 @@
                 (else (msg (G_ "Nothing is known about the files that were not searched."))))))
     (list 'report (list 'verdict v) (list 'title title) (list 'description description))))
 
+;; Home's condensate: one row per kind of problem, each a summary, split
+;; by who can read; nothing for what is right, unless nothing fails: then
+;; one row that says so. Page 2 lists every finding.
+(define (home verdict title subtitle)
+  (list 'home (list 'verdict verdict) (list 'title title) (list 'subtitle subtitle)))
+
+(define (home-rows summary quick findings far)
+  (let* ((far-of (lambda (reach)
+                   (count-of (lambda (i) (and (far i) (= (field i 'reach) reach))) findings)))
+         (others (- (field summary 'others) (far-of 3)))
+         (groups (- (field summary 'groups) (far-of 2)))
+         (far-n (count-of far findings))
+         (count (field summary 'count))
+         (rows
+          (append
+           (if (> others 0)
+               (list (home 'warning
+                           (msgn (N_ "{n} secret can be read by every account"
+                                     "{n} secrets can be read by every account")
+                                 others (list 'n others))
+                           (msg (G_ "Any other account on this computer can copy them"))))
+               '())
+           (if (> groups 0)
+               (list (home 'warning
+                           (msgn (N_ "{n} secret can be read by members of a group"
+                                     "{n} secrets can be read by members of a group")
+                                 groups (list 'n groups))
+                           (msg (G_ "Accounts in a group with access can copy them"))))
+               '())
+           (if (> far-n 0)
+               (list (home 'unknown
+                           (msgn (N_ "{n} secret on a network folder may be readable by others"
+                                     "{n} secrets on network folders may be readable by others")
+                                 far-n (list 'n far-n))
+                           (msg (G_ "The server decides who can read them"))))
+               '())
+           (cond ((not (= (field summary 'status) 0))
+                  (list (home 'unknown (msg (G_ "Your home folder could not be searched"))
+                              (msg (G_ "Nothing is known about the files that were not searched.")))))
+                 ((= (field summary 'truncated) 1)
+                  (list (home 'unknown (msg (G_ "The search stopped before the end"))
+                              (msg (G_ "Nothing is known about the files that were not searched.")))))
+                 (else '())))))
+    (if (pair? rows)
+        rows
+        (list (home 'ok
+                    (cond (quick (msg (G_ "The usual places for secrets are closed")))
+                          ((= count 0) (msg (G_ "No secrets found outside the usual places")))
+                          (else (msgn (N_ "{n} secret found, only you can read it"
+                                          "{n} secrets found, only you can read them")
+                                      count (list 'n count))))
+                    (msg (G_ "Nothing needs attention")))))))
+
 (define (area-notes areas)
   (map (lambda (a)
          (let ((path (list 'path (field a 'path))))
@@ -312,6 +365,7 @@
                     (list 'description (msg (G_ "Nothing is known about the files that were not searched.")))))
         (append
          (list (head summary (quick? input) far-problems))
+         (home-rows summary (quick? input) findings far)
          (section searched findings
                   (lambda (i) (and (= (field i 'reach) 3) (not (far i))))
                   (G_ "Every account can read these")

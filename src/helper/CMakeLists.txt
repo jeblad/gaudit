@@ -6,7 +6,7 @@ pkg_check_modules(HELPER_DEPS REQUIRED IMPORTED_TARGET libcap libseccomp)
 
 # The sandbox on its own, so it can be tested.
 # Plugins add their checks (src/plugins/*/helper/).
-add_library(gaudit_sandbox STATIC sandbox.c lease.c)
+add_library(gaudit_sandbox STATIC sandbox.c lease.c sha256.c conf-write.c)
 target_compile_definitions(gaudit_sandbox PRIVATE _GNU_SOURCE)
 target_include_directories(gaudit_sandbox PUBLIC .)
 target_link_libraries(gaudit_sandbox PUBLIC PkgConfig::HELPER_DEPS)

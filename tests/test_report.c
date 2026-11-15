@@ -115,6 +115,9 @@ int main(int argc, char *argv[])
         "(note (msg \"x\" (\"k\" 1)))",
         "(script (msg \"x\"))",
         "(note (msg \"x\" (k (msg \"y\" (k (msg \"z\" (k (msg \"w\" (k (msg \"v\"))))))))))",
+        /* Advice is for page 2's rows only: never Home's, never the report's. */
+        "(home (verdict advice) (title (msg \"x\")) (subtitle (msg \"y\")))",
+        "(row (verdict hint) (title (msg \"x\")) (subtitle (msg \"y\")))",
     };
     for (size_t i = 0; i < sizeof bad_lines / sizeof bad_lines[0]; i++) {
         r = parse_one(HEAD, bad_lines[i]);
@@ -125,6 +128,10 @@ int main(int argc, char *argv[])
         }
     }
     r = parse_one(HEAD, "(row (verdict warning) (title (text \"~/x\")) (subtitle (msg \"y\")) (fix make-private (item 3)))");
+    CHECK(r != NULL);
+    gaudit_report_free(r);
+    /* A recommendation on page 2: taken, and it leaves the verdict as it is. */
+    r = parse_one(HEAD, "(row (verdict advice) (title (msg \"x\")) (subtitle (msg \"y\")) (fix automatic-on (item 4)))");
     CHECK(r != NULL);
     gaudit_report_free(r);
 

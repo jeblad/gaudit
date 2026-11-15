@@ -21,6 +21,7 @@ typedef struct {
     guint tick_id;          /* shows the progress of a run as the user */
     gint64 next_ask;        /* when to ask whether to go on (monotonic, µs) */
     GtkWidget *ask;         /* weak: the "keep going?" buttons, while shown */
+    guint waiting_id;       /* hears when its run waits for administrator rights */
     gaudit_firewall_report firewall;
 } RunJob;
 
@@ -98,50 +99,6 @@ static void show_firewall(RunJob *job)
         show_enable(job);
 }
 
-/* --- Package integrity ------------------------------------------------- */
-
-/* A dpkg package name, optionally with ":arch": [a-z0-9][a-z0-9+.-]+, so
- * it can go into a command without quoting. Anything else is left out of
- * the command (the finding is still listed). */
-static gboolean plain_package(const char *name)
-{
-    const char *colon = strchr(name, ':');
-    gsize len = colon != NULL ? (gsize)(colon - name) : strlen(name);
-    if (len < 2 || !(g_ascii_islower(name[0]) || g_ascii_isdigit(name[0])))
-        return FALSE;
-    for (gsize i = 0; i < len; i++)
-        if (!(g_ascii_islower(name[i]) || g_ascii_isdigit(name[i]) || strchr("+.-", name[i]) != NULL))
-            return FALSE;
-    if (colon != NULL)
-        for (const char *c = colon + 1; *c != '\0'; c++)
-            if (!(g_ascii_islower(*c) || g_ascii_isdigit(*c) || *c == '-'))
-                return FALSE;
-    return colon == NULL || colon[1] != '\0';
-}
-
-static GtkWidget *findings_group(const GauditRunResult *r, gaudit_integrity_file_kind kind,
-                                 const char *title, const char *description)
-{
-    AdwPreferencesGroup *group = NULL;
-    for (unsigned i = 0; i < r->n_files; i++) {
-        if (r->files[i].kind != kind)
-            continue;
-        if (group == NULL) {
-            group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
-            adw_preferences_group_set_title(group, title);
-            adw_preferences_group_set_description(group, description);
-        }
-        AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
-        /* Paths and names come from the system: plain text only. */
-        adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
-        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), r->files[i].path);
-        adw_action_row_set_subtitle(row, r->files[i].package);
-        adw_preferences_row_set_title_selectable(ADW_PREFERENCES_ROW(row), TRUE);
-        adw_preferences_group_add(group, GTK_WIDGET(row));
-    }
-    return group != NULL ? GTK_WIDGET(group) : NULL;
-}
-
 char *gaudit_run_result_title(const GauditRunResult *r)
 {
     if (r == NULL)
@@ -167,78 +124,35 @@ char *gaudit_run_result_title(const GauditRunResult *r)
     }
 }
 
-static void show_integrity(RunJob *job, const GauditRunResult *r)
-{
-    const gaudit_integrity_report *ir = &r->integrity;
-    g_autofree char *title = gaudit_run_result_title(r);
-    const char *icon = ir->verdict == GAUDIT_VERDICT_OK ? "gaudit-status-high-symbolic"
-                     : ir->verdict == GAUDIT_VERDICT_WARNING ? "gaudit-status-medium-symbolic"
-                     : "gaudit-status-unknown-symbolic";
-    /* Translators: "Checked <files> files from <packages> packages (<MB> MB) in <s> seconds." */
-    g_autofree char *how = g_strdup_printf(_("Checked %lu files from %lu packages (%lu MB) in %u seconds."),
-                                           ir->checked, ir->packages, ir->megabytes, ir->seconds);
-    g_autofree char *description = ir->verdict == GAUDIT_VERDICT_OK
-        ? g_strdup_printf("%s %s", how,
-              /* Translators: Keep the meaning: no changes found is not proof. */
-              _("This means no changes were found, not that the computer is proven clean."))
-        : g_strdup(how);
-    show(job, icon, title, description);
-    if (job->status == NULL)
-        return;
+/* --- The run ---------------------------------------------------------- */
 
-    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 24);
-    GtkWidget *changed = findings_group(r, GAUDIT_INTEGRITY_FILE_CHANGED, _("Changed"),
-        _("The file differs from the one the package installed."));
-    if (changed != NULL) {
-        gtk_box_append(GTK_BOX(box), changed);
-        /* Reinstalling puts the package's own files back. */
-        g_autoptr(GString) cmd = g_string_new("sudo apt install --reinstall");
-        g_autoptr(GHashTable) seen = g_hash_table_new(g_str_hash, g_str_equal);
-        for (unsigned i = 0; i < r->n_files; i++) {
-            const char *p = r->files[i].package;
-            if (r->files[i].kind != GAUDIT_INTEGRITY_FILE_CHANGED || !plain_package(p)
-                || !g_hash_table_add(seen, (gpointer)p))
-                continue;
-            g_string_append_printf(cmd, " %s", p);
-        }
-        if (g_hash_table_size(seen) > 0) {
-            gtk_box_append(GTK_BOX(box), small_note(
-                _("If you did not change these files yourself, put the packages' own files back "
-                  "by reinstalling them:")));
-            gtk_box_append(GTK_BOX(box), gaudit_command_field_new(cmd->str));
-        }
-    }
-    GtkWidget *missing = findings_group(r, GAUDIT_INTEGRITY_FILE_MISSING, _("Missing"),
-        _("The package installed the file, but it is gone."));
-    if (missing != NULL)
-        gtk_box_append(GTK_BOX(box), missing);
-    GtkWidget *unreadable = findings_group(r, GAUDIT_INTEGRITY_FILE_UNREADABLE, _("Could not be read"),
-        _("Even with administrator rights, these could not be read, so they were not checked."));
-    if (unreadable != NULL)
-        gtk_box_append(GTK_BOX(box), unreadable);
-    unsigned long total = ir->changed + ir->missing + ir->unreadable;
-    if (ir->shown < total) {
-        g_autofree char *more = g_strdup_printf(_("Showing %u of %lu files."), ir->shown, total);
-        gtk_box_append(GTK_BOX(box), small_note(more));
-    }
-    if (ir->bad_lines > 0) {
-        g_autofree char *bad = g_strdup_printf(
-            ngettext("%lu line in the packages' checksum lists could not be read.",
-                     "%lu lines in the packages' checksum lists could not be read.", ir->bad_lines),
-            ir->bad_lines);
-        gtk_box_append(GTK_BOX(box), small_note(bad));
-    }
-    if (gtk_widget_get_first_child(box) == NULL) {
-        g_object_ref_sink(box);
-        g_object_unref(box);
+/* Its run waits for the password, which only the switch gives: say where. */
+static void on_waiting(const char *command, gboolean waiting, gboolean first, gpointer user_data)
+{
+    (void)first;
+    RunJob *job = user_data;
+    if (job->status == NULL || gaudit_session_running_for(job->command) != command)
+        return;
+    if (!waiting) {
+        /* Going on: the password dialog comes now (on_progress follows). */
+        adw_status_page_set_title(job->status, _("Waiting for the password"));
+        adw_status_page_set_description(job->status,
+                                        job->task->run_waiting != NULL ? _(job->task->run_waiting) : NULL);
         return;
     }
-    GtkWidget *clamp = adw_clamp_new();
-    adw_clamp_set_child(ADW_CLAMP(clamp), box);
-    adw_status_page_set_child(job->status, clamp);
+    adw_status_page_set_title(job->status, _("Waiting for administrator rights"));
+    adw_status_page_set_description(job->status,
+        _("Use the switch beside the title to give the password. The check goes on "
+          "from there."));
 }
 
-/* --- The run ---------------------------------------------------------- */
+static void watch_waiting(RunJob *job)
+{
+    if (job->waiting_id == 0)
+        job->waiting_id = gaudit_session_watch_waiting(on_waiting, job);
+    if (gaudit_session_waiting_for(job->command))
+        on_waiting(gaudit_session_running_for(job->command), TRUE, FALSE, job);
+}
 
 static void on_progress(gpointer user_data)
 {
@@ -251,6 +165,8 @@ static void on_progress(gpointer user_data)
 
 static void job_free(RunJob *job)
 {
+    if (job->waiting_id != 0)
+        gaudit_session_unwatch_waiting(job->waiting_id);
     if (job->tick_id != 0)
         g_source_remove(job->tick_id);
     if (job->ask != NULL)
@@ -381,10 +297,7 @@ static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
     } else if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_FIREWALL) {
         job->firewall = result->firewall;
         show_firewall(job);
-    } else if (status == GAUDIT_RUN_OK && result != NULL
-               && result->kind == GAUDIT_RESULT_INTEGRITY) {
-        show_integrity(job, result);
-    } else if (status == GAUDIT_RUN_CANCELLED && !job->task->needs_admin) {
+    } else if (status == GAUDIT_RUN_CANCELLED && !gaudit_command_needs_admin(job->command)) {
         show(job, "dialog-information-symbolic", _("The search was stopped"),
              _("Nothing is known from this run. Run it again, perhaps with fewer folders."));
     } else if (status == GAUDIT_RUN_CANCELLED) {
@@ -421,20 +334,19 @@ static void on_keep_going(GtkButton *button, gpointer user_data)
 
 static void on_stop(GtkButton *button, gpointer user_data)
 {
-    (void)user_data;
     gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
-    gaudit_session_cancel();  /* on_run_done says it was stopped */
+    gaudit_session_cancel_for(((RunJob *)user_data)->command);  /* on_run_done says it was stopped */
 }
 
 static gboolean on_tick(gpointer user_data)
 {
     RunJob *job = user_data;
-    if (job->status == NULL || gaudit_session_running() == NULL) {
+    if (job->status == NULL || gaudit_session_running_for(job->command) == NULL) {
         job->tick_id = 0;
         return G_SOURCE_REMOVE;
     }
     const char *where = NULL;
-    guint64 n = gaudit_session_progress(&where);
+    guint64 n = gaudit_session_progress(job->command, &where);
     if (n > 0) {
         /* Translators: %s is a number, e.g. "1 234 567". */
         g_autofree char *count = g_strdup_printf("%'" G_GUINT64_FORMAT, n);
@@ -473,7 +385,7 @@ static gboolean on_tick(gpointer user_data)
 /* While a run as the user goes on: its progress, every second. */
 static void watch_progress(RunJob *job)
 {
-    if (job->task->needs_admin || job->tick_id != 0)
+    if (gaudit_command_needs_admin(job->command) || job->tick_id != 0)
         return;
     job->next_ask = g_get_monotonic_time() + ASK_AFTER_US;
     job->tick_id = g_timeout_add_seconds(1, on_tick, job);
@@ -507,9 +419,8 @@ static void on_other_done(gaudit_run_status status, const GauditRunResult *resul
 
 static void on_restart_clicked(GtkButton *button, gpointer user_data)
 {
-    (void)user_data;
     gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
-    gaudit_session_cancel();  /* on_other_done starts ours */
+    gaudit_session_cancel_for(((RunJob *)user_data)->command);  /* on_other_done starts ours */
 }
 
 static void on_wait_clicked(GtkButton *button, gpointer user_data)
@@ -522,11 +433,11 @@ static void on_wait_clicked(GtkButton *button, gpointer user_data)
 
 static void start_or_ask(RunJob *job)
 {
-    const char *running = gaudit_session_running();
+    const char *running = gaudit_session_running_for(job->command);
     if (running == NULL) {
         if (job->status != NULL)
-            adw_status_page_set_title(job->status, job->task->needs_admin
-                                      ? _("Waiting for the password") : _(job->task->run_running));
+            adw_status_page_set_title(job->status, _(job->task->run_running));
+        watch_waiting(job);  /* before it starts: it may wait at once */
         if (!gaudit_session_run_args(job->command, (const char *const *)job->args,
                                      on_progress, on_run_done, job)) {
             show(job, "dialog-warning-symbolic", _("The check could not be started"), NULL);
@@ -543,7 +454,8 @@ static void start_or_ask(RunJob *job)
             adw_status_page_set_description(job->status,
                 _("This check was already running. Its result is shown here when it is done."));
         }
-        gaudit_session_attach(NULL, on_run_done, job);
+        gaudit_session_attach(job->command, NULL, on_run_done, job);
+        watch_waiting(job);
         watch_progress(job);
         return;
     }
@@ -567,7 +479,7 @@ static void start_or_ask(RunJob *job)
         gtk_box_append(GTK_BOX(box), restart);
         adw_status_page_set_child(job->status, box);
     }
-    gaudit_session_attach(NULL, on_other_done, job);
+    gaudit_session_attach(job->command, NULL, on_other_done, job);
 }
 
 AdwNavigationPage *gaudit_cached_report_page_new(const GauditTaskInfo *task)
@@ -615,12 +527,7 @@ static AdwNavigationPage *gaudit_run_page_new_with(const GauditTaskInfo *task, c
 #else
     adw_status_page_set_icon_name(status, "content-loading-symbolic");
 #endif
-    if (task->needs_admin) {
-        adw_status_page_set_title(status, _("Waiting for the password"));
-        adw_status_page_set_description(status, _(task->run_waiting));
-    } else {
-        adw_status_page_set_title(status, _(task->run_running));
-    }
+    adw_status_page_set_title(status, _(task->run_running));
     AdwNavigationPage *page = gaudit_page_wrap(GTK_WIDGET(status), _("Report"), "run");
 
     RunJob *job = g_new0(RunJob, 1);
@@ -632,6 +539,14 @@ static AdwNavigationPage *gaudit_run_page_new_with(const GauditTaskInfo *task, c
     g_object_add_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
     start_or_ask(job);
     return page;
+}
+
+AdwNavigationPage *gaudit_run_page_follow(const GauditTaskInfo *task)
+{
+    const char *command = gaudit_session_running_for(task->run_command);
+    if (command == NULL)
+        return NULL;
+    return gaudit_run_page_new_with(task, command, gaudit_session_running_args(command), FALSE);
 }
 
 AdwNavigationPage *gaudit_run_page_again(const GauditTaskInfo *task)

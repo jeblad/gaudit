@@ -43,7 +43,6 @@ typedef struct {
      * "user secrets quick". run_command is then its full collection. */
     const char *home_commands[GAUDIT_LEVEL_COUNT];
     const char *home_title;   /* that row's title, N_()-marked */
-    gboolean needs_admin;     /* its run needs administrator rights (the password) */
     /* A plugin whose run is a collection for its rule script (run_command
      * "user <mode>"): checks one line of the collection strictly, and says
      * whether it is the last. NULL for runs that give a result directly. */
@@ -57,6 +56,10 @@ typedef struct {
      * fixes. */
     AdwNavigationPage *(*fix_page)(const char *fix_id, GPtrArray *lines, guint item);
     const char *backend;      /* only with this package backend (e.g. "debian"); NULL: any */
+    /* The helper parts of its commands ("user ... then run ...") only with
+     * this package backend; elsewhere they are left out, and the commands
+     * run as the user alone. NULL: everywhere. */
+    const char *helper_backend;
     const char *run_waiting;  /* page 2 while the password is asked for, N_()-marked */
     const char *run_running;  /* page 2 while the check runs, N_()-marked */
 } GauditTaskInfo;
@@ -69,6 +72,15 @@ const GauditTaskInfo *gaudit_tasks_get(gsize *n_tasks);
  * nearest level at or below it (the fallback), or NULL when it has no
  * report on Home at that level. */
 const char *gaudit_task_home_command(const GauditTaskInfo *task, guint level);
+
+/* Whether a run command needs administrator rights (the password): it
+ * runs in the helper ("run ..."), or has a helper part ("user ... then
+ * run ..."). Decided by the command, so a plugin's levels may differ. */
+gboolean gaudit_command_needs_admin(const char *command);
+
+/* Whether task's Home report at level needs the password (FALSE when it
+ * has none there). */
+gboolean gaudit_task_home_needs_admin(const GauditTaskInfo *task, guint level);
 
 /* The lowest level task has a Home report at; GAUDIT_LEVEL_COUNT for none. */
 guint gaudit_task_home_from(const GauditTaskInfo *task);

@@ -73,5 +73,9 @@
          colour), under own names so no theme can change or hide them. -->
     <file preprocess="xml-stripblanks" alias="gaudit-user-symbolic.svg">icons/scalable/actions/gaudit-user-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="gaudit-superuser-symbolic.svg">icons/scalable/actions/gaudit-superuser-symbolic.svg</file>
+    <!-- A Home row that cannot run until the user switches to administrator:
+         something must be done. The GNOME icon library's
+         questionmark-symbolic, Jakub Steiner, CC0, under its own name. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-questionmark-symbolic.svg">icons/scalable/actions/gaudit-questionmark-symbolic.svg</file>
   </gresource>
 </gresources>

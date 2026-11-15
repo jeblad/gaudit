@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 03:19+0100\n"
+"POT-Creation-Date: 2026-11-15 11:28+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,65 +18,76 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: src/gui/gaudit-app.c:265
+#: src/gui/gaudit-app.c:309
+#, c-format
+msgid "%s needs administrator rights. Use the switch beside the title."
+msgstr ""
+
+#: src/gui/gaudit-app.c:311
+msgid ""
+"This change needs administrator rights. Use the switch beside the title."
+msgstr ""
+
+#: src/gui/gaudit-app.c:330
 msgid "General"
 msgstr ""
 
-#: src/gui/gaudit-app.c:268
+#: src/gui/gaudit-app.c:333
 msgid "There is nothing to set yet."
 msgstr ""
 
-#: src/gui/gaudit-app.c:278
+#: src/gui/gaudit-app.c:343
 msgid "Open Main Menu"
 msgstr ""
 
-#: src/gui/gaudit-app.c:279
+#: src/gui/gaudit-app.c:344
 msgid "Preferences"
 msgstr ""
 
-#: src/gui/gaudit-app.c:280 src/gui/gaudit-app.c:300
+#: src/gui/gaudit-app.c:345 src/gui/gaudit-app.c:365
 msgid "Keyboard Shortcuts"
 msgstr ""
 
-#: src/gui/gaudit-app.c:281
+#: src/gui/gaudit-app.c:346
 msgid "Quit"
 msgstr ""
 
-#: src/gui/gaudit-app.c:325 data/gaudit.desktop.in:6
+#: src/gui/gaudit-app.c:390 data/gaudit.desktop.in:6
 msgid "Check the security status of this computer"
 msgstr ""
 
 #. Translators: Replace with your names, one per line.
-#: src/gui/gaudit-app.c:332
+#: src/gui/gaudit-app.c:397
 msgid "translator-credits"
 msgstr ""
 
-#: src/gui/gaudit-app.c:394 src/gui/gaudit-run-page.c:351
+#: src/gui/gaudit-app.c:460 src/gui/gaudit-run-page.c:267
 msgid "The report could not be made"
 msgstr ""
 
-#: src/gui/gaudit-window.c:27 src/plugins/updates/plugin.c:12
+#: src/gui/gaudit-window.c:29 src/plugins/private-files/plugin.c:13
+msgid "Private Files"
+msgstr ""
+
+#: src/gui/gaudit-window.c:31 src/plugins/updates/plugin.c:13
+#: src/plugins/updates/plugin.c:52
 msgid "Updates"
 msgstr ""
 
-#: src/gui/gaudit-window.c:31
+#: src/gui/gaudit-window.c:32
 msgid "Flatpak"
 msgstr ""
 
-#: src/gui/gaudit-window.c:32
+#: src/gui/gaudit-window.c:33
 msgid "Snap"
 msgstr ""
 
-#: src/gui/gaudit-window.c:35 src/plugins/firewall/plugin.c:12
+#: src/gui/gaudit-window.c:36 src/plugins/firewall/plugin.c:12
 msgid "Firewall"
 msgstr ""
 
-#: src/gui/gaudit-window.c:36
+#: src/gui/gaudit-window.c:37
 msgid "Antivirus"
-msgstr ""
-
-#: src/gui/gaudit-window.c:37 src/plugins/private-files/plugin.c:13
-msgid "Private Files"
 msgstr ""
 
 #: src/gui/gaudit-window.c:43
@@ -91,385 +102,276 @@ msgstr ""
 msgid "Thorough"
 msgstr ""
 
-#: src/gui/gaudit-window.c:136 src/gui/gaudit-window.c:506
-#: src/gui/gaudit-window.c:790
+#: src/gui/gaudit-window.c:148 src/gui/gaudit-window.c:431
+#: src/gui/gaudit-window.c:711
 msgid "Checking…"
 msgstr ""
 
-#: src/gui/gaudit-window.c:137
+#: src/gui/gaudit-window.c:149
 msgid "Looking at the status of this computer."
 msgstr ""
 
-#: src/gui/gaudit-window.c:142
+#: src/gui/gaudit-window.c:154
 msgid "No signs of problems found"
 msgstr ""
 
 #. Translators: Keep the meaning: a clean result is not a guarantee.
-#: src/gui/gaudit-window.c:144
+#: src/gui/gaudit-window.c:156
 msgid ""
 "This does not prove the computer is safe, only that the checks found nothing "
 "wrong."
 msgstr ""
 
-#: src/gui/gaudit-window.c:149
+#: src/gui/gaudit-window.c:161
 msgid "Some things need attention"
 msgstr ""
 
-#: src/gui/gaudit-window.c:154
+#: src/gui/gaudit-window.c:166
 msgid "Serious problems found"
 msgstr ""
 
-#: src/gui/gaudit-window.c:160
+#: src/gui/gaudit-window.c:172
 msgid "Some checks could not be completed"
 msgstr ""
 
-#: src/gui/gaudit-window.c:196 src/gui/gaudit-sourceless-page.c:129
+#: src/gui/gaudit-window.c:208 src/gui/gaudit-sourceless-page.c:129
 msgid "Not supported on this system yet"
 msgstr ""
 
-#. Translators: "This looks like Ubuntu, but its package system (dpkg/apt) was not found".
-#: src/gui/gaudit-window.c:204
-#, c-format
-msgid "This looks like %s, but its package system (%s) was not found"
-msgstr ""
-
-#: src/gui/gaudit-window.c:205
-msgid "a known distribution"
-msgstr ""
-
-#: src/gui/gaudit-window.c:207
-msgid "Package system"
-msgstr ""
-
-#: src/gui/gaudit-window.c:212
+#: src/gui/gaudit-window.c:214
 msgid "Software needed to check snaps is missing"
 msgstr ""
 
-#: src/gui/gaudit-window.c:214
+#: src/gui/gaudit-window.c:216
 msgid "The snap service is not running, so snaps are not updated"
 msgstr ""
 
-#: src/gui/gaudit-window.c:216
+#: src/gui/gaudit-window.c:218
 msgid "Could not check the snaps"
 msgstr ""
 
 #. Translators: %s is a date.
-#: src/gui/gaudit-window.c:225
+#: src/gui/gaudit-window.c:227
 #, c-format
 msgid "Automatic updates are paused until %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:230
+#: src/gui/gaudit-window.c:232
 #, c-format
 msgid "Last updated %d day ago"
 msgid_plural "Last updated %d days ago"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:236
+#: src/gui/gaudit-window.c:238
 #, c-format
 msgid "%u snap is held back from updates"
 msgid_plural "%u snaps are held back from updates"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:243
+#: src/gui/gaudit-window.c:245
 #, c-format
 msgid "%u snap runs in developer mode, without a working sandbox"
 msgid_plural "%u snaps run in developer mode, without a working sandbox"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:250
+#: src/gui/gaudit-window.c:252
 msgid "Snaps are updated automatically"
 msgstr ""
 
-#: src/gui/gaudit-window.c:252
+#: src/gui/gaudit-window.c:254
 #, c-format
 msgid "%u snap runs without a sandbox by design (classic)"
 msgid_plural "%u snaps run without a sandbox by design (classic)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:261
+#: src/gui/gaudit-window.c:263
 msgid "Snap apps"
 msgstr ""
 
-#. Translators: %s is a list of package systems, e.g. "rpm, Nix".
-#: src/gui/gaudit-window.c:271
-#, c-format
-msgid "Packages managed by %s are not checked"
-msgstr ""
-
-#: src/gui/gaudit-window.c:272
-msgid "Other package systems"
-msgstr ""
-
-#: src/gui/gaudit-window.c:277
+#: src/gui/gaudit-window.c:267
 msgid "An antivirus program is installed"
 msgstr ""
 
-#: src/gui/gaudit-window.c:278
+#: src/gui/gaudit-window.c:268
 msgid "No antivirus program found"
 msgstr ""
 
-#: src/gui/gaudit-window.c:279
+#: src/gui/gaudit-window.c:269
 msgid "Antivirus program"
 msgstr ""
 
-#: src/gui/gaudit-window.c:283
+#: src/gui/gaudit-window.c:273
 msgid "A firewall is installed"
 msgstr ""
 
-#: src/gui/gaudit-window.c:284
+#: src/gui/gaudit-window.c:274
 msgid "No firewall found"
 msgstr ""
 
-#: src/gui/gaudit-window.c:285
+#: src/gui/gaudit-window.c:275
 msgid "Firewall program"
 msgstr ""
 
-#: src/gui/gaudit-window.c:289
+#: src/gui/gaudit-window.c:279
 msgid "Could not find out which services listen on the network"
 msgstr ""
 
-#: src/gui/gaudit-window.c:291
+#: src/gui/gaudit-window.c:281
 msgid "No services listen for connections from the network"
 msgstr ""
 
-#: src/gui/gaudit-window.c:294
+#: src/gui/gaudit-window.c:284
 #, c-format
 msgid "%u service listens for connections from the network."
 msgid_plural "%u services listen for connections from the network."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:298
+#: src/gui/gaudit-window.c:288
 msgid "None of them run under your account."
 msgstr ""
 
-#: src/gui/gaudit-window.c:299
+#: src/gui/gaudit-window.c:289
 #, c-format
 msgid "%u of them runs under your account."
 msgid_plural "%u of them run under your account."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:304
+#: src/gui/gaudit-window.c:294
 msgid "The firewall check shows whether they can be reached."
 msgstr ""
 
-#: src/gui/gaudit-window.c:306
+#: src/gui/gaudit-window.c:296
 msgid "Network services"
 msgstr ""
 
-#: src/gui/gaudit-window.c:310
-msgid "Could not find out where security updates come from"
-msgstr ""
-
-#: src/gui/gaudit-window.c:312
-msgid "Security updates come directly from the distribution"
-msgstr ""
-
-#. Translators: %s is a host name, e.g. no.archive.ubuntu.com.
-#: src/gui/gaudit-window.c:315
-#, c-format
-msgid "Security updates come from %s, a mirror that may lag behind"
-msgstr ""
-
-#: src/gui/gaudit-window.c:317
-msgid "Source of security updates"
-msgstr ""
-
-#: src/gui/gaudit-window.c:323
-msgid "Could not find out when updates were last checked for"
-msgstr ""
-
-#: src/gui/gaudit-window.c:327
-msgid "Last checked today"
-msgstr ""
-
-#: src/gui/gaudit-window.c:329
-#, c-format
-msgid "Last checked %d day ago"
-msgid_plural "Last checked %d days ago"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/gui/gaudit-window.c:334
-msgid "Checking for updates"
-msgstr ""
-
-#: src/gui/gaudit-window.c:338
-msgid "Could not find out whether updates are waiting"
-msgstr ""
-
-#: src/gui/gaudit-window.c:340
-msgid "No updates are waiting"
-msgstr ""
-
-#: src/gui/gaudit-window.c:342
-#, c-format
-msgid "%u update is waiting to be installed"
-msgid_plural "%u updates are waiting to be installed"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/gui/gaudit-window.c:346
-msgid "Pending updates"
-msgstr ""
-
-#: src/gui/gaudit-window.c:350
-msgid "Could not find out where the installed packages come from"
-msgstr ""
-
-#: src/gui/gaudit-window.c:352
-msgid "All packages come from a software source"
-msgstr ""
-
-#: src/gui/gaudit-window.c:354
-#, c-format
-msgid "%u package is no longer offered by any software source"
-msgid_plural "%u packages are no longer offered by any software source"
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/gui/gaudit-window.c:358
-msgid "Packages without a source"
-msgstr ""
-
-#: src/gui/gaudit-window.c:362
-msgid "Updates are installed automatically"
-msgstr ""
-
-#: src/gui/gaudit-window.c:364
-msgid "Automatic updates are switched off"
-msgstr ""
-
-#: src/gui/gaudit-window.c:365
-msgid "Could not find out whether automatic updates are switched on"
-msgstr ""
-
-#: src/gui/gaudit-window.c:366
-msgid "Automatic updates"
-msgstr ""
-
-#: src/gui/gaudit-window.c:370
+#: src/gui/gaudit-window.c:300
 msgid "Software needed to check Flatpak apps is missing"
 msgstr ""
 
-#: src/gui/gaudit-window.c:372
+#: src/gui/gaudit-window.c:302
 msgid "Could not check the Flatpak apps"
 msgstr ""
 
-#: src/gui/gaudit-window.c:374
+#: src/gui/gaudit-window.c:304
 msgid "No apps use runtimes without security updates"
 msgstr ""
 
-#: src/gui/gaudit-window.c:379
+#: src/gui/gaudit-window.c:309
 #, c-format
 msgid "%u app uses a runtime without security updates"
 msgid_plural "%u apps use runtimes without security updates"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:384
+#: src/gui/gaudit-window.c:314
 #, c-format
 msgid "%u unused outdated runtime can be removed"
 msgid_plural "%u unused outdated runtimes can be removed"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:389
+#: src/gui/gaudit-window.c:319
 #, c-format
 msgid "%u outdated runtime is kept but not used by any app"
 msgid_plural "%u outdated runtimes are kept but not used by any app"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-window.c:404
+#: src/gui/gaudit-window.c:334
 msgid "Flatpak apps"
 msgstr ""
 
-#: src/gui/gaudit-window.c:666
+#: src/gui/gaudit-window.c:550
 msgid "Report Level"
 msgstr ""
 
-#: src/gui/gaudit-window.c:731
+#: src/gui/gaudit-window.c:617
 msgid "No report at this level"
 msgstr ""
 
 #. Translators: the level a plugin's report on Home first shows
 #. * at, e.g. "Shown from Thorough".
-#: src/gui/gaudit-window.c:781
+#: src/gui/gaudit-window.c:696
 #, c-format
 msgid "Shown from %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:785
+#: src/gui/gaudit-window.c:700
 msgid "Its check runs on the plugin's own page"
+msgstr ""
+
+#: src/gui/gaudit-window.c:706 src/gui/gaudit-window.c:756
+msgid "Switch to administrator to run this check"
+msgstr ""
+
+#. Translators: under a plugin's group on Home, e.g. "Checked at 14:32".
+#: src/gui/gaudit-window.c:731
+#, c-format
+msgid "Checked at %s"
 msgstr ""
 
 #. Translators: "<what was found> · checked at <time>", e.g.
 #. * "No changed package files found · checked at 14:32".
-#: src/gui/gaudit-window.c:797
+#: src/gui/gaudit-window.c:740
 #, c-format
 msgid "%s · checked at %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:804 src/gui/gaudit-task-page.c:816
+#: src/gui/gaudit-window.c:753 src/gui/gaudit-task-page.c:991
 msgid "Not available on this system"
 msgstr ""
 
-#: src/gui/gaudit-window.c:805 src/gui/gaudit-task-page.c:776
+#: src/gui/gaudit-window.c:754 src/gui/gaudit-task-page.c:951
 msgid "Software is missing"
 msgstr ""
 
-#: src/gui/gaudit-window.c:807
+#: src/gui/gaudit-window.c:757
 msgid "Not run yet"
 msgstr ""
 
-#: src/gui/gaudit-window.c:808
-msgid "Switch to administrator to run this check"
-msgstr ""
-
-#: src/gui/gaudit-window.c:858
+#: src/gui/gaudit-window.c:829
 msgid "checked as Debian"
 msgstr ""
 
-#: src/gui/gaudit-window.c:859
+#: src/gui/gaudit-window.c:830
 msgid "checked as Fedora"
 msgstr ""
 
-#: src/gui/gaudit-window.c:860
+#: src/gui/gaudit-window.c:831
 msgid "checked as Arch"
 msgstr ""
 
-#: src/gui/gaudit-window.c:861
+#: src/gui/gaudit-window.c:832
 msgid "general checks only"
 msgstr ""
 
-#: src/gui/gaudit-window.c:864
+#: src/gui/gaudit-window.c:835
 msgid "Unknown system"
 msgstr ""
 
 #. Translators: "<system> · <how gAudit checks it>",
 #. * e.g. "Ubuntu 26.04 LTS · checked as Debian".
-#: src/gui/gaudit-window.c:867
+#: src/gui/gaudit-window.c:838
 #, c-format
 msgid "%s · %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:870
+#: src/gui/gaudit-window.c:841
 msgid "This computer"
 msgstr ""
 
-#: src/gui/gaudit-window.c:874
+#: src/gui/gaudit-window.c:845
 msgid "Unknown host name"
 msgstr ""
 
-#: src/gui/gaudit-window.c:898 src/gui/gaudit-window.c:977
-#: src/gui/gaudit-window.c:1529 src/gui/gaudit-task-page.c:490
+#: src/gui/gaudit-window.c:869 src/gui/gaudit-window.c:942
+#: src/gui/gaudit-window.c:1636 src/gui/gaudit-task-page.c:665
 msgid "Home"
 msgstr ""
 
@@ -477,252 +379,310 @@ msgstr ""
 #. * e.g. "Private Files › Parameters". Turn the separator around for
 #. * right-to-left languages if it reads wrong.
 #. Translators: the content's title, "<page> › <page>", here "Home › Information".
-#: src/gui/gaudit-window.c:916 src/gui/gaudit-window.c:977
+#: src/gui/gaudit-window.c:887 src/gui/gaudit-window.c:942
 #, c-format
 msgid "%s › %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:955
+#: src/gui/gaudit-window.c:926
 msgid "The parameters are set back"
 msgstr ""
 
-#: src/gui/gaudit-window.c:977 src/gui/gaudit-window.c:1035
-#: src/gui/gaudit-window.c:1060 src/gui/gaudit-task-page.c:481
+#: src/gui/gaudit-window.c:942 src/gui/gaudit-window.c:1009
+#: src/gui/gaudit-window.c:1028 src/gui/gaudit-task-page.c:656
 msgid "Information"
 msgstr ""
 
 #. Translators: %s is the application name, which is not translated.
-#: src/gui/gaudit-window.c:1037 src/gui/gaudit-window.c:1059
+#: src/gui/gaudit-window.c:1011 src/gui/gaudit-window.c:1027
 #, c-format
 msgid "About %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1042 src/gui/gaudit-window.c:1044
-#: src/gui/gaudit-window.c:1067 src/gui/gaudit-window.c:1069
+#: src/gui/gaudit-window.c:1016 src/gui/gaudit-window.c:1018
+#: src/gui/gaudit-window.c:1033 src/gui/gaudit-window.c:1035
 msgid "Menu for this page"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1053 src/gui/gaudit-window.c:1170
-#: src/gui/gaudit-window.c:1217
-msgid "Parameters"
-msgstr ""
-
-#: src/gui/gaudit-window.c:1054 src/gui/gaudit-window.c:1193
-#: src/gui/gaudit-run-page.c:584 src/gui/gaudit-run-page.c:624
-msgid "Report"
-msgstr ""
-
-#: src/gui/gaudit-window.c:1080
+#: src/gui/gaudit-window.c:1046
 msgid "Check again"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1081
+#: src/gui/gaudit-window.c:1047
 msgid "Set the parameters back"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1082
+#: src/gui/gaudit-window.c:1048
 msgid "Collect again with the same settings"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1193 src/gui/gaudit-run-page.c:585
+#: src/gui/gaudit-window.c:1140 src/gui/gaudit-window.c:1187
+msgid "Parameters"
+msgstr ""
+
+#: src/gui/gaudit-window.c:1163 src/gui/gaudit-run-page.c:496
+#: src/gui/gaudit-run-page.c:531
+msgid "Report"
+msgstr ""
+
+#: src/gui/gaudit-window.c:1163 src/gui/gaudit-run-page.c:497
 msgid "Simplified Report"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1372
+#: src/gui/gaudit-window.c:1349
 msgid "_Preferences"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1373
+#: src/gui/gaudit-window.c:1350
 msgid "_Keyboard Shortcuts"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1384
+#: src/gui/gaudit-window.c:1361
 msgid "Main Menu"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1440
-msgid "Stop the Check and Close?"
-msgstr ""
-
-#: src/gui/gaudit-window.c:1441
-msgid ""
-"A check is still running. Closing stops it, and what it has found so far is "
-"lost."
-msgstr ""
-
-#: src/gui/gaudit-window.c:1442
-msgid "_Cancel"
-msgstr ""
-
-#: src/gui/gaudit-window.c:1443
-msgid "_Stop and Close"
-msgstr ""
-
-#. Translators: Title of the main window and its sidebar.
-#: src/gui/gaudit-window.c:1519 src/gui/gaudit-window.c:1587
-msgid "Audit Center"
-msgstr ""
-
-#: src/gui/gaudit-window.c:1529 src/gui/gaudit-task-page.c:491
-msgid "Overall status"
-msgstr ""
-
-#: src/gui/gaudit-window.c:1551 src/gui/gaudit-window.c:1554
+#: src/gui/gaudit-window.c:1438 src/gui/gaudit-window.c:1440
 msgid "Running as you. Switch to administrator"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1560 src/gui/gaudit-window.c:1563
+#: src/gui/gaudit-window.c:1445 src/gui/gaudit-window.c:1447
 msgid "Running with administrator rights"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1571
+#: src/gui/gaudit-window.c:1455
 msgid ""
 "gAudit holds administrator rights. They end 2 minutes after the last check "
 "that needs them, and at the latest 30 minutes after you gave the password."
 msgstr ""
 
-#: src/gui/gaudit-window.c:1577
+#: src/gui/gaudit-window.c:1461
 msgid "Drop Administrator Rights"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1712
+#. Translators: Title of the main window and its sidebar.
+#: src/gui/gaudit-window.c:1508 src/gui/gaudit-window.c:1626
+#: src/gui/gaudit-window.c:1652
+msgid "Audit Center"
+msgstr ""
+
+#: src/gui/gaudit-window.c:1540
+msgid "Stop the Check and Close?"
+msgstr ""
+
+#: src/gui/gaudit-window.c:1541
+msgid ""
+"A check is still running. Closing stops it, and what it has found so far is "
+"lost."
+msgstr ""
+
+#: src/gui/gaudit-window.c:1542 src/gui/gaudit-task-page.c:228
+msgid "_Cancel"
+msgstr ""
+
+#: src/gui/gaudit-window.c:1543
+msgid "_Stop and Close"
+msgstr ""
+
+#: src/gui/gaudit-window.c:1636 src/gui/gaudit-task-page.c:666
+msgid "Overall status"
+msgstr ""
+
+#: src/gui/gaudit-window.c:1792
 msgid "Not checked: it was stopped"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1713
+#: src/gui/gaudit-window.c:1793
 msgid "Not checked: no password was given, or it was stopped"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1714
+#: src/gui/gaudit-window.c:1794
 msgid "Not checked: the password was not accepted"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1715
+#: src/gui/gaudit-window.c:1795
 msgid "Another check is running. Try again when it has finished"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1716 src/gui/gaudit-run-page.c:397
+#: src/gui/gaudit-window.c:1796 src/gui/gaudit-run-page.c:310
 msgid "The check could not be completed"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:49
+#: src/gui/gaudit-task-page.c:50
 msgid "OK"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:52
+#: src/gui/gaudit-task-page.c:53
 msgid "Needs attention"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:55
+#: src/gui/gaudit-task-page.c:56
 msgid "Serious"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:59 src/gui/gaudit-run-page.c:148
+#: src/gui/gaudit-task-page.c:60 src/gui/gaudit-run-page.c:105
 msgid "Unknown"
 msgstr ""
 
+#: src/gui/gaudit-task-page.c:153
+msgid "Done. gAudit's setting is written; it is checked again now."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:154
+msgid "It was already set up this way, so nothing was changed."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:155
+msgid "Done. gAudit's setting is removed; it is checked again now."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:156
+msgid "There was no setting of gAudit's to remove."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:157
+msgid ""
+"A file of that name that gAudit did not write is already there, so nothing "
+"was changed."
+msgstr ""
+
 #: src/gui/gaudit-task-page.c:158
+msgid ""
+"gAudit's file has been changed since it was written, so it was left as it is."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:159
+msgid ""
+"Something it needs is missing or not as expected, so nothing was written."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:160
+msgid "A folder on the way can be changed by others, so nothing was written."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:165 src/gui/gaudit-task-page.c:186
+msgid "It could not be done, so nothing was changed."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:182
+msgid "Cancelled, so nothing was changed."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:184
+msgid "The password was not accepted, so nothing was changed."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:210
+msgid ""
+"Under way. It needs administrator rights: use the switch beside the title if "
+"asked."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:214
+msgid "It is already under way."
+msgstr ""
+
+#: src/gui/gaudit-task-page.c:333
 msgid "Opens a new page"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:228
+#: src/gui/gaudit-task-page.c:403
 msgid "No more folders can be added"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:231
+#: src/gui/gaudit-task-page.c:406
 msgid "Already checked with your home folder"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:242 src/gui/gaudit-task-page.c:290
-#: src/gui/gaudit-task-page.c:292
+#: src/gui/gaudit-task-page.c:417 src/gui/gaudit-task-page.c:465
+#: src/gui/gaudit-task-page.c:467
 msgid "Add a Folder to Search"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:264
+#: src/gui/gaudit-task-page.c:439
 msgid "From the file manager"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:270 src/gui/gaudit-task-page.c:272
+#: src/gui/gaudit-task-page.c:445 src/gui/gaudit-task-page.c:447
 msgid "Remove from the List"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:284
+#: src/gui/gaudit-task-page.c:459
 msgid "Folders to Search"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:286
+#: src/gui/gaudit-task-page.c:461
 msgid "Everything under each folder is searched, within its own disk."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:298
+#: src/gui/gaudit-task-page.c:473
 msgid "Your Home Folder"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:299
+#: src/gui/gaudit-task-page.c:474
 msgid "Always searched"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:343
+#: src/gui/gaudit-task-page.c:518
 #, c-format
 msgid "%u MiB"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:344
+#: src/gui/gaudit-task-page.c:519
 #, c-format
 msgid "%u KiB"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:350
+#: src/gui/gaudit-task-page.c:525
 msgid "Read Files Up To"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:352
+#: src/gui/gaudit-task-page.c:527
 msgid ""
 "Smaller is faster on large disks. Larger files are recognised by name only."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:360
+#: src/gui/gaudit-task-page.c:535
 msgid "Search Caches Too"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:362
+#: src/gui/gaudit-task-page.c:537
 msgid ""
 "Caches are rebuilt by programs and seldom hold secrets, but take long on "
 "large disks."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:395
+#: src/gui/gaudit-task-page.c:570
 msgid "How: the Parameters"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:396
+#: src/gui/gaudit-task-page.c:571
 msgid "How: Home"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:396
+#: src/gui/gaudit-task-page.c:571
 msgid "How: This Report"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:414
+#: src/gui/gaudit-task-page.c:589
 msgid ""
 "This is the simplified report Home made: it uses none of the parameters, so "
 "it is the same every time. Run on Parameters gives the full report."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:417
+#: src/gui/gaudit-task-page.c:592
 msgid ""
 "This is the full report, made with the parameters as they were when it ran."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:463
+#: src/gui/gaudit-task-page.c:638
 msgid "What It Does"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:474
+#: src/gui/gaudit-task-page.c:649
 msgid "Why It Matters"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:493
+#: src/gui/gaudit-task-page.c:668
 msgid ""
 "Home shows the state of this computer at a glance. At the top, which "
 "computer this is and how gAudit checks it. Below, one group for each check, "
@@ -731,7 +691,7 @@ msgid ""
 "them all up."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:498
+#: src/gui/gaudit-task-page.c:673
 msgid ""
 "Security problems are easy to miss when they are spread over many places: an "
 "update that never ran, a firewall that is off, a key others can read. One "
@@ -740,7 +700,7 @@ msgid ""
 "computer is proven safe."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:503
+#: src/gui/gaudit-task-page.c:678
 msgid ""
 "Report Level decides how thorough Home is: Quick is fast and runs every time "
 "Home opens; higher levels look further and take longer. The reports here are "
@@ -751,264 +711,222 @@ msgid ""
 "at the top of the sidebar; Home never asks for the password when it opens."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:545
+#: src/gui/gaudit-task-page.c:720
 msgid "What to check"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:566
+#: src/gui/gaudit-task-page.c:741
 msgid "Start"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:571
+#: src/gui/gaudit-task-page.c:746
 msgid "Applies to the full report only, not to Home"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:602
+#: src/gui/gaudit-task-page.c:777
 msgid "The command shown has changed, so it was not copied"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:606
+#: src/gui/gaudit-task-page.c:781
 msgid "Command copied"
 msgstr ""
 
 #. Translators: %04o is the new permissions, e.g. 0600.
-#: src/gui/gaudit-task-page.c:655
+#: src/gui/gaudit-task-page.c:830
 #, c-format
 msgid "Done: the permissions are now %04o."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:657
+#: src/gui/gaudit-task-page.c:832
 msgid "It could not be changed. Nothing was done."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:674
+#: src/gui/gaudit-task-page.c:849
 msgid "The command shown has changed, so it was not run"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:721 src/gui/gaudit-task-page.c:723
+#: src/gui/gaudit-task-page.c:896 src/gui/gaudit-task-page.c:898
 msgid "Copy command"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:735 src/gui/gaudit-task-page.c:737
+#: src/gui/gaudit-task-page.c:910 src/gui/gaudit-task-page.c:912
 msgid "Run this command"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:764
+#: src/gui/gaudit-task-page.c:939
 msgid "Installing is not implemented yet."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:779
+#: src/gui/gaudit-task-page.c:954
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:785
+#: src/gui/gaudit-task-page.c:960
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:790
+#: src/gui/gaudit-task-page.c:965
 msgid "Install"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:798
+#: src/gui/gaudit-task-page.c:973
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:818
+#: src/gui/gaudit-task-page.c:993
 msgid "This check is not supported on this operating system yet."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:69
+#: src/gui/gaudit-run-page.c:70
 msgid "To switch it on, run this command in a terminal:"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:75
+#: src/gui/gaudit-run-page.c:76
 msgid ""
 "If you use this computer from another one, for example over SSH, allow that "
 "in the firewall first, or you will be shut out."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:78
+#: src/gui/gaudit-run-page.c:79
 msgid "No known firewall program is installed."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:79 src/gui/gaudit-category.c:28
+#: src/gui/gaudit-run-page.c:80 src/gui/gaudit-category.c:28
 msgid "Choose a Firewall"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:159
+#: src/gui/gaudit-run-page.c:116
 msgid "No changed package files found"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:162
+#: src/gui/gaudit-run-page.c:119
 #, c-format
 msgid "%lu package file has changed or is missing"
 msgid_plural "%lu package files have changed or are missing"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/gui/gaudit-run-page.c:166
+#: src/gui/gaudit-run-page.c:123
 msgid "Some package files could not be checked"
 msgstr ""
 
-#. Translators: "Checked <files> files from <packages> packages (<MB> MB) in <s> seconds."
-#: src/gui/gaudit-run-page.c:178
-#, c-format
-msgid "Checked %lu files from %lu packages (%lu MB) in %u seconds."
+#: src/gui/gaudit-run-page.c:138
+msgid "Waiting for the password"
 msgstr ""
 
-#. Translators: Keep the meaning: no changes found is not proof.
-#: src/gui/gaudit-run-page.c:183
+#: src/gui/gaudit-run-page.c:143
+msgid "Waiting for administrator rights"
+msgstr ""
+
+#: src/gui/gaudit-run-page.c:145
 msgid ""
-"This means no changes were found, not that the computer is proven clean."
+"Use the switch beside the title to give the password. The check goes on from "
+"there."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:190
-msgid "Changed"
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:191
-msgid "The file differs from the one the package installed."
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:206
-msgid ""
-"If you did not change these files yourself, put the packages' own files back "
-"by reinstalling them:"
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:211
-msgid "Missing"
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:212
-msgid "The package installed the file, but it is gone."
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:215
-msgid "Could not be read"
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:216
-msgid ""
-"Even with administrator rights, these could not be read, so they were not "
-"checked."
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:221
-#, c-format
-msgid "Showing %u of %lu files."
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:226
-#, c-format
-msgid "%lu line in the packages' checksum lists could not be read."
-msgid_plural "%lu lines in the packages' checksum lists could not be read."
-msgstr[0] ""
-msgstr[1] ""
-
-#: src/gui/gaudit-run-page.c:352
+#: src/gui/gaudit-run-page.c:268
 msgid "The check ran, but its report could not be put together."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:373 src/gui/gaudit-run-page.c:581
+#: src/gui/gaudit-run-page.c:289 src/gui/gaudit-run-page.c:493
 msgid "Writing the report…"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:388
+#: src/gui/gaudit-run-page.c:301
 msgid "The search was stopped"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:389
+#: src/gui/gaudit-run-page.c:302
 msgid ""
 "Nothing is known from this run. Run it again, perhaps with fewer folders."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:391
+#: src/gui/gaudit-run-page.c:304
 msgid "The check was cancelled"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:392
+#: src/gui/gaudit-run-page.c:305
 msgid "No password was given, so nothing was checked."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:394
+#: src/gui/gaudit-run-page.c:307
 msgid "Not authorized"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:395
+#: src/gui/gaudit-run-page.c:308
 msgid ""
 "The password was not accepted, or this account may not run administrator "
 "checks."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:398
+#: src/gui/gaudit-run-page.c:311
 msgid "Nothing is known from this run."
 msgstr ""
 
 #. Translators: "<count> … · now in <folder>", e.g. "/mnt/backup".
-#: src/gui/gaudit-run-page.c:447
+#: src/gui/gaudit-run-page.c:359
 #, c-format
 msgid "Looked at %s files and folders so far · now in %s"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:448
+#: src/gui/gaudit-run-page.c:360
 #, c-format
 msgid "Looked at %s files and folders so far."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:452
+#: src/gui/gaudit-run-page.c:364
 msgid "The search is taking a long time. Keep going?"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:457
+#: src/gui/gaudit-run-page.c:369
 msgid "Keep Going"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:460
+#: src/gui/gaudit-run-page.c:372
 msgid "Stop"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:520
+#: src/gui/gaudit-run-page.c:431
 msgid "Waiting for the other check to finish…"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:529 src/gui/gaudit-run-page.c:619
-msgid "Waiting for the password"
-msgstr ""
-
-#: src/gui/gaudit-run-page.c:532
+#: src/gui/gaudit-run-page.c:443
 msgid "The check could not be started"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:542
+#: src/gui/gaudit-run-page.c:453
 msgid "In progress, processing…"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:544
+#: src/gui/gaudit-run-page.c:455
 msgid ""
 "This check was already running. Its result is shown here when it is done."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:551
+#: src/gui/gaudit-run-page.c:463
 msgid "In progress, restart?"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:553
+#: src/gui/gaudit-run-page.c:465
 msgid ""
 "Another check is still running. Stop it and start this one, or wait until it "
 "has finished; this one starts then."
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:559
+#: src/gui/gaudit-run-page.c:471
 msgid "Stop and Restart"
 msgstr ""
 
-#: src/gui/gaudit-run-page.c:563
+#: src/gui/gaudit-run-page.c:475
 msgid "Wait"
+msgstr ""
+
+#: src/gui/gaudit-report.c:533 src/gui/gaudit-report.c:535
+msgid "Recommendation"
 msgstr ""
 
 #: src/plugins/firewall/gaudit-firewall-text.c:14
@@ -1084,50 +1002,70 @@ msgstr ""
 msgid "Firewall rules"
 msgstr ""
 
-#: src/plugins/firewall/plugin.c:31
+#: src/plugins/firewall/plugin.c:30
 msgid "Reading the firewall rules needs the administrator password."
 msgstr ""
 
-#: src/plugins/firewall/plugin.c:32
+#: src/plugins/firewall/plugin.c:31
 msgid "Checking the firewall…"
 msgstr ""
 
-#: src/plugins/updates/plugin.c:13
+#: src/plugins/updates/plugin.c:14
 msgid ""
-"Checks that your software is kept up to date, and that the files it was "
-"installed with have not been changed since."
+"Checks that this computer looks for updates, installs them, and gets them "
+"from the right place."
 msgstr ""
 
-#: src/plugins/updates/plugin.c:15
+#: src/plugins/updates/plugin.c:16
 msgid ""
-"Home shows whether updates are found and installed. The thorough check here "
-"goes further.\n"
+"Updates checks how updates reach this computer: how often it looks for them, "
+"whether it installs them by itself, whether security updates are waiting, "
+"where security updates come from, and whether installed software is left "
+"without any source of updates.\n"
 "\n"
-"Every program installed from a package comes with a list of its files and a "
-"checksum for each. This check reads every one of those files and compares it "
-"with its checksum, so a changed or missing file shows up, whether a person, "
-"a program or malware changed it. Your own settings in /etc are not counted: "
-"changing them is normal.\n"
+"It reads how the computer is set up, not what an update program shows, so it "
+"says the same whichever program you use for updates.\n"
 "\n"
-"It reads tens of thousands of files and can take from half a minute to "
-"several minutes. Reading all of them needs the administrator password. "
-"gAudit only reads; it changes nothing.\n"
+"The full report, and Home at Thorough, also check the package files: every "
+"program installed from a package comes with a checksum for each of its "
+"files, and every file is compared with it, so a changed or missing file "
+"shows up, whoever changed it. Your own settings in /etc are not counted. "
+"This reads tens of thousands of files, can take several minutes, and needs "
+"the administrator password. A clean result means no changes were found, not "
+"that the computer is proven clean: the checksums are not signed once "
+"installed.\n"
 "\n"
-"A clean result means no changes were found, not that the computer is proven "
-"clean: the checksums are not signed once installed, so someone with full "
-"control of the computer could change them too."
+"Updates changes nothing."
 msgstr ""
 
-#: src/plugins/updates/plugin.c:36
-msgid "Package files"
+#: src/plugins/updates/plugin.c:31
+msgid ""
+"Most attacks use problems that already have a fix. A computer that does not "
+"install its updates keeps those problems open, often for weeks, and security "
+"updates matter most."
 msgstr ""
 
-#: src/plugins/updates/plugin.c:39
-msgid "Reading every package file needs the administrator password."
+#: src/plugins/updates/plugin.c:35
+msgid ""
+"The report is grouped by what can go wrong: looking for updates, installing "
+"them, where security updates come from, software no source keeps up to date, "
+"package systems that are not checked, and, in the full report, package files "
+"that were changed. Each problem is marked with a warning and leads on to "
+"what to do about it."
 msgstr ""
 
-#: src/plugins/updates/plugin.c:40
-msgid "Checking the package files… This can take a few minutes."
+#: src/plugins/updates/plugin.c:48
+msgid "Check how updates reach this computer"
+msgstr ""
+
+#: src/plugins/updates/plugin.c:58
+msgid "Checking the package files needs the administrator password."
+msgstr ""
+
+#: src/plugins/updates/plugin.c:59
+msgid ""
+"Checking how updates reach this computer… The package files can take a few "
+"minutes."
 msgstr ""
 
 #: src/plugins/private-files/plugin.c:14
@@ -1195,11 +1133,11 @@ msgstr ""
 msgid "Secrets in your home folder"
 msgstr ""
 
-#: src/plugins/private-files/plugin.c:68
+#: src/plugins/private-files/plugin.c:67
 msgid "Searching your home folder…"
 msgstr ""
 
-#: src/plugins/private-files/plugin.c:69
+#: src/plugins/private-files/plugin.c:68
 msgid "Searching… Large folders can take a long time."
 msgstr ""
 

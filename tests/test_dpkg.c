@@ -165,7 +165,7 @@ static void compressed_cases(void)
 
     static const char *const formats[] = { "gz", "xz", "lz4", "zst" };
     for (size_t i = 0; i < sizeof formats / sizeof formats[0]; i++) {
-        gaudit_deb_counts c = { 99, 99 };
+        gaudit_deb_counts c = { 99, 99, 99 };
         gaudit_backend_status st = gaudit_deb_scan(DATA "/status", make_lists(formats[i], 0),
                                                    NULL, NULL, &c);
         if (st != GAUDIT_BACKEND_OK || c.upgradable != 3 || c.obsolete != 2)
@@ -228,7 +228,7 @@ int main(void)
      *  h: installed 1:0.5 is newer than any offered (2.0) -> obsolete
      *  firefox: 159 from packages.mozilla.org; archive has 1:1snap1
      *  thunderbird: 137, only offered as archive 1:1snap1 */
-    gaudit_deb_counts counts = { 99, 99 };
+    gaudit_deb_counts counts = { 99, 99, 99 };
 
     /* Without preferences, the snap transitional packages (epoch 1) look
      * like upgrades for firefox and thunderbird. */
@@ -257,6 +257,26 @@ int main(void)
           == GAUDIT_BACKEND_ERROR);
 
     /* An empty (corrupt) .lz4 index: cannot tell. */
+    /* Which tools are installed, by the status: a and g are, zz is not, and
+     * the continuation line naming another package is no package. */
+    {
+        static const char *const names[] = { "zz", "g", "a", NULL };
+        char found[64];
+        unsigned n = 9;
+        CHECK(gaudit_deb_installed_names(DATA "/status", names, found, sizeof found, &n) == 0
+              && n == 2 && strcmp(found, "g, a") == 0);
+        CHECK(gaudit_deb_installed_names(DATA "/no-such-status", names, found, sizeof found, &n) != 0);
+    }
+
+    /* Security updates: a has a newer version in noble-security, and an
+     * even newer one in noble-updates (Ubuntu puts security fixes there
+     * too), so it counts; b is newer only in -updates; f's security update
+     * is phased and held back. */
+    CHECK(gaudit_deb_scan(DATA "/status", DATA "/lists-security", NULL, NULL, &counts)
+          == GAUDIT_BACKEND_OK);
+    CHECK(counts.upgradable == 2 && counts.security == 1);
+    CHECK(gaudit_deb_scan(DATA "/status", DATA "/lists", NULL, NULL, &counts) == GAUDIT_BACKEND_OK
+          && counts.security == 0);
     CHECK(gaudit_deb_scan(DATA "/status", DATA "/lists-mixed", NULL, NULL, &counts)
           == GAUDIT_BACKEND_ERROR);
     CHECK(gaudit_deb_scan(DATA "/status", DATA "/lists-compressed", NULL, NULL, &counts)

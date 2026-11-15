@@ -13,18 +13,13 @@
 extern "C" {
 #endif
 
-/* Also the display order on Home. */
+/* Also the display order on Home. The update rows are gone: Updates is a
+ * plugin with a collection of its own (src/plugins/updates), and Home
+ * shows its report as one row. */
 typedef enum {
-    GAUDIT_PROBE_PACKAGE_SYSTEM = 0, /* the package system the distribution implies is present */
-    GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS, /* package systems present that are not checked */
-    GAUDIT_PROBE_ANTIVIRUS,         /* some known antivirus program is installed */
+    GAUDIT_PROBE_ANTIVIRUS = 0,     /* some known antivirus program is installed */
     GAUDIT_PROBE_FIREWALL,          /* some known firewall is installed */
     GAUDIT_PROBE_LISTENING,         /* services listening for the network (informs only) */
-    GAUDIT_PROBE_AUTO_UPDATES,      /* updates are installed automatically */
-    GAUDIT_PROBE_SECURITY_SOURCE,   /* security updates come from the distribution itself */
-    GAUDIT_PROBE_PACKAGE_INDEX,     /* when updates were last checked for */
-    GAUDIT_PROBE_PENDING_UPGRADES,  /* updates waiting to be installed */
-    GAUDIT_PROBE_OBSOLETE_PACKAGES, /* packages no software source offers */
     GAUDIT_PROBE_FLATPAK,           /* Flatpak apps on end-of-life runtimes */
     GAUDIT_PROBE_SNAP,              /* snaps that are not kept up to date or unconfined */
     GAUDIT_PROBE_COUNT
@@ -33,26 +28,23 @@ typedef enum {
 /* Snaps not refreshed automatically for longer than this is a warning. */
 #define GAUDIT_PROBE_SNAP_MAX_AGE (7 * 24 * 60 * 60)
 
-/* Package index older than this is a warning. */
-#define GAUDIT_PROBE_INDEX_MAX_AGE (7 * 24 * 60 * 60)
-
 typedef struct {
     gaudit_probe_kind kind;
     const char *id;           /* stable key, e.g. "status.firewall" (static; from the kind) */
     gaudit_verdict verdict;
-    int64_t age_seconds;      /* GAUDIT_PROBE_PACKAGE_INDEX */
-    unsigned count;           /* _PENDING_UPGRADES, _OBSOLETE_PACKAGES; _FLATPAK: eol apps;
+    int64_t age_seconds;      /* _SNAP, see below */
+    unsigned count;           /* _FLATPAK: eol apps;
                                  _LISTENING: services, extra_count: of those the user's own */
     unsigned extra_count;     /* _FLATPAK: unused end-of-life refs */
     unsigned info_count;      /* _FLATPAK: end-of-life runtimes kept (pinned) but unused */
     int applicable;           /* 0: does not apply here (e.g. no Flatpak), not shown */
     char missing_capability[32];  /* set ("" otherwise) when software for the check is missing */
     int unsupported;          /* 1: this check is not supported on this system (yet) */
-    char detail[32];          /* _PACKAGE_SYSTEM: the expected package system, e.g. "dpkg/apt" */
-    unsigned mask;            /* _OTHER_PACKAGE_SYSTEMS: 1 << gaudit_package_system */
+    char detail[32];          /* unused since the update rows moved to their plugin */
+    unsigned mask;            /* unused, as detail */
     int64_t until_epoch;      /* _SNAP: automatic refreshes held until then (0: not held) */
     int service_down;         /* _SNAP: snapd did not answer */
-    char text[64];            /* _SECURITY_SOURCE: the mirror's host name */
+    char text[64];            /* unused, as detail */
     /* _SNAP also uses count (devmode), extra_count (held), info_count
      * (classic, informs only) and age_seconds (since the last refresh, -1 unknown). */
 } gaudit_probe_result;
@@ -61,21 +53,20 @@ typedef struct {
 void gaudit_probe_collect(const gaudit_pkg_backend *pkg, int64_t now,
                           gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
 
-/* As above. expected: the backend the distribution implies (may be NULL).
- * If it differs from pkg, the expected package system was not found:
- * GAUDIT_PROBE_PACKAGE_SYSTEM becomes a warning. Otherwise that row does
- * not apply (the Home heading already says what was found). */
+/* As above. expected: the backend the distribution implies (may be NULL);
+ * no longer used by any probe (the Updates plugin says when the expected
+ * package system is missing). */
 void gaudit_probe_collect_ex(const gaudit_pkg_backend *pkg, const gaudit_pkg_backend *expected,
                              int64_t now, gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
 
-/* Every kind with its default: unknown, shown; the package system rows
- * not shown. What a kind keeps when its task could not run. */
+/* Every kind with its default: unknown, shown. What a kind keeps when its
+ * task could not run. */
 void gaudit_probe_init(gaudit_probe_result out[GAUDIT_PROBE_COUNT]);
 
 /* The probes in independent tasks, so they can run side by side (the
  * orchestrator runs each in its own process) and a slow one does not hold
  * up the rest. A task may fill several kinds. */
-#define GAUDIT_PROBE_TASK_COUNT 9
+#define GAUDIT_PROBE_TASK_COUNT 4
 
 /* The kinds a task fills, as 1 << kind; 0 for an unknown task. */
 unsigned gaudit_probe_task_kinds(int task);

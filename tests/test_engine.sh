@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
-# The rule engine: the Private Files report on fixed input gives the
+# The rule engine: the Private Files and Updates reports on fixed input give the
 # expected lines, and rules that loop, allocate without end, touch files,
 # evaluate code or do not even read give no report at all (exit 1).
 # Usage: test_engine.sh <engine built with the test rules> <data dir>
@@ -14,6 +14,13 @@ for n in 1 2 3 4 5 6 7 8 9 10 11 12 13; do
         echo "private-files-$n: no report" >&2; status=1
     elif ! cmp -s out.$$ "$data/private-files-$n.out"; then
         echo "private-files-$n: report differs:" >&2; diff "$data/private-files-$n.out" out.$$ >&2; status=1
+    fi
+done
+for n in 1 2 3 4 5 6; do
+    if ! "$engine" report core.updates < "$data/updates-$n.in" > out.$$ 2>/dev/null; then
+        echo "updates-$n: no report" >&2; status=1
+    elif ! cmp -s out.$$ "$data/updates-$n.out"; then
+        echo "updates-$n: report differs:" >&2; diff "$data/updates-$n.out" out.$$ >&2; status=1
     fi
 done
 rm -f out.$$

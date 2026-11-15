@@ -14,3 +14,9 @@
 gaudit_backend_status gaudit_apt_unattended_upgrade(const char *conf_file,
                                                     const char *conf_dir,
                                                     int *out_enabled);
+
+/* Any APT::Periodic::<name> the same way (e.g. "Update-Package-Lists":
+ * days between checks, 0 never; "Download-Upgradeable-Packages"). Absent
+ * means 0, as for apt. */
+gaudit_backend_status gaudit_apt_periodic(const char *conf_file, const char *conf_dir,
+                                          const char *name, long *out_value);

@@ -1,4 +1,5 @@
 (report (verdict unknown) (title (msgn "{n} secret on a network folder may be readable by others" "{n} secrets on network folders may be readable by others" 1 (n 1))) (description (msg "On a network folder the server decides who can read a file, and what this computer shows may not say so. Check them on the server.")))
+(home (verdict unknown) (title (msgn "{n} secret on a network folder may be readable by others" "{n} secrets on network folders may be readable by others" 1 (n 1))) (subtitle (msg "The server decides who can read them")))
 (section (title (msg "On network folders, perhaps readable by others")) (description (msg "This computer shows them as readable by others, but on a network folder the server decides.")))
 (row (verdict unknown) (title (text "/net/share/keys/server.pem")) (subtitle (msg "{kind} · {mode} · on a network folder" (kind (msg "Private key")) (mode "0644"))) (fix make-private (item 5)))
 (section (title (msg "Only you can read these")) (description (msg "This is how secrets should be kept. Listed so you know where they are.")))

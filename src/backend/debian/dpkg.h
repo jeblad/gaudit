@@ -8,6 +8,12 @@
 /* 1 if status_file is a regular, readable file and dpkg_bin is executable. */
 int gaudit_deb_present(const char *status_file, const char *dpkg_bin);
 
+/* Which of names (NULL-terminated) are installed, by the dpkg status:
+ * written to out, ", " between, in the order of names; *count how many.
+ * 0 on success, -1 when the status cannot be read. */
+int gaudit_deb_installed_names(const char *status_file, const char *const *names, char *out,
+                               size_t len, unsigned *count);
+
 /* dpkg's version ordering (epoch:upstream-revision, '~' sorts first).
  * Returns <0, 0 or >0. */
 int gaudit_deb_version_compare(const char *a, const char *b);
@@ -15,6 +21,9 @@ int gaudit_deb_version_compare(const char *a, const char *b);
 typedef struct {
     unsigned obsolete;    /* as apt's "local": installed version offered nowhere, no upgrade */
     unsigned upgradable;  /* an upgrade would install a newer version */
+    unsigned security;    /* of those, packages a security suite (*-security) offers a newer
+                             version of: the security suite need not hold the candidate itself,
+                             since Ubuntu puts security fixes in -updates too */
 } gaudit_deb_counts;
 
 /* Compares installed packages (status_file) with the package indexes

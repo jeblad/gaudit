@@ -9,12 +9,18 @@
  *   (section (title MSG) (description MSG))
  *   (row (verdict V) (title MSG) (subtitle MSG) [(fix ID (item N))])
  *   (note MSG)
+ *   (home (verdict V) (title MSG) (subtitle MSG))   Home's rows, not on page 2
  *
- *   V    ok | warning | critical | unknown
+ *   V    ok | warning | critical | unknown; a row may also be advice (a
+ *        recommendation: counts as fine, never on Home)
  *   MSG  (msg "text" (key VALUE) ...) | (msgn "one" "many" N (key VALUE) ...) | (text "plain")
  *   VALUE  "string" | integer | MSG
  *
- * Texts carry {key} placeholders, never printf formats. */
+ * Texts carry {key} placeholders, never printf formats.
+ *
+ * The home elements are Home's condensate of what fails: one row per
+ * problem, each a summary ("37 security updates are waiting"), and one
+ * row saying all is well when nothing fails. Page 2 shows everything. */
 #pragma once
 
 #include <adwaita.h>
@@ -34,6 +40,17 @@ gaudit_verdict gaudit_report_verdict(const GauditReport *report);
 
 /* The report's title, translated in domain and filled in. g_free it. */
 char *gaudit_report_title(const GauditReport *report, const char *domain);
+
+/* One of Home's rows. */
+typedef struct {
+    gaudit_verdict verdict;
+    char *title;
+    char *subtitle;
+} GauditHomeRow;
+
+/* Home's rows, translated in domain and filled in; when the rule gives
+ * none, one from the report's verdict and title. Never NULL. */
+GPtrArray *gaudit_report_home_rows(const GauditReport *report, const char *domain);
 
 /* The page for a fix a row names, or NULL when the plugin has none for it.
  * fix_id is the rule's symbol, item the position of the collection line

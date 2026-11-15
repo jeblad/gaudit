@@ -116,35 +116,56 @@ static const char app_css[] =
     ".navigation-sidebar row:selected .sidebar-icon {\n"
     "  background-color: var(--accent-bg-color);\n"
     "  color: var(--accent-fg-color);\n"
+    "}\n"
+    /* The switch while a check waits for administrator rights: a round
+     * disc in the accent colour, which shows where it is. */
+    "button.gaudit-attention {\n"
+    "  border-radius: 9999px;\n"
+    "  background-color: var(--accent-bg-color);\n"
+    "  color: var(--accent-fg-color);\n"
     "}\n";
 
 /* --- Home's tasks at the chosen level ---------------------------------------
  *
- * Run one after another through the session, so one password covers all
- * of them (the helper's lease). A cancelled or refused password stops the
- * rest: asking again at once would only annoy. Results themselves, from
- * here or from a task's own page 2, arrive through on_session_result. */
+ * Run one after another, those that need no password first, so a check
+ * waiting for administrator rights never holds up the others; within the
+ * lease, one password covers all that need it. A cancelled or refused
+ * password stops the rest: asking again at once would only annoy. Results
+ * themselves, from here or from a task's own page 2, arrive through
+ * on_session_result. */
 
 typedef struct {
     GauditApp *app;
     GauditWindow *view;
     guint level;
-    gboolean with_admin;  /* also the tasks that need the password */
-    gsize next;      /* the task index to look at next */
+    GArray *order;   /* gsize: the task indexes, those without the password first */
+    guint pos;       /* the next one in order */
     gsize current;
+    gboolean again;  /* asked for anew (another level, Reload): start over when done */
 } LevelJob;
 
 static LevelJob *level_job;  /* the one under way, if any */
 
 static void level_next(LevelJob *job);
+static void start_level_job(GauditApp *app, GauditWindow *view);
 
-static void level_finish(LevelJob *job)
+/* status: why the tasks still waiting did not run (GAUDIT_RUN_OK when
+ * every one did); they lose their spinner with that said. */
+static void level_finish(LevelJob *job, gaudit_run_status status)
 {
+    for (guint p = job->pos; p < job->order->len; p++)
+        gaudit_window_task_failed(job->view, g_array_index(job->order, gsize, p), status);
     gaudit_window_set_worst(job->view, gaudit_model_summary(job->app->model));
-    g_object_unref(job->view);
-    g_object_unref(job->app);
+    GauditApp *app = job->app;
+    GauditWindow *view = job->view;
+    gboolean again = job->again;
+    g_array_unref(job->order);
     g_free(job);
     level_job = NULL;
+    if (again)
+        start_level_job(app, view);
+    g_object_unref(view);
+    g_object_unref(app);
 }
 
 static void on_level_done(gaudit_run_status status, const GauditRunResult *result,
@@ -157,7 +178,7 @@ static void on_level_done(gaudit_run_status status, const GauditRunResult *resul
         gaudit_window_task_failed(job->view, job->current,
                                   status == GAUDIT_RUN_OK ? GAUDIT_RUN_FAILED : status);
     if (status == GAUDIT_RUN_CANCELLED || status == GAUDIT_RUN_DENIED) {
-        level_finish(job);
+        level_finish(job, status);
         return;
     }
     level_next(job);
@@ -167,39 +188,55 @@ static void level_next(LevelJob *job)
 {
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
-    while (job->next < n_tasks
-           && (gaudit_task_home_command(&tasks[job->next], job->level) == NULL
-               || (tasks[job->next].needs_admin && !job->with_admin)))
-        job->next++;
-    if (job->next >= n_tasks) {
-        level_finish(job);
+    if (job->pos >= job->order->len) {
+        level_finish(job, GAUDIT_RUN_OK);
         return;
     }
-    job->current = job->next++;
+    job->current = g_array_index(job->order, gsize, job->pos++);
     gaudit_window_task_running(job->view, job->current);
     if (!gaudit_session_run(gaudit_task_home_command(&tasks[job->current], job->level), NULL,
                             on_level_done, job)) {
-        /* Another run is under way (e.g. from a plugin's page 2). */
+        /* The same plugin is already at work (e.g. from its page 2). */
         gaudit_window_task_failed(job->view, job->current, GAUDIT_RUN_OK);
-        level_finish(job);
+        level_next(job);
     }
 }
 
-/* The checks of the level chosen on Home. with_admin: also those that
- * need the password, which is asked for only after an explicit act
- * (picking a level, the administrator switch); when the app opens, only
- * the others run. */
-static void start_level_job(GauditApp *app, GauditWindow *view, gboolean with_admin)
+/* The checks of the level chosen on Home, when the app opens, on Reload
+ * and when a level is picked. Those that need administrator rights wait
+ * for the switch (the password is never asked for otherwise). */
+static void start_level_job(GauditApp *app, GauditWindow *view)
 {
-    if (level_job != NULL)
+    if (level_job != NULL) {
+        /* Asked for anew while one is under way: that one finishes first,
+         * then this starts; one that waits for the password would never
+         * finish, so it stops now. */
+        gsize n_tasks;
+        const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+        level_job->again = TRUE;
+        const char *command = gaudit_task_home_command(&tasks[level_job->current], level_job->level);
+        if (gaudit_session_waiting_for(command))
+            gaudit_session_cancel_for(command);
         return;
+    }
     guint level = gaudit_window_home_level(view);
     LevelJob *job = g_new0(LevelJob, 1);
     job->app = g_object_ref(app);
     job->view = g_object_ref(view);
     job->level = level;
-    job->with_admin = with_admin || gaudit_session_elevated();
+    job->order = g_array_new(FALSE, FALSE, sizeof(gsize));
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    for (int admin = 0; admin <= 1; admin++)
+        for (gsize i = 0; i < n_tasks; i++)
+            if (gaudit_task_home_command(&tasks[i], level) != NULL
+                && gaudit_task_home_needs_admin(&tasks[i], level) == (gboolean)admin)
+                g_array_append_val(job->order, i);
     level_job = job;
+    /* Every task waiting its turn has its spinner from the start, and loses
+     * it only when its own run is done. */
+    for (guint p = 0; p < job->order->len; p++)
+        gaudit_window_task_running(view, g_array_index(job->order, gsize, p));
     level_next(job);
 }
 
@@ -216,7 +253,7 @@ static void on_reload_home(GSimpleAction *action, GVariant *param, gpointer app)
     if (!GAUDIT_IS_WINDOW(win))
         return;
     refresh_status(GAUDIT_APP(app), GAUDIT_WINDOW(win));
-    start_level_job(GAUDIT_APP(app), GAUDIT_WINDOW(win), TRUE);
+    start_level_job(GAUDIT_APP(app), GAUDIT_WINDOW(win));
 }
 
 static void on_run_level(GSimpleAction *action, GVariant *param, gpointer app)
@@ -225,28 +262,56 @@ static void on_run_level(GSimpleAction *action, GVariant *param, gpointer app)
     (void)param;
     GtkWindow *win = gtk_application_get_active_window(GTK_APPLICATION(app));
     if (GAUDIT_IS_WINDOW(win))
-        start_level_job(GAUDIT_APP(app), GAUDIT_WINDOW(win), TRUE);
+        start_level_job(GAUDIT_APP(app), GAUDIT_WINDOW(win));
 }
 
-/* The switch in the header bar: administrator rights before any check. The
- * switch itself follows the helper (on_elevated_changed), so a cancelled
- * or refused password simply leaves it as it was. With the rights, the
- * checks of Home's level run (switching is an explicit act). */
+/* The switch in the header bar, the only thing that asks for the password.
+ * Checks waiting for administrator rights go on (the first asks); with
+ * none waiting, it only gets the rights, which then cover what comes next
+ * within the lease. The switch itself follows the helper
+ * (on_elevated_changed), so a cancelled or refused password leaves it as
+ * it was, and ends the checks that waited. */
 static void on_elevate_done(gaudit_run_status status, const GauditRunResult *result,
                             gpointer app)
 {
+    (void)status;
     (void)result;
-    if (status == GAUDIT_RUN_OK)
-        g_action_group_activate_action(G_ACTION_GROUP(app), "run-level", NULL);
+    (void)app;
 }
 
 static void on_elevate(GSimpleAction *action, GVariant *param, gpointer app)
 {
     (void)action;
     (void)param;
-    (void)app;
-    if (!gaudit_session_elevated())
-        gaudit_session_run("elevate", NULL, on_elevate_done, app);  /* FALSE: a run is under way */
+    if (gaudit_session_resume() || gaudit_session_elevated())
+        return;
+    gaudit_session_run("elevate", NULL, on_elevate_done, app);  /* FALSE: already asked for */
+}
+
+/* A check waits for administrator rights: once per run, a toast saying
+ * which and where the switch is; the switch has its disc while any waits;
+ * on Home, the waiting row says so. */
+static void on_waiting(const char *command, gboolean waiting, gboolean first, gpointer app)
+{
+    gsize index;
+    const GauditTaskInfo *task = gaudit_task_for_command(command, &index);
+    gboolean any = gaudit_session_any_waiting();
+    for (GList *w = gtk_application_get_windows(GTK_APPLICATION(app)); w != NULL; w = w->next) {
+        if (!GAUDIT_IS_WINDOW(w->data))
+            continue;
+        GauditWindow *view = GAUDIT_WINDOW(w->data);
+        gaudit_window_set_attention(view, any);
+        if (task != NULL)
+            gaudit_window_task_waiting(view, index, waiting);
+        if (waiting && first) {
+            /* Translators: %s is a plugin, e.g. "Updates". */
+            g_autofree char *text = task != NULL
+                ? g_strdup_printf(_("%s needs administrator rights. Use the switch beside the title."),
+                                  _(task->title))
+                : g_strdup(_("This change needs administrator rights. Use the switch beside the title."));
+            gaudit_window_toast(view, text);
+        }
+    }
 }
 
 /* --- Actions (primary menu and shortcuts) --------------------------------- */
@@ -365,7 +430,8 @@ static void set_accel(GApplication *app, const char *action, const char *accel)
  * disagree. */
 /* A task's latest result onto its Home row in every window, and into the
  * model under the task's id, so the summary counts it. */
-static void record(GauditApp *self, gsize i, gaudit_verdict verdict, const char *title)
+static void record(GauditApp *self, gsize i, gaudit_verdict verdict, const char *title,
+                   GPtrArray *rows)
 {
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
@@ -374,7 +440,7 @@ static void record(GauditApp *self, gsize i, gaudit_verdict verdict, const char 
     gaudit_verdict worst = gaudit_model_summary(self->model);
     for (GList *w = gtk_application_get_windows(GTK_APPLICATION(self)); w != NULL; w = w->next)
         if (GAUDIT_IS_WINDOW(w->data)) {
-            gaudit_window_task_report(GAUDIT_WINDOW(w->data), i, verdict, title);
+            gaudit_window_task_report(GAUDIT_WINDOW(w->data), i, verdict, title, rows);
             gaudit_window_set_worst(GAUDIT_WINDOW(w->data), worst);
         }
 }
@@ -392,7 +458,9 @@ static void on_cached_report(GauditReport *report, gpointer user_data)
     const GauditTaskInfo *task = &gaudit_tasks_get(&n_tasks)[c->task];
     g_autofree char *title = report != NULL ? gaudit_report_title(report, task->text_domain)
                                             : g_strdup(_("The report could not be made"));
-    record(c->app, c->task, gaudit_report_verdict(report), title);
+    g_autoptr(GPtrArray) rows = report != NULL ? gaudit_report_home_rows(report, task->text_domain)
+                                               : NULL;
+    record(c->app, c->task, gaudit_report_verdict(report), title, rows);
     gaudit_report_free(report);
     g_object_unref(c->app);
     g_free(c);
@@ -436,7 +504,7 @@ static void on_session_result(const char *command, const GauditRunResult *result
             continue;
         }
         g_autofree char *title = gaudit_run_result_title(result);
-        record(self, i, gaudit_run_result_verdict(result), title);
+        record(self, i, gaudit_run_result_verdict(result), title, NULL);
     }
 }
 
@@ -484,6 +552,7 @@ static void gaudit_app_startup(GApplication *app)
     g_object_set(gtk_settings_get_default(), "gtk-label-select-on-focus", FALSE, NULL);
 
     gaudit_session_set_elevated_listener(on_elevated_changed, app);
+    gaudit_session_watch_waiting(on_waiting, app);
     gaudit_session_set_result_listener(on_session_result, app);
     g_signal_connect(app, "window-removed", G_CALLBACK(on_window_removed), NULL);
 
@@ -509,7 +578,7 @@ static void gaudit_app_activate(GApplication *app)
     if (win == NULL) {
         GauditWindow *view = gaudit_window_new(GTK_APPLICATION(app));
         refresh_status(self, view);
-        start_level_job(self, view, FALSE);  /* never the password when the app opens */
+        start_level_job(self, view);  /* the password only ever from the switch */
         win = GTK_WINDOW(view);
     }
     gtk_window_present(win);

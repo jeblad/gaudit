@@ -235,6 +235,14 @@ static gboolean verdict_of(const Sx *field, gaudit_verdict *out)
     return (int)*out >= 0;
 }
 
+/* A row may also be advice: a recommendation, not a finding. It counts as
+ * fine, so it never makes the verdict worse and never reaches Home. */
+static gboolean is_advice(const Sx *field)
+{
+    return field != NULL && field->items->len == 2 && is_symbol(item(field, 1), NULL)
+           && strcmp(item(field, 1)->text, "advice") == 0;
+}
+
 /* (key MSG) */
 static gboolean msg_field(const Sx *field)
 {
@@ -281,7 +289,8 @@ GauditReport *gaudit_report_parse(const char *const *lines, gsize n_lines)
         } else if (headed(sx, "row")) {
             static const char *const keys[] = { "verdict", "title", "subtitle", "fix", NULL };
             gaudit_verdict v;
-            ok = fields(sx, keys, TRUE, f) && verdict_of(f[0], &v) && msg_field(f[1]) && msg_field(f[2]);
+            ok = fields(sx, keys, TRUE, f) && (verdict_of(f[0], &v) || is_advice(f[0]))
+                 && msg_field(f[1]) && msg_field(f[2]);
             /* (fix ID (item N)) */
             if (ok && f[3] != NULL) {
                 const Sx *at = item(f[3], 2);
@@ -291,6 +300,11 @@ GauditReport *gaudit_report_parse(const char *const *lines, gsize n_lines)
             }
         } else if (headed(sx, "note")) {
             ok = sx->items->len == 2 && valid_msg(item(sx, 1), 0);
+        } else if (headed(sx, "home")) {
+            static const char *const keys[] = { "verdict", "title", "subtitle", NULL };
+            gaudit_verdict v;
+            ok = fields(sx, keys, FALSE, f) && verdict_of(f[0], &v) && msg_field(f[1])
+                 && msg_field(f[2]);
         }
         if (!ok) {
             sx_free(sx);
@@ -391,6 +405,41 @@ char *gaudit_report_title(const GauditReport *report, const char *domain)
     return field_text(report->head, "title", domain);
 }
 
+static void home_row_free(gpointer p)
+{
+    GauditHomeRow *r = p;
+    g_free(r->title);
+    g_free(r->subtitle);
+    g_free(r);
+}
+
+GPtrArray *gaudit_report_home_rows(const GauditReport *report, const char *domain)
+{
+    GPtrArray *rows = g_ptr_array_new_with_free_func(home_row_free);
+    if (report == NULL)
+        return rows;
+    for (guint i = 0; i < report->elements->len; i++) {
+        const Sx *e = g_ptr_array_index(report->elements, i);
+        if (!headed(e, "home"))
+            continue;
+        GauditHomeRow *r = g_new0(GauditHomeRow, 1);
+        r->verdict = GAUDIT_VERDICT_UNKNOWN;
+        verdict_of(field(e, "verdict"), &r->verdict);
+        r->title = field_text(e, "title", domain);
+        r->subtitle = field_text(e, "subtitle", domain);
+        g_ptr_array_add(rows, r);
+    }
+    if (rows->len == 0) {
+        /* A rule that gives none: the report's own verdict and title. */
+        GauditHomeRow *r = g_new0(GauditHomeRow, 1);
+        r->verdict = report->verdict;
+        r->title = field_text(report->head, "title", domain);
+        r->subtitle = g_strdup("");
+        g_ptr_array_add(rows, r);
+    }
+    return rows;
+}
+
 /* --- Showing it --------------------------------------------------------- */
 
 typedef struct {
@@ -468,7 +517,9 @@ void gaudit_report_show(AdwStatusPage *status, const GauditReport *report, const
                 gtk_box_append(GTK_BOX(box), GTK_WIDGET(group));
             }
             gaudit_verdict v = GAUDIT_VERDICT_UNKNOWN;
-            verdict_of(field(e, "verdict"), &v);
+            gboolean advice = is_advice(field(e, "verdict"));
+            if (!advice)
+                verdict_of(field(e, "verdict"), &v);
             g_autofree char *t = field_text(e, "title", domain);
             g_autofree char *st = field_text(e, "subtitle", domain);
             AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
@@ -476,7 +527,16 @@ void gaudit_report_show(AdwStatusPage *status, const GauditReport *report, const
             adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
             adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), t);
             adw_action_row_set_subtitle(row, st);
-            adw_action_row_add_prefix(row, gaudit_verdict_icon_new(v));
+            if (advice) {
+                GtkWidget *image = gtk_image_new_from_icon_name("dialog-information-symbolic");
+                gtk_widget_add_css_class(image, "accent");
+                gtk_widget_set_tooltip_text(image, _("Recommendation"));
+                gtk_accessible_update_property(GTK_ACCESSIBLE(image), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                               _("Recommendation"), -1);
+                adw_action_row_add_prefix(row, image);
+            } else {
+                adw_action_row_add_prefix(row, gaudit_verdict_icon_new(v));
+            }
             const Sx *fix = field(e, "fix");
             if (fix != NULL && fix_fn != NULL) {
                 g_object_set_data_full(G_OBJECT(row), "gaudit-fix", g_strdup(item(fix, 1)->text), g_free);

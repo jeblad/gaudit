@@ -51,12 +51,12 @@ int main(void)
     r->info_count = 9;
     r->until_epoch = 1800000000;
     r->service_down = 1;
-    in[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].mask = (1u << GAUDIT_PKGSYS_RPM) | (1u << GAUDIT_PKGSYS_NIX);
-    in[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable = 0;
-    in[GAUDIT_PROBE_AUTO_UPDATES].unsupported = 1;
+    in[GAUDIT_PROBE_LISTENING].mask = (1u << GAUDIT_PKGSYS_RPM) | (1u << GAUDIT_PKGSYS_NIX);
+    in[GAUDIT_PROBE_ANTIVIRUS].applicable = 0;
+    in[GAUDIT_PROBE_FIREWALL].unsupported = 1;
     snprintf(in[GAUDIT_PROBE_FLATPAK].missing_capability, sizeof in[0].missing_capability, "libflatpak");
-    snprintf(in[GAUDIT_PROBE_PACKAGE_SYSTEM].detail, sizeof in[0].detail, "dpkg/apt");
-    snprintf(in[GAUDIT_PROBE_SECURITY_SOURCE].text, sizeof in[0].text, "odd \"host\" \\ name");
+    snprintf(in[GAUDIT_PROBE_LISTENING].detail, sizeof in[0].detail, "dpkg/apt");
+    snprintf(in[GAUDIT_PROBE_SNAP].text, sizeof in[0].text, "odd \"host\" \\ name");
 
     write_all(in);
     CHECK(gaudit_probe_parse_all(text, out) == 0);
@@ -73,10 +73,10 @@ int main(void)
     }
 
     /* Control characters are replaced when written, so the line stays valid. */
-    snprintf(in[GAUDIT_PROBE_SECURITY_SOURCE].text, sizeof in[0].text, "bad\x01name");
+    snprintf(in[GAUDIT_PROBE_SNAP].text, sizeof in[0].text, "bad\x01name");
     write_all(in);
     CHECK(gaudit_probe_parse_all(text, out) == 0);
-    CHECK(strcmp(out[GAUDIT_PROBE_SECURITY_SOURCE].text, "bad?name") == 0);
+    CHECK(strcmp(out[GAUDIT_PROBE_SNAP].text, "bad?name") == 0);
 
     /* Rejected: a kind missing, a kind twice, an extra line, out-of-range
      * values, overlong text, broken quoting. */
@@ -158,9 +158,12 @@ int main(void)
           .packages = 3105, .files = 446591, .checked = 446000, .changed = 1, .missing = 1,
           .unreadable = 589, .excluded = 0, .diverted = 1, .bad_lines = 0, .megabytes = 31734,
           .shown = 2, .seconds = 44 } },
+        { .type = GAUDIT_RUN_EVENT_CONF, .conf = { .template_id = "core.updates.automatic",
+          .action = "on", .result = "written" } },
         { .type = GAUDIT_RUN_EVENT_ELEVATED, .elevated = 0 },
         { .type = GAUDIT_RUN_EVENT_END, .status = GAUDIT_RUN_CANCELLED },
     };
+    gaudit_run_event ev;
     for (size_t i = 0; i < sizeof evs / sizeof evs[0]; i++) {
         char rl[512];
         gaudit_run_event back;
@@ -172,9 +175,18 @@ int main(void)
               && memcmp(&back.integrity, &evs[i].integrity, sizeof back.integrity) == 0
               && back.file.kind == evs[i].file.kind
               && strcmp(back.file.package, evs[i].file.package) == 0
-              && strcmp(back.file.path, evs[i].file.path) == 0);
+              && strcmp(back.file.path, evs[i].file.path) == 0
+              && strcmp(back.conf.template_id, evs[i].conf.template_id) == 0
+              && strcmp(back.conf.action, evs[i].conf.action) == 0
+              && strcmp(back.conf.result, evs[i].conf.result) == 0);
     }
-    gaudit_run_event ev;
+    /* A configuration write: only known actions and results, plain template ids. */
+    CHECK(gaudit_run_parse_line("(conf (template \"t\") (action \"on\") (result \"deleted\"))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(conf (template \"t\") (action \"open\") (result \"written\"))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(conf (template \"../t\") (action \"on\") (result \"written\"))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(conf (template \"a b\") (action \"on\") (result \"written\"))", &ev) != 0);
+    CHECK(gaudit_run_parse_line("(conf (template \"t\") (action \"remove\") (result \"removed\"))", &ev) == 0
+          && ev.type == GAUDIT_RUN_EVENT_CONF);
     CHECK(gaudit_run_parse_line("(end (status 4))", &ev) != 0);           /* no such status */
     CHECK(gaudit_run_parse_line("(elevated (on 2))", &ev) != 0);
     CHECK(gaudit_run_parse_line("(elevated (on 1) (on 1))", &ev) != 0);

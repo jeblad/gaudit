@@ -16,6 +16,11 @@
  *   integrity every deb package's files against dpkg's md5sums (root with
  *             CAP_DAC_READ_SEARCH only, several threads, up to 15 minutes):
  *             up to 40 (integrity-file ...) lines, then (integrity ...)
+ *   automatic-updates-on, automatic-updates-remove
+ *             write or remove gAudit's own apt drop-in for automatic
+ *             updates (root without any capability: the folders are
+ *             root's own), only as conf-write.h allows: one
+ *             (conf (template ...) (action ...) (result ...)) line
  *   session   keeps the rights for more commands (one per line on stdin:
  *             a command name, or "quit") within the lease of lease.h, and
  *             ends with (helper-end (reason ...)): idle, cap, quit, eof or
@@ -26,6 +31,7 @@
  * other gaudit processes and the root-owned log come later. */
 #include "config.h"
 
+#include "automatic.h"
 #include "integrity.h"
 #include "lease.h"
 #include "nft.h"
@@ -288,6 +294,24 @@ static void integrity(void *ctx)
            r.diverted, r.bad_lines, r.bytes / 1000000, shown, elapsed_ms(&start) / 1000);
 }
 
+/* --- configuration -------------------------------------------------------- */
+
+static const gaudit_conf_env system_env = { .root = "/", .register_dir = "var/lib/gaudit", .owner = 0 };
+
+static void automatic_on(void *ctx)
+{
+    (void)ctx;
+    printf("(conf (template \"%s\") (action \"on\") (result \"%s\"))\n", GAUDIT_AUTOMATIC_TEMPLATE,
+           gaudit_conf_result_name(gaudit_automatic_updates_on(&system_env)));
+}
+
+static void automatic_remove(void *ctx)
+{
+    (void)ctx;
+    printf("(conf (template \"%s\") (action \"remove\") (result \"%s\"))\n", GAUDIT_AUTOMATIC_TEMPLATE,
+           gaudit_conf_result_name(gaudit_automatic_updates_remove(&system_env)));
+}
+
 /* --- main ----------------------------------------------------------------- */
 
 /* PKEXEC_UID as set by pkexec, -1 if absent or not a plain number. Only
@@ -327,6 +351,14 @@ static const check_def firewall_checks[] = {
     { "firewall",        { .to_nobody = 0, .caps = net_caps, .n_caps = 1 },  firewall, 0, 0 },
 };
 
+/* Root, but no capability: writing in root's own folders needs none. */
+static const check_def automatic_on_checks[] = {
+    { "automatic-updates-on",     { .to_nobody = 0 }, automatic_on, 0, 0 },
+};
+static const check_def automatic_remove_checks[] = {
+    { "automatic-updates-remove", { .to_nobody = 0 }, automatic_remove, 0, 0 },
+};
+
 /* Reading every package file takes time: half a minute on a fast disk,
  * several minutes on a slow one. */
 static const check_def integrity_checks[] = {
@@ -342,6 +374,8 @@ static const struct {
     { "selftest", selftest_checks, sizeof selftest_checks / sizeof selftest_checks[0] },
     { "firewall", firewall_checks, sizeof firewall_checks / sizeof firewall_checks[0] },
     { "integrity", integrity_checks, sizeof integrity_checks / sizeof integrity_checks[0] },
+    { "automatic-updates-on", automatic_on_checks, 1 },
+    { "automatic-updates-remove", automatic_remove_checks, 1 },
 };
 
 static int find_command(const char *name)
@@ -467,7 +501,8 @@ int main(int argc, char *argv[])
     int cmd = argc == 2 ? find_command(argv[1]) : -1;
     int is_session = argc == 2 && strcmp(argv[1], "session") == 0;
     if (cmd < 0 && !is_session) {
-        fputs("usage: gaudit-helper selftest | firewall | integrity | session\n", stderr);
+        fputs("usage: gaudit-helper selftest | firewall | integrity | automatic-updates-on"
+              " | automatic-updates-remove | session\n", stderr);
         return 2;
     }
     if (getuid() != 0 || geteuid() != 0) {

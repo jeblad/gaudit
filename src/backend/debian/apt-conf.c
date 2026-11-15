@@ -10,8 +10,7 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#define KEY           "APT::Periodic::Unattended-Upgrade"
-#define BARE_KEY      "Unattended-Upgrade"
+#define PERIODIC      "APT::Periodic::"
 #define MAX_FILE_SIZE (64 * 1024)
 #define MAX_FILES     256
 
@@ -51,11 +50,11 @@ static int compare_entries(const struct dirent **a, const struct dirent **b)
     return strcmp((*a)->d_name, (*b)->d_name);
 }
 
-/* A value assignment to a bare "Unattended-Upgrade" (nested block form). */
-static int bare_assignment(const char *line)
+/* A value assignment to the bare key (nested block form). */
+static int bare_assignment(const char *line, const char *bare)
 {
-    for (const char *q = strstr(line, BARE_KEY); q != NULL; q = strstr(q + 1, BARE_KEY)) {
-        const char *after = q + strlen(BARE_KEY);
+    for (const char *q = strstr(line, bare); q != NULL; q = strstr(q + 1, bare)) {
+        const char *after = q + strlen(bare);
         while (isspace((unsigned char)*after))
             after++;
         if (*after == '"')
@@ -65,7 +64,7 @@ static int bare_assignment(const char *line)
 }
 
 /* 0: parsed (value/found updated if the key is present), -1: cannot tell. */
-static int parse_file(const char *path, long *value, int *found)
+static int parse_file(const char *path, const char *key, long *value, int *found)
 {
     FILE *f = fopen(path, "re");
     if (f == NULL)
@@ -99,8 +98,8 @@ static int parse_file(const char *path, long *value, int *found)
             break;
         }
 
-        size_t klen = strlen(KEY);
-        if (strncmp(s, KEY, klen) == 0
+        size_t klen = strlen(key);
+        if (strncmp(s, key, klen) == 0
             && (isspace((unsigned char)s[klen]) || s[klen] == '"')) {
             char *p = s + klen;
             while (isspace((unsigned char)*p))
@@ -119,7 +118,7 @@ static int parse_file(const char *path, long *value, int *found)
             }
             *value = v;
             *found = 1;
-        } else if (bare_assignment(s)) {
+        } else if (bare_assignment(s, key + strlen(PERIODIC))) {
             result = -1;
             break;
         }
@@ -128,11 +127,13 @@ static int parse_file(const char *path, long *value, int *found)
     return result;
 }
 
-gaudit_backend_status gaudit_apt_unattended_upgrade(const char *conf_file,
-                                                    const char *conf_dir,
-                                                    int *out_enabled)
+gaudit_backend_status gaudit_apt_periodic(const char *conf_file, const char *conf_dir,
+                                          const char *name, long *out_value)
 {
-    if (conf_file == NULL || conf_dir == NULL || out_enabled == NULL)
+    char key[96];
+    if (conf_file == NULL || conf_dir == NULL || name == NULL || out_value == NULL
+        || strchr(name, ':') != NULL || name[0] == '\0'
+        || snprintf(key, sizeof key, PERIODIC "%s", name) >= (int)sizeof key)
         return GAUDIT_BACKEND_ERROR;
 
     long value = 0;
@@ -154,18 +155,32 @@ gaudit_backend_status gaudit_apt_unattended_upgrade(const char *conf_file,
             char path[PATH_MAX];
             int len = snprintf(path, sizeof path, "%s/%s", conf_dir, entries[i]->d_name);
             if (len < 0 || (size_t)len >= sizeof path
-                || parse_file(path, &value, &found) != 0)
+                || parse_file(path, key, &value, &found) != 0)
                 status = GAUDIT_BACKEND_ERROR;
         }
         free(entries[i]);
     }
     free(entries);
 
-    if (status == GAUDIT_BACKEND_OK && parse_file(conf_file, &value, &found) != 0)
+    if (status == GAUDIT_BACKEND_OK && parse_file(conf_file, key, &value, &found) != 0)
         status = GAUDIT_BACKEND_ERROR;
     if (status != GAUDIT_BACKEND_OK)
         return status;
 
-    *out_enabled = found && value != 0;
+    *out_value = found ? value : 0;
     return GAUDIT_BACKEND_OK;
+}
+
+gaudit_backend_status gaudit_apt_unattended_upgrade(const char *conf_file,
+                                                    const char *conf_dir,
+                                                    int *out_enabled)
+{
+    long value = 0;
+    if (out_enabled == NULL)
+        return GAUDIT_BACKEND_ERROR;
+    gaudit_backend_status status =
+        gaudit_apt_periodic(conf_file, conf_dir, "Unattended-Upgrade", &value);
+    if (status == GAUDIT_BACKEND_OK)
+        *out_enabled = value != 0;
+    return status;
 }

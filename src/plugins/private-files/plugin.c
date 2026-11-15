@@ -58,7 +58,6 @@ const GauditTaskInfo gaudit_plugin_private_files = {
     .home_commands = { [GAUDIT_LEVEL_QUICK] = "user secrets quick",
                        [GAUDIT_LEVEL_THOROUGH] = "user secrets full" },
     .home_title = N_("Secrets in your home folder"),
-    .needs_admin = FALSE,
     .collection_line = gaudit_private_files_line,
     .text_domain = GAUDIT_PRIVATE_FILES_DOMAIN,
     .param_folders = TRUE,

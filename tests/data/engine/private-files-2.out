@@ -1,2 +1,3 @@
 (report (verdict unknown) (title (msg "The search stopped before the end")) (description (msg "Nothing is known about the files that were not searched.")))
+(home (verdict unknown) (title (msg "The search stopped before the end")) (subtitle (msg "Nothing is known about the files that were not searched.")))
 (note (msg "Your home folder has more files than the search goes through, so it stopped before the end."))

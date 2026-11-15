@@ -1,4 +1,6 @@
 (report (verdict warning) (title (msgn "{n} secret can be read by others" "{n} secrets can be read by others" 2 (n 2))) (description (msg "Anyone who can use these accounts can copy them. Open each one marked with a warning to see how to close it.")))
+(home (verdict warning) (title (msgn "{n} secret can be read by every account" "{n} secrets can be read by every account" 1 (n 1))) (subtitle (msg "Any other account on this computer can copy them")))
+(home (verdict warning) (title (msgn "{n} secret can be read by members of a group" "{n} secrets can be read by members of a group" 1 (n 1))) (subtitle (msg "Accounts in a group with access can copy them")))
 (section (title (msg "Every account can read these")) (description (msg "Any other account on this computer can read them, including programs running as those accounts.")))
 (row (verdict warning) (title (text "~/.netrc")) (subtitle (msg "{kind} · {mode}" (kind (msg "Stored passwords or keys")) (mode "0644"))) (fix make-private (item 1)))
 (section (title (msg "Members of a group can read these")) (description (msg "Accounts in a group that has access to the file, or to a folder on the way, can read them.")))

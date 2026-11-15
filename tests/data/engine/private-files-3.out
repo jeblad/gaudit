@@ -1,4 +1,6 @@
 (report (verdict warning) (title (msgn "{n} secret can be read by others" "{n} secrets can be read by others" 1 (n 1))) (description (msg "Anyone who can use these accounts can copy them. Open each one marked with a warning to see how to close it.")))
+(home (verdict warning) (title (msgn "{n} secret can be read by members of a group" "{n} secrets can be read by members of a group" 1 (n 1))) (subtitle (msg "Accounts in a group with access can copy them")))
+(home (verdict unknown) (title (msg "The search stopped before the end")) (subtitle (msg "Nothing is known about the files that were not searched.")))
 (section (title (msg "Members of a group can read these")) (description (msg "Accounts in a group that has access to the file, or to a folder on the way, can read them.")))
 (row (verdict warning) (title (text "~")) (subtitle (msg "{kind} · {mode}" (kind (msg "Your home folder can be changed by others")) (mode "0775"))) (fix close-home (item 1)))
 (note (msg "Your home folder has more files than the search goes through, so it stopped before the end."))

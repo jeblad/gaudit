@@ -17,6 +17,10 @@ AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task);
  * the full run with the parameters as they are now. For Reload. */
 AdwNavigationPage *gaudit_run_page_again(const GauditTaskInfo *task);
 
+/* Page 2 for the task's run under way (Home's, or a full one), showing its
+ * result when it is done; NULL when none runs. */
+AdwNavigationPage *gaudit_run_page_follow(const GauditTaskInfo *task);
+
 /* The report from the task's cached collection, without collecting again.
  * NULL if nothing is cached. */
 AdwNavigationPage *gaudit_cached_report_page_new(const GauditTaskInfo *task);

@@ -571,6 +571,7 @@ typedef struct {
     int installed_prio; /* priority of the installed version */
     int has_newer;      /* some installable newer version exists */
     int newer_prio;     /* highest priority among those */
+    int security_newer; /* an installable newer version from a security suite */
 } entry;
 
 typedef struct {
@@ -640,6 +641,42 @@ static int collect_installed(const stanza *s, void *ctx)
     return 0;
 }
 
+typedef struct {
+    const char *const *names;
+    unsigned found;  /* bit per name */
+} names_ctx;
+
+static int find_installed(const stanza *s, void *vctx)
+{
+    names_ctx *ctx = vctx;
+    if (!is_installed(s->status))
+        return 0;
+    for (unsigned i = 0; ctx->names[i] != NULL && i < 32; i++)
+        if (strcmp(s->package, ctx->names[i]) == 0)
+            ctx->found |= 1u << i;
+    return 0;
+}
+
+int gaudit_deb_installed_names(const char *status_file, const char *const *names, char *out,
+                               size_t len, unsigned *count)
+{
+    if (status_file == NULL || names == NULL || out == NULL || len == 0 || count == NULL)
+        return -1;
+    names_ctx ctx = { names, 0 };
+    if (read_stanzas(status_file, find_installed, &ctx) != 0)
+        return -1;
+    out[0] = '\0';
+    *count = 0;
+    for (unsigned i = 0; names[i] != NULL && i < 32; i++) {
+        if (!(ctx.found & (1u << i)))
+            continue;
+        size_t used = strlen(out);
+        snprintf(out + used, len - used, "%s%s", *count > 0 ? ", " : "", names[i]);
+        (*count)++;
+    }
+    return 0;
+}
+
 static void free_entries(entry_list *l)
 {
     for (size_t i = 0; i < l->len; i++) {
@@ -652,6 +689,12 @@ static void free_entries(entry_list *l)
 }
 
 /* --- Package indexes ------------------------------------------------------ */
+
+static int ends_with(const char *s, const char *suffix)
+{
+    size_t len = strlen(s), slen = strlen(suffix);
+    return len >= slen && strcmp(s + len - slen, suffix) == 0;
+}
 
 typedef struct {
     entry_list *installed;
@@ -696,14 +739,10 @@ static int match_available(const stanza *s, void *vctx)
             e->has_newer = 1;
             e->newer_prio = prio;
         }
+        if (prio >= 0 && !held && ends_with(ctx->src->suite, "-security"))
+            e->security_newer = 1;
     }
     return 0;
-}
-
-static int ends_with(const char *s, const char *suffix)
-{
-    size_t len = strlen(s), slen = strlen(suffix);
-    return len >= slen && strcmp(s + len - slen, suffix) == 0;
 }
 
 /* Kernel ABI "N.N.N-N" at p. */
@@ -814,12 +853,15 @@ gaudit_backend_status gaudit_deb_scan_ex(const char *status_file, const char *li
 
     out->obsolete = 0;
     out->upgradable = 0;
+    out->security = 0;
     for (size_t i = 0; i < installed.len; i++) {
         const entry *e = &installed.items[i];
         /* Highest priority wins; on a tie the higher version wins. */
         int upgradable = e->has_newer && e->newer_prio >= e->installed_prio;
         if (upgradable)
             out->upgradable++;
+        if (upgradable && e->security_newer)
+            out->security++;
         /* As apt's "local": the installed version is not offered anywhere
          * and no upgrade will replace it. */
         if (!e->same && !upgradable && !versioned_kernel_package(e->name)) {

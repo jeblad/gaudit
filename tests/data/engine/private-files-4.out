@@ -1,4 +1,5 @@
 (report (verdict ok) (title (msgn "{n} secret found, only you can read it" "{n} secrets found, only you can read them" 2 (n 2))) (description (msg "Secrets only you can read are normal. This means none were found that others can read, not that every secret was found.")))
+(home (verdict ok) (title (msgn "{n} secret found, only you can read it" "{n} secrets found, only you can read them" 2 (n 2))) (subtitle (msg "Nothing needs attention")))
 (section (title (msg "Only you can read these")) (description (msg "This is how secrets should be kept. Listed so you know where they are.")))
 (row (verdict ok) (title (text "~/.ssh/id_ed25519")) (subtitle (msg "{kind} · {mode}" (kind (msg "SSH private key")) (mode "0600"))))
 (row (verdict ok) (title (text "~/notes/key.pem")) (subtitle (msg "{kind} · {mode}" (kind (text "no-such-reason")) (mode "0660"))))

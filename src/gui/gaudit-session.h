@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* Runs on request through one long-lived orchestrator session, so the
- * helper can keep its elevated rights between runs within its lease. One
- * run at a time. The lease itself is decided by the helper. */
+/* Runs on request. Runs as the user each have an orchestrator of their
+ * own and go side by side; the helper's parts go one at a time through one
+ * long-lived orchestrator session, so the helper keeps its elevated rights
+ * between them within its lease. The lease itself is decided by the
+ * helper. */
 #pragma once
 
 #include <glib.h>
@@ -14,6 +16,7 @@ typedef enum {
     GAUDIT_RESULT_FIREWALL,
     GAUDIT_RESULT_INTEGRITY,
     GAUDIT_RESULT_COLLECTION,  /* collected data for the plugin's rule script */
+    GAUDIT_RESULT_CONF,        /* what writing a configuration did */
 } GauditResultKind;
 
 /* What a run found: one kind of result, with its findings. */
@@ -21,6 +24,7 @@ typedef struct {
     GauditResultKind kind;
     gaudit_firewall_report firewall;
     gaudit_integrity_report integrity;
+    gaudit_conf_report conf;
     gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
     unsigned n_files;
     GPtrArray *lines;  /* COLLECTION: its lines (char *), each checked by the plugin */
@@ -45,8 +49,8 @@ typedef void (*GauditRunProgressFn)(gpointer user_data);
  * elevated rights (the password, unless the lease still runs) and ends
  * GAUDIT_RUN_OK without a result. "user <mode>" (e.g. "user secrets") runs
  * as the user, in an orchestrator of its own, without the helper and
- * without a password. FALSE if another run is under way; then nothing is
- * called. */
+ * without a password. FALSE if a run of the same task is under way; then
+ * nothing is called. */
 gboolean gaudit_session_run(const char *command, GauditRunProgressFn on_progress,
                             GauditRunDoneFn on_done, gpointer user_data);
 
@@ -58,31 +62,64 @@ gboolean gaudit_session_run_args(const char *command, const char *const *args,
                                  GauditRunProgressFn on_progress, GauditRunDoneFn on_done,
                                  gpointer user_data);
 
-/* The command of the run under way (e.g. "user secrets quick"), or NULL. */
-const char *gaudit_session_running(void);
+/* A run that needs administrator rights never asks for the password
+ * itself: without the lease its helper part waits, without a time limit,
+ * for the user to give it with the switch. Runs as the user go on side by
+ * side meanwhile. Told with the run's command when it starts waiting
+ * (TRUE; first: the first time for this run) and when it stops (FALSE:
+ * going on, or ended). */
+typedef void (*GauditSessionWaitingFn)(const char *command, gboolean waiting, gboolean first,
+                                       gpointer user_data);
+guint gaudit_session_watch_waiting(GauditSessionWaitingFn fn, gpointer user_data);
+void gaudit_session_unwatch_waiting(guint id);
 
-/* Whether a run is under way and has gone on for more than 10 seconds: a
- * heavy one, worth asking about before closing. */
+/* Whether the run of command's task waits for administrator rights. */
+gboolean gaudit_session_waiting_for(const char *command);
+
+/* Whether any run waits for them. */
+gboolean gaudit_session_any_waiting(void);
+
+/* The switch: every waiting run goes on; the first asks for the password,
+ * the others follow within the lease. FALSE when none waits. A cancelled
+ * or refused password ends all of them as cancelled. */
+gboolean gaudit_session_resume(void);
+
+/* Runs of one task are one at a time; runs of different tasks go side by
+ * side (the helper's parts in turn). The command of the run of command's
+ * task under way, or NULL. */
+const char *gaudit_session_running_for(const char *command);
+
+/* The parameters of the run of command's task: NULL for Home's (simplified)
+ * run, or none under way. */
+const char *const *gaudit_session_running_args(const char *command);
+
+/* Whether any run is under way and has gone on for more than 10 seconds:
+ * a heavy one, worth asking about before closing. */
 gboolean gaudit_session_running_long(void);
 
-/* How far the run under way has come: entries looked at, from its
+/* How far the run of command's task has come: entries looked at, from its
  * progress lines (0 for none, or a run that does not report it), and in
  * *where (may be NULL) the folder it is in, as data from the run. */
-guint64 gaudit_session_progress(const char **where);
+guint64 gaudit_session_progress(const char *command, const char **where);
 
-/* Whether the run under way is command with exactly these arguments (the
- * same parameters). */
+/* Whether the run of command's task is command with exactly these
+ * arguments (the same parameters). */
 gboolean gaudit_session_running_is(const char *command, const char *const *args);
 
-/* Waits for the run under way as well: on_done (and on_progress, may be
- * NULL) are called as for the one who started it. FALSE when none runs. */
-gboolean gaudit_session_attach(GauditRunProgressFn on_progress, GauditRunDoneFn on_done,
-                               gpointer user_data);
+/* Waits for the run of command's task as well: on_done (and on_progress,
+ * may be NULL) are called as for the one who started it. FALSE when none
+ * runs. */
+gboolean gaudit_session_attach(const char *command, GauditRunProgressFn on_progress,
+                               GauditRunDoneFn on_done, gpointer user_data);
 
-/* Stops the run under way; it ends as GAUDIT_RUN_CANCELLED. A run as the
- * user stops at once. One through the helper ends the session: while the
- * password is asked for, at once; once the helper runs as root, after the
- * check under way (it cannot be killed from the user's side). */
+/* Stops the run of command's task; it ends as GAUDIT_RUN_CANCELLED. */
+void gaudit_session_cancel_for(const char *command);
+
+/* Stops every run under way; each ends as GAUDIT_RUN_CANCELLED. A run as
+ * the user stops at once, one waiting for its turn too. One through the
+ * helper ends the session: while the password is asked for, at once; once
+ * the helper runs as root, after the check under way (it cannot be killed
+ * from the user's side). */
 void gaudit_session_cancel(void);
 
 /* Whether the helper holds elevated rights now. */

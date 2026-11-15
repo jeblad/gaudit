@@ -37,10 +37,20 @@ guint gaudit_window_home_level(GauditWindow *self);
 void gaudit_window_task_running(GauditWindow *self, gsize task_index);
 void gaudit_window_task_failed(GauditWindow *self, gsize task_index, gaudit_run_status status);
 
+/* Its run waits for administrator rights, or no longer does. */
+void gaudit_window_task_waiting(GauditWindow *self, gsize task_index, gboolean waiting);
+
+/* The switch's disc in the accent colour, while any check waits for it. */
+void gaudit_window_set_attention(GauditWindow *self, gboolean on);
+
 /* A result of a task shown on Home, kept for the rest of the session: its
- * row then shows the verdict and what was found. */
+ * row then shows the verdict and what was found. rows (GauditHomeRow, may
+ * be NULL): a plugin's condensate of what fails, one row each, copied. */
 void gaudit_window_task_report(GauditWindow *self, gsize task_index, gaudit_verdict verdict,
-                               const char *title);
+                               const char *title, GPtrArray *rows);
+
+/* A short in-app message at the bottom of the window. */
+void gaudit_window_toast(GauditWindow *self, const char *text);
 
 /* The summary at the top of Home, after a result came in. */
 void gaudit_window_set_worst(GauditWindow *self, gaudit_verdict worst);

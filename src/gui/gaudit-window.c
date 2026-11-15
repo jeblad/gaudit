@@ -6,13 +6,13 @@
 #include "gaudit-window.h"
 #include "gaudit-crossfade.h"
 #include "gaudit-category.h"
-#include "gaudit-sourceless-page.h"
 #include "gaudit-firewall-text.h"
 #include "gaudit-session.h"
 #include "gaudit-task.h"
 #include "gaudit-task-page.h"
 #include "gaudit-run-page.h"
 #include "gaudit-report-run.h"
+#include "gaudit-report.h"
 
 /* Home's groups: each core plugin's report, its rows in this order. The
  * chevron in a group's title leads to the task named by task_id, when this
@@ -24,17 +24,17 @@ static const struct {
     int kinds[HOME_GROUP_MAX_ROWS];
     int n_kinds;
 } home_groups[] = {
-    { N_("Updates"), "core.updates",
-      { GAUDIT_PROBE_PACKAGE_SYSTEM, GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS, GAUDIT_PROBE_PACKAGE_INDEX,
-        GAUDIT_PROBE_PENDING_UPGRADES, GAUDIT_PROBE_AUTO_UPDATES, GAUDIT_PROBE_SECURITY_SOURCE,
-        GAUDIT_PROBE_OBSOLETE_PACKAGES }, 7 },
+    /* First: its findings are of immediate use and easy to fix, so the
+     * user sees at once what gAudit is good for. */
+    { N_("Private Files"), "core.private-files", { 0 }, 0 },
+    /* Its report, as one row: the facts are its own collection's. */
+    { N_("Updates"), "core.updates", { 0 }, 0 },
     { N_("Flatpak"), NULL, { GAUDIT_PROBE_FLATPAK }, 1 },
     { N_("Snap"), NULL, { GAUDIT_PROBE_SNAP }, 1 },
     /* Listening ports belong here: the firewall check is what turns them
      * into a finding. */
     { N_("Firewall"), "core.firewall", { GAUDIT_PROBE_FIREWALL, GAUDIT_PROBE_LISTENING }, 2 },
     { N_("Antivirus"), NULL, { GAUDIT_PROBE_ANTIVIRUS }, 1 },
-    { N_("Private Files"), "core.private-files", { 0 }, 0 },
 };
 #define N_HOME_GROUPS (sizeof home_groups / sizeof home_groups[0])
 
@@ -47,8 +47,15 @@ struct _GauditWindow {
     AdwApplicationWindow parent_instance;
 
     GSettings *settings;  /* NULL when the schema is not installed */
-    GtkWidget *as_user;          /* the switch before the title, as the user: a button */
-    GtkWidget *elevated_marker;  /* ... and with administrator rights: a menu button */
+    /* The user/administrator switch, stuck at the top left beside whatever
+     * is the title: in the sidebar's root and each folder, and in the
+     * content's pages while the window is narrow (collapsed), so it is
+     * always in view. GtkBox each, holding "gaudit-as-user" (a button) and
+     * "gaudit-elevated" (a menu button); "gaudit-collapsed-only" on the
+     * content's. Weak: a page's goes with it. */
+    GPtrArray *switches;
+    GtkLabel *folder_title;      /* weak: the open folder's title, which follows the width */
+    gboolean attention;          /* a check waits for administrator rights */
 
     AdwNavigationSplitView *split;
     AdwNavigationView *side_nav;  /* the sidebar: its root, and a plugin's folder on top */
@@ -79,8 +86,13 @@ struct _GauditWindow {
         char *title;
         char when[16];
         gboolean running;
+        gboolean waiting;  /* its run waits for administrator rights (the switch) */
         const char *note;  /* static, translated: why the last attempt gave nothing */
+        GPtrArray *rows;   /* GauditHomeRow: a plugin's condensate of what fails; NULL for a
+                              check that gives one result */
     } results[GAUDIT_WINDOW_MAX_TASKS];
+    AdwPreferencesGroup *task_groups[GAUDIT_WINDOW_MAX_TASKS];  /* weak: the task's group */
+    GPtrArray *more_rows[GAUDIT_WINDOW_MAX_TASKS];  /* its Home rows after the first (owned) */
     AdwActionRow *check_rows[GAUDIT_WINDOW_MAX_TASKS];  /* weak: rows of tasks on Home */
     AdwActionRow *empty_rows[GAUDIT_WINDOW_MAX_TASKS];  /* weak: "no report at this level" */
     GtkWidget *chevrons[GAUDIT_WINDOW_MAX_TASKS];       /* weak: in the plugins' group titles */
@@ -107,7 +119,7 @@ static gboolean strict_passed(GauditWindow *self)
     guint level = home_level(self);
     gboolean any = FALSE;
     for (gsize i = 0; i < n_tasks && i < GAUDIT_WINDOW_MAX_TASKS; i++) {
-        if (!tasks[i].needs_admin || gaudit_task_home_command(&tasks[i], level) == NULL)
+        if (!gaudit_task_home_needs_admin(&tasks[i], level))
             continue;
         if (!self->results[i].have || self->results[i].verdict != GAUDIT_VERDICT_OK)
             return FALSE;
@@ -197,16 +209,6 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
         return probe_title(r);
     }
     switch (r->kind) {
-    case GAUDIT_PROBE_PACKAGE_SYSTEM: {
-        char name[128], full[8];
-        gaudit_system_describe(NULL, 0, name, sizeof name, full, sizeof full);
-        /* Translators: "This looks like Ubuntu, but its package system (dpkg/apt) was not found". */
-        *subtitle = g_strdup_printf(_("This looks like %s, but its package system (%s) was not found"),
-                                    name[0] != '\0' ? name : _("a known distribution"),
-                                    r->detail[0] != '\0' ? r->detail : "?");
-        return _("Package system");
-    }
-
     case GAUDIT_PROBE_SNAP:
         if (r->missing_capability[0] != '\0') {
             *subtitle = g_strdup(_("Software needed to check snaps is missing"));
@@ -260,18 +262,6 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
         }
         return _("Snap apps");
 
-    case GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS: {
-        g_autoptr(GPtrArray) names = g_ptr_array_new();
-        for (int s = 0; s < GAUDIT_PKGSYS_COUNT; s++)
-            if (r->mask & (1u << s))
-                g_ptr_array_add(names, (gpointer)gaudit_package_system_label((gaudit_package_system)s));
-        g_ptr_array_add(names, NULL);
-        g_autofree char *list = g_strjoinv(", ", (char **)names->pdata);
-        /* Translators: %s is a list of package systems, e.g. "rpm, Nix". */
-        *subtitle = g_strdup_printf(_("Packages managed by %s are not checked"), list);
-        return _("Other package systems");
-    }
-
     case GAUDIT_PROBE_ANTIVIRUS:
         *subtitle = g_strdup(r->verdict == GAUDIT_VERDICT_OK
                              ? _("An antivirus program is installed")
@@ -304,66 +294,6 @@ static const char *probe_text(const gaudit_probe_result *r, char **subtitle)
                 _("The firewall check shows whether they can be reached."));
         }
         return _("Network services");
-
-    case GAUDIT_PROBE_SECURITY_SOURCE:
-        if (r->verdict == GAUDIT_VERDICT_UNKNOWN)
-            *subtitle = g_strdup(_("Could not find out where security updates come from"));
-        else if (r->verdict == GAUDIT_VERDICT_OK)
-            *subtitle = g_strdup(_("Security updates come directly from the distribution"));
-        else
-            /* Translators: %s is a host name, e.g. no.archive.ubuntu.com. */
-            *subtitle = g_strdup_printf(_("Security updates come from %s, a mirror that may lag behind"),
-                                        r->text[0] != '\0' ? r->text : "?");
-        return _("Source of security updates");
-
-    case GAUDIT_PROBE_PACKAGE_INDEX:
-        /* When the package lists were refreshed, which is not the same as
-         * packages having been upgraded. */
-        if (r->verdict == GAUDIT_VERDICT_UNKNOWN) {
-            *subtitle = g_strdup(_("Could not find out when updates were last checked for"));
-        } else {
-            gint64 days = r->age_seconds / (24 * 60 * 60);
-            if (days == 0)
-                *subtitle = g_strdup(_("Last checked today"));
-            else
-                *subtitle = g_strdup_printf(ngettext("Last checked %d day ago",
-                                                     "Last checked %d days ago",
-                                                     (unsigned long)days),
-                                            (int)MIN(days, G_MAXINT));
-        }
-        return _("Checking for updates");
-
-    case GAUDIT_PROBE_PENDING_UPGRADES:
-        if (r->verdict == GAUDIT_VERDICT_UNKNOWN)
-            *subtitle = g_strdup(_("Could not find out whether updates are waiting"));
-        else if (r->count == 0)
-            *subtitle = g_strdup(_("No updates are waiting"));
-        else
-            *subtitle = g_strdup_printf(ngettext("%u update is waiting to be installed",
-                                                 "%u updates are waiting to be installed",
-                                                 r->count),
-                                        r->count);
-        return _("Pending updates");
-
-    case GAUDIT_PROBE_OBSOLETE_PACKAGES:
-        if (r->verdict == GAUDIT_VERDICT_UNKNOWN)
-            *subtitle = g_strdup(_("Could not find out where the installed packages come from"));
-        else if (r->count == 0)
-            *subtitle = g_strdup(_("All packages come from a software source"));
-        else
-            *subtitle = g_strdup_printf(ngettext("%u package is no longer offered by any software source",
-                                                 "%u packages are no longer offered by any software source",
-                                                 r->count),
-                                        r->count);
-        return _("Packages without a source");
-
-    case GAUDIT_PROBE_AUTO_UPDATES:
-        *subtitle = g_strdup(r->verdict == GAUDIT_VERDICT_OK
-                             ? _("Updates are installed automatically")
-                             : r->verdict == GAUDIT_VERDICT_WARNING
-                             ? _("Automatic updates are switched off")
-                             : _("Could not find out whether automatic updates are switched on"));
-        return _("Automatic updates");
 
     case GAUDIT_PROBE_FLATPAK:
         if (r->missing_capability[0] != '\0') {
@@ -424,10 +354,6 @@ static const char *probe_title(const gaudit_probe_result *r)
 static void on_missing_row_activated(AdwActionRow *row, gpointer user_data)
 {
     GauditWindow *self = GAUDIT_WINDOW(user_data);
-    if (g_object_get_data(G_OBJECT(row), "gaudit-sourceless") != NULL) {
-        adw_navigation_view_push(self->content, gaudit_sourceless_page_new());
-        return;
-    }
     const GauditCategory *category = g_object_get_data(G_OBJECT(row), "gaudit-category");
     if (category != NULL) {
         /* Nothing in the category is installed: choose one. */
@@ -498,7 +424,6 @@ static void fill_row_inner(GauditWindow *self, int k)
     g_object_set_data(G_OBJECT(row), "gaudit-suffix", NULL);
     g_object_set_data(G_OBJECT(row), "gaudit-capability", NULL);
     g_object_set_data(G_OBJECT(row), "gaudit-category", NULL);
-    g_object_set_data(G_OBJECT(row), "gaudit-sourceless", NULL);
     gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), FALSE);
 
     if (!self->received[k]) {
@@ -523,19 +448,6 @@ static void fill_row_inner(GauditWindow *self, int k)
     GtkWidget *icon = verdict_icon(probe->verdict);
     adw_action_row_add_prefix(row, icon);
     g_object_set_data(G_OBJECT(row), "gaudit-prefix", icon);
-
-    /* Packages without a source: the row leads to the list, where the
-     * backend can give one. */
-    if (probe->kind == GAUDIT_PROBE_OBSOLETE_PACKAGES && probe->count > 0
-        && probe->verdict != GAUDIT_VERDICT_UNKNOWN && self->pkg->sourceless_packages != NULL) {
-        GtkWidget *next = gtk_image_new_from_icon_name("go-next-symbolic");
-        adw_action_row_add_suffix(row, next);
-        g_object_set_data(G_OBJECT(row), "gaudit-suffix", next);
-        gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), TRUE);
-        g_object_set_data(G_OBJECT(row), "gaudit-sourceless", GINT_TO_POINTER(1));
-        gtk_widget_set_visible(GTK_WIDGET(row), TRUE);
-        return;
-    }
 
     /* A category with nothing installed (no firewall, no antivirus): the
      * row leads to choosing one. */
@@ -563,32 +475,6 @@ static void fill_row_inner(GauditWindow *self, int k)
     gtk_widget_set_visible(GTK_WIDGET(row), TRUE);
 }
 
-/* The chevron to a plugin appears once its collection is done, that is,
- * once a collection of it is cached. Plugins that do not collect for a
- * rule script yet (their checks run in the helper) have no cache: for
- * them, once every probe row of the group has its answer and their own
- * run is not under way. */
-static void update_chevron(GauditWindow *self, gsize task)
-{
-    if (task >= GAUDIT_WINDOW_MAX_TASKS || self->chevrons[task] == NULL)
-        return;
-    gsize n_tasks;
-    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
-    if (tasks[task].collection_line != NULL) {
-        gtk_widget_set_visible(self->chevrons[task], gaudit_cache_lines(&tasks[task], NULL) != NULL
-                                                     && !self->results[task].running);
-        return;
-    }
-    gboolean done = !self->results[task].running;
-    for (gsize g = 0; done && g < N_HOME_GROUPS; g++) {
-        if (g_strcmp0(home_groups[g].task_id, tasks[task].id) != 0)
-            continue;
-        for (int j = 0; j < home_groups[g].n_kinds; j++)
-            done = done && self->received[home_groups[g].kinds[j]];
-    }
-    gtk_widget_set_visible(self->chevrons[task], done);
-}
-
 /* A group is shown while any of its rows is: one whose checks do not apply
  * here (e.g. Snap without snapd) goes once all of them have said so. */
 static void fill_row(GauditWindow *self, int k)
@@ -603,8 +489,6 @@ static void fill_row(GauditWindow *self, int k)
         }
         if (has_k && self->groups[g] != NULL)
             gtk_widget_set_visible(GTK_WIDGET(self->groups[g]), any);
-        if (has_k)
-            update_chevron(self, (gsize)task_by_id(home_groups[g].task_id));
     }
 }
 
@@ -696,8 +580,8 @@ static GtkWidget *build_group(GauditWindow *self, const char *title, int task,
         g_object_set_data(G_OBJECT(chevron), "gaudit-index", GINT_TO_POINTER(task + 1));
         g_signal_connect(chevron, "clicked", G_CALLBACK(on_group_chevron_clicked), self);
         adw_preferences_group_set_header_suffix(group, chevron);
-        /* Shown once the group's first collection is in (update_chevron). */
-        gtk_widget_set_visible(chevron, FALSE);
+        /* Always there: with nothing cached yet, the report page follows the
+         * run under way or starts one. */
         if (task < GAUDIT_WINDOW_MAX_TASKS)
             set_weak(&self->chevrons[task], chevron);
     }
@@ -724,8 +608,10 @@ static GtkWidget *build_group(GauditWindow *self, const char *title, int task,
     GtkWidget *prefix = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     g_object_set_data(G_OBJECT(row), "gaudit-prefix", prefix);
     adw_action_row_add_prefix(row, prefix);
+    adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
     adw_preferences_group_add(group, GTK_WIDGET(row));
     set_weak(&self->check_rows[task], row);
+    set_weak(&self->task_groups[task], group);
     if (n_kinds == 0) {
         AdwActionRow *empty = ADW_ACTION_ROW(adw_action_row_new());
         adw_preferences_row_set_title(ADW_PREFERENCES_ROW(empty), _("No report at this level"));
@@ -754,11 +640,38 @@ static gboolean task_has_core_group(gsize i)
  * verdict and what was found, with the time. In its group it is shown at
  * the levels that include it, and always once it has a result: results do
  * not vanish when the level goes down. */
+/* Home's rows after the first, as the last report gave them. */
+static void clear_more_rows(GauditWindow *self, gsize i)
+{
+    if (self->more_rows[i] == NULL)
+        return;
+    for (guint r = 0; r < self->more_rows[i]->len; r++) {
+        GtkWidget *w = g_ptr_array_index(self->more_rows[i], r);
+        if (self->task_groups[i] != NULL && gtk_widget_get_parent(w) != NULL)
+            adw_preferences_group_remove(self->task_groups[i], w);
+    }
+    g_clear_pointer(&self->more_rows[i], g_ptr_array_unref);
+}
+
+static AdwActionRow *home_row_new(const GauditHomeRow *h)
+{
+    AdwActionRow *row = ADW_ACTION_ROW(adw_action_row_new());
+    /* The rule's texts, filled in with data from the system: plain text. */
+    adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(row), FALSE);
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), h->title);
+    adw_action_row_set_subtitle(row, h->subtitle);
+    adw_action_row_add_prefix(row, verdict_icon(h->verdict));
+    return row;
+}
+
 static void fill_check_row_inner(GauditWindow *self, gsize i)
 {
     AdwActionRow *row = self->check_rows[i];
     if (row == NULL)
         return;
+    clear_more_rows(self, i);
+    if (self->task_groups[i] != NULL)
+        adw_preferences_group_set_description(self->task_groups[i], NULL);
     GtkWidget *prefix = g_object_get_data(G_OBJECT(row), "gaudit-prefix");
     GtkWidget *old = gtk_widget_get_first_child(prefix);
     if (old != NULL)
@@ -766,6 +679,8 @@ static void fill_check_row_inner(GauditWindow *self, gsize i)
 
     gsize n_tasks;
     const GauditTaskInfo *task = &gaudit_tasks_get(&n_tasks)[i];
+    adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row),
+                                  _(task->home_title != NULL ? task->home_title : task->title));
     /* Shown at the levels that include it (none for a task with no Home
      * report), and always once it has a result. */
     gboolean shown = gaudit_task_home_command(task, home_level(self)) != NULL
@@ -785,9 +700,37 @@ static void fill_check_row_inner(GauditWindow *self, gsize i)
             adw_action_row_set_subtitle(empty, _("Its check runs on the plugin's own page"));
         }
     }
+    if (self->results[i].running && self->results[i].waiting) {
+        /* Something must be done: switch to administrator. */
+        gtk_box_append(GTK_BOX(prefix), gtk_image_new_from_icon_name("gaudit-questionmark-symbolic"));
+        adw_action_row_set_subtitle(row, _("Switch to administrator to run this check"));
+        return;
+    }
     if (self->results[i].running) {
         gtk_box_append(GTK_BOX(prefix), row_spinner());
         adw_action_row_set_subtitle(row, _("Checking…"));
+        return;
+    }
+    if (self->results[i].have && self->results[i].rows != NULL && self->results[i].rows->len > 0) {
+        /* A plugin's condensate: one row per problem, each a summary, or
+         * one saying all is well; the time it was checked under the title. */
+        GPtrArray *rows = self->results[i].rows;
+        const GauditHomeRow *first = g_ptr_array_index(rows, 0);
+        gtk_box_append(GTK_BOX(prefix), verdict_icon(first->verdict));
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), first->title);
+        adw_action_row_set_subtitle(row, first->subtitle);
+        self->more_rows[i] = g_ptr_array_new_with_free_func(g_object_unref);
+        for (guint r = 1; r < rows->len && self->task_groups[i] != NULL; r++) {
+            AdwActionRow *more = home_row_new(g_ptr_array_index(rows, r));
+            g_ptr_array_add(self->more_rows[i], g_object_ref(more));
+            adw_preferences_group_add(self->task_groups[i], GTK_WIDGET(more));
+            gtk_widget_set_visible(GTK_WIDGET(more), shown);
+        }
+        if (self->task_groups[i] != NULL) {
+            /* Translators: under a plugin's group on Home, e.g. "Checked at 14:32". */
+            g_autofree char *at = g_strdup_printf(_("Checked at %s"), self->results[i].when);
+            adw_preferences_group_set_description(self->task_groups[i], at);
+        }
         return;
     }
     if (self->results[i].have) {
@@ -800,18 +743,23 @@ static void fill_check_row_inner(GauditWindow *self, gsize i)
         return;
     }
     g_autoptr(GPtrArray) missing = gaudit_task_missing_packages(task, self->pkg);
-    gtk_box_append(GTK_BOX(prefix), gtk_image_new_from_icon_name(task->icon));
+    gboolean waits_for_admin = missing != NULL && missing->len == 0 && self->results[i].note == NULL
+                               && gaudit_task_home_needs_admin(task, home_level(self))
+                               && !gaudit_session_elevated();
+    /* A row that needs the user to switch to administrator gets a question
+     * mark: something must be done. Otherwise the plugin's own icon. */
+    gtk_box_append(GTK_BOX(prefix), gtk_image_new_from_icon_name(
+        waits_for_admin ? "gaudit-questionmark-symbolic" : task->icon));
     adw_action_row_set_subtitle(row, missing == NULL ? _("Not available on this system")
                                    : missing->len > 0 ? _("Software is missing")
                                    : self->results[i].note != NULL ? self->results[i].note
-                                   : !task->needs_admin || gaudit_session_elevated() ? _("Not run yet")
-                                   : _("Switch to administrator to run this check"));
+                                   : waits_for_admin ? _("Switch to administrator to run this check")
+                                   : _("Not run yet"));
 }
 
 static void fill_check_row(GauditWindow *self, gsize i)
 {
     fill_check_row_inner(self, i);
-    update_chevron(self, i);
 }
 
 static void fill_check_rows(GauditWindow *self)
@@ -820,18 +768,41 @@ static void fill_check_rows(GauditWindow *self)
         fill_check_row(self, i);
 }
 
+static GPtrArray *copy_home_rows(GPtrArray *rows)
+{
+    if (rows == NULL)
+        return NULL;
+    GPtrArray *copy = g_ptr_array_new_with_free_func(g_free);
+    for (guint r = 0; r < rows->len; r++) {
+        const GauditHomeRow *h = g_ptr_array_index(rows, r);
+        /* One block: the struct, then its two strings. */
+        gsize lt = strlen(h->title) + 1, ls = strlen(h->subtitle != NULL ? h->subtitle : "") + 1;
+        GauditHomeRow *c = g_malloc(sizeof *c + lt + ls);
+        c->verdict = h->verdict;
+        c->title = (char *)(c + 1);
+        c->subtitle = c->title + lt;
+        memcpy(c->title, h->title, lt);
+        memcpy(c->subtitle, h->subtitle != NULL ? h->subtitle : "", ls);
+        g_ptr_array_add(copy, c);
+    }
+    return copy;
+}
+
 void gaudit_window_task_report(GauditWindow *self, gsize task_index, gaudit_verdict verdict,
-                               const char *title)
+                               const char *title, GPtrArray *rows)
 {
     g_return_if_fail(GAUDIT_IS_WINDOW(self) && title != NULL);
     if (task_index >= GAUDIT_WINDOW_MAX_TASKS)
         return;
     self->results[task_index].have = TRUE;
     self->results[task_index].running = FALSE;
+    self->results[task_index].waiting = FALSE;
     self->results[task_index].note = NULL;
     self->results[task_index].verdict = verdict;
     g_free(self->results[task_index].title);
     self->results[task_index].title = g_strdup(title);
+    g_clear_pointer(&self->results[task_index].rows, g_ptr_array_unref);
+    self->results[task_index].rows = copy_home_rows(rows);
     g_autoptr(GDateTime) now = g_date_time_new_now_local();
     g_autofree char *when = g_date_time_format(now, "%H:%M");
     g_strlcpy(self->results[task_index].when, when != NULL ? when : "",
@@ -1012,12 +983,21 @@ static void on_plugin_info(GSimpleAction *action, GVariant *param, gpointer user
     }
 }
 
+static GtkWidget *switch_new(GauditWindow *self, gboolean collapsed_only);
+static GtkWidget *titled(GtkWidget *switch_box, const char *text, GtkLabel **label_out);
+static void update_folder_title(GauditWindow *self);
+
 static void decorate(GauditWindow *self, AdwNavigationPage *page)
 {
     AdwHeaderBar *header = page != NULL ? g_object_get_data(G_OBJECT(page), "gaudit-header") : NULL;
     if (header == NULL || g_object_get_data(G_OBJECT(page), "gaudit-decorated") != NULL)
         return;
     g_object_set_data(G_OBJECT(page), "gaudit-decorated", GINT_TO_POINTER(1));
+    /* The page's title with the switch to its left, shown while the window
+     * is narrow and the sidebar, with its own, is out of view. */
+    GtkLabel *title = NULL;
+    adw_header_bar_set_title_widget(header, titled(switch_new(self, TRUE), "", &title));
+    g_object_bind_property(page, "title", title, "label", G_BINDING_SYNC_CREATE);
     const char *tag = adw_navigation_page_get_tag(page);
     gboolean home = g_strcmp0(tag, "home") == 0;
     gboolean in_plugin = !home && self->folder >= 0;
@@ -1143,6 +1123,10 @@ static void open_entry(GauditWindow *self, int entry)
     AdwNavigationPage *page = NULL;
     if (entry == 1) {
         page = gaudit_cached_report_page_new(task);
+        /* Nothing cached yet, but its run is under way (e.g. Home's at
+         * start-up): follow that one, rather than start another. */
+        if (page == NULL)
+            page = gaudit_run_page_follow(task);
         if (page == NULL && task->n_params == 0) {
             g_autoptr(GPtrArray) missing = gaudit_task_missing_packages(task, self->pkg);
             if (missing != NULL && missing->len == 0)
@@ -1209,7 +1193,14 @@ static AdwNavigationPage *folder_page(GauditWindow *self, const GauditTaskInfo *
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), GTK_WIDGET(list));
     AdwHeaderBar *header = ADW_HEADER_BAR(adw_header_bar_new());
-    adw_header_bar_set_show_title(header, FALSE);
+    /* The switch and a title, also beside the back button: "Audit Center"
+     * while the content shows beside it (its title names the plugin), the
+     * plugin's name when the window is narrow and the folder shows alone. */
+    GtkLabel *folder_title = NULL;
+    adw_header_bar_set_title_widget(header, titled(switch_new(self, FALSE), "", &folder_title));
+    set_weak(&self->folder_title, folder_title);
+    g_object_set_data_full(G_OBJECT(folder_title), "gaudit-plugin", g_strdup(_(task->title)), g_free);
+    update_folder_title(self);
     adw_header_bar_pack_end(header, primary_menu_button());
     AdwToolbarView *view = ADW_TOOLBAR_VIEW(adw_toolbar_view_new());
     adw_toolbar_view_add_top_bar(view, GTK_WIDGET(header));
@@ -1397,10 +1388,133 @@ static GSettings *open_settings(void)
 
 static void on_drop_clicked(GtkButton *button, gpointer user_data)
 {
-    GauditWindow *self = GAUDIT_WINDOW(user_data);
-    gtk_menu_button_popdown(GTK_MENU_BUTTON(self->elevated_marker));
-    (void)button;
+    (void)user_data;
+    GtkWidget *popover = gtk_widget_get_ancestor(GTK_WIDGET(button), GTK_TYPE_POPOVER);
+    if (popover != NULL)
+        gtk_popover_popdown(GTK_POPOVER(popover));
     gaudit_session_drop();
+}
+
+/* One switch as the state is now. */
+static void switch_update(GauditWindow *self, GtkWidget *box)
+{
+    gboolean elevated = gaudit_session_elevated();
+    GtkWidget *as_user = g_object_get_data(G_OBJECT(box), "gaudit-as-user");
+    GtkWidget *marker = g_object_get_data(G_OBJECT(box), "gaudit-elevated");
+    if (!elevated)
+        gtk_menu_button_popdown(GTK_MENU_BUTTON(marker));
+    gtk_widget_set_visible(marker, elevated);
+    gtk_widget_set_visible(as_user, !elevated);
+    /* The content's own only while the sidebar is out of view. */
+    gboolean collapsed = self->split != NULL && adw_navigation_split_view_get_collapsed(self->split);
+    gtk_widget_set_visible(box, g_object_get_data(G_OBJECT(box), "gaudit-collapsed-only") == NULL
+                                || collapsed);
+    /* A disc in the accent colour behind it while a check waits for the
+     * rights: not an error, it shows where the switch is. */
+    if (self->attention)
+        gtk_widget_add_css_class(as_user, "gaudit-attention");
+    else
+        gtk_widget_remove_css_class(as_user, "gaudit-attention");
+}
+
+static void switch_gone(gpointer data, GObject *box)
+{
+    GauditWindow *self = data;
+    if (self->switches != NULL)
+        g_ptr_array_remove(self->switches, box);
+}
+
+/* The switch: as the user a button (one click asks for the password, or
+ * lets checks waiting for it go on), with administrator rights a menu
+ * button that explains the lease and lets the rights go. The two icons
+ * differ in shape (one person, two), not in colour only. */
+static GtkWidget *switch_new(GauditWindow *self, gboolean collapsed_only)
+{
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    if (collapsed_only)
+        g_object_set_data(G_OBJECT(box), "gaudit-collapsed-only", GINT_TO_POINTER(1));
+    GtkWidget *as_user = gtk_button_new_from_icon_name("gaudit-user-symbolic");
+    gtk_actionable_set_action_name(GTK_ACTIONABLE(as_user), "app.elevate");
+    gtk_widget_set_tooltip_text(as_user, _("Running as you. Switch to administrator"));
+    gtk_accessible_update_property(GTK_ACCESSIBLE(as_user), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                   _("Running as you. Switch to administrator"), -1);
+    gtk_box_append(GTK_BOX(box), as_user);
+
+    GtkWidget *marker = gtk_menu_button_new();
+    gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(marker), "gaudit-superuser-symbolic");
+    gtk_widget_set_tooltip_text(marker, _("Running with administrator rights"));
+    gtk_accessible_update_property(GTK_ACCESSIBLE(marker), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                   _("Running with administrator rights"), -1);
+    GtkWidget *pop_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_set_margin_top(pop_box, 6);
+    gtk_widget_set_margin_bottom(pop_box, 6);
+    gtk_widget_set_margin_start(pop_box, 6);
+    gtk_widget_set_margin_end(pop_box, 6);
+    /* The times are the helper's lease (src/helper/lease.h). */
+    GtkWidget *pop_text = gtk_label_new(
+        _("gAudit holds administrator rights. They end 2 minutes after the last check "
+          "that needs them, and at the latest 30 minutes after you gave the password."));
+    gtk_label_set_wrap(GTK_LABEL(pop_text), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(pop_text), 36);
+    gtk_label_set_xalign(GTK_LABEL(pop_text), 0.0f);
+    gtk_box_append(GTK_BOX(pop_box), pop_text);
+    GtkWidget *drop = gtk_button_new_with_label(_("Drop Administrator Rights"));
+    gtk_widget_add_css_class(drop, "destructive-action");
+    g_signal_connect(drop, "clicked", G_CALLBACK(on_drop_clicked), self);
+    gtk_box_append(GTK_BOX(pop_box), drop);
+    GtkWidget *popover = gtk_popover_new();
+    gtk_popover_set_child(GTK_POPOVER(popover), pop_box);
+    gtk_menu_button_set_popover(GTK_MENU_BUTTON(marker), popover);
+    gtk_box_append(GTK_BOX(box), marker);
+
+    g_object_set_data(G_OBJECT(box), "gaudit-as-user", as_user);
+    g_object_set_data(G_OBJECT(box), "gaudit-elevated", marker);
+    if (self->switches == NULL)
+        self->switches = g_ptr_array_new();
+    g_ptr_array_add(self->switches, box);
+    g_object_weak_ref(G_OBJECT(box), switch_gone, self);
+    switch_update(self, box);
+    return box;
+}
+
+static void switches_update(GauditWindow *self)
+{
+    for (guint i = 0; self->switches != NULL && i < self->switches->len; i++)
+        switch_update(self, g_ptr_array_index(self->switches, i));
+}
+
+/* A header's title with the switch to its left. label_out (may be NULL)
+ * gets the label, for a title that changes. */
+static GtkWidget *titled(GtkWidget *switch_box, const char *text, GtkLabel **label_out)
+{
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+    gtk_box_append(GTK_BOX(box), switch_box);
+    GtkWidget *label = gtk_label_new(text);
+    gtk_widget_add_css_class(label, "title");
+    gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
+    gtk_label_set_single_line_mode(GTK_LABEL(label), TRUE);
+    gtk_box_append(GTK_BOX(box), label);
+    if (label_out != NULL)
+        *label_out = GTK_LABEL(label);
+    return box;
+}
+
+static void update_folder_title(GauditWindow *self)
+{
+    if (self->folder_title == NULL)
+        return;
+    gboolean collapsed = self->split != NULL && adw_navigation_split_view_get_collapsed(self->split);
+    const char *plugin = g_object_get_data(G_OBJECT(self->folder_title), "gaudit-plugin");
+    gtk_label_set_text(self->folder_title, collapsed && plugin != NULL ? plugin : _("Audit Center"));
+}
+
+static void on_collapsed(GObject *split, GParamSpec *pspec, gpointer user_data)
+{
+    (void)split;
+    (void)pspec;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    switches_update(self);
+    update_folder_title(self);
 }
 
 static void on_close_answer(AdwAlertDialog *dialog, const char *response, gpointer user_data)
@@ -1470,12 +1584,19 @@ static void gaudit_window_dispose(GObject *object)
         set_weak(&win->empty_rows[i], NULL);
         set_weak(&win->chevrons[i], NULL);
         g_clear_pointer(&win->results[i].title, g_free);
+        g_clear_pointer(&win->results[i].rows, g_ptr_array_unref);
+        g_clear_pointer(&win->more_rows[i], g_ptr_array_unref);
+        set_weak(&win->task_groups[i], NULL);
     }
     for (int k = 0; k < GAUDIT_PROBE_COUNT; k++)
         set_weak(&win->rows[k], NULL);
     for (gsize g = 0; g < N_HOME_GROUPS; g++)
         set_weak(&win->groups[g], NULL);
     set_weak(&win->folder_list, NULL);
+    set_weak(&win->folder_title, NULL);
+    for (guint i = 0; win->switches != NULL && i < win->switches->len; i++)
+        g_object_weak_unref(g_ptr_array_index(win->switches, i), switch_gone, win);
+    g_clear_pointer(&win->switches, g_ptr_array_unref);
     g_clear_object(&GAUDIT_WINDOW(object)->settings);
     G_OBJECT_CLASS(gaudit_window_parent_class)->dispose(object);
 }
@@ -1524,56 +1645,11 @@ static void gaudit_window_init(GauditWindow *self)
                                    GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), GTK_WIDGET(self->sidebar));
 
-    /* Sidebar header: "Audit Center", with a switch in front of it that
-     * shows whether gAudit runs as the user or with administrator rights,
-     * and the primary menu at the end. The two icons differ in shape (one
-     * person, two), not in colour only. */
+    /* Sidebar header: the user/administrator switch, then "Audit Center",
+     * and the primary menu at the end. */
     AdwHeaderBar *sidebar_header = ADW_HEADER_BAR(adw_header_bar_new());
-    GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
-    /* As the user: one click asks for the password. */
-    self->as_user = gtk_button_new_from_icon_name("gaudit-user-symbolic");
-    gtk_widget_add_css_class(self->as_user, "flat");
-    gtk_actionable_set_action_name(GTK_ACTIONABLE(self->as_user), "app.elevate");
-    gtk_widget_set_tooltip_text(self->as_user, _("Running as you. Switch to administrator"));
-    gtk_accessible_update_property(GTK_ACCESSIBLE(self->as_user),
-                                   GTK_ACCESSIBLE_PROPERTY_LABEL,
-                                   _("Running as you. Switch to administrator"), -1);
-    gtk_box_append(GTK_BOX(title_box), self->as_user);
-    /* With administrator rights: it explains the lease and lets the rights go. */
-    self->elevated_marker = gtk_menu_button_new();
-    gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(self->elevated_marker), "gaudit-superuser-symbolic");
-    gtk_widget_add_css_class(self->elevated_marker, "flat");
-    gtk_widget_set_tooltip_text(self->elevated_marker, _("Running with administrator rights"));
-    gtk_accessible_update_property(GTK_ACCESSIBLE(self->elevated_marker),
-                                   GTK_ACCESSIBLE_PROPERTY_LABEL,
-                                   _("Running with administrator rights"), -1);
-    GtkWidget *pop_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
-    gtk_widget_set_margin_top(pop_box, 6);
-    gtk_widget_set_margin_bottom(pop_box, 6);
-    gtk_widget_set_margin_start(pop_box, 6);
-    gtk_widget_set_margin_end(pop_box, 6);
-    /* The times are the helper's lease (src/helper/lease.h). */
-    GtkWidget *pop_text = gtk_label_new(
-        _("gAudit holds administrator rights. They end 2 minutes after the last check "
-          "that needs them, and at the latest 30 minutes after you gave the password."));
-    gtk_label_set_wrap(GTK_LABEL(pop_text), TRUE);
-    gtk_label_set_max_width_chars(GTK_LABEL(pop_text), 36);
-    gtk_label_set_xalign(GTK_LABEL(pop_text), 0.0f);
-    gtk_box_append(GTK_BOX(pop_box), pop_text);
-    GtkWidget *drop = gtk_button_new_with_label(_("Drop Administrator Rights"));
-    gtk_widget_add_css_class(drop, "destructive-action");
-    g_signal_connect(drop, "clicked", G_CALLBACK(on_drop_clicked), self);
-    gtk_box_append(GTK_BOX(pop_box), drop);
-    GtkWidget *popover = gtk_popover_new();
-    gtk_popover_set_child(GTK_POPOVER(popover), pop_box);
-    gtk_menu_button_set_popover(GTK_MENU_BUTTON(self->elevated_marker), popover);
-    gtk_widget_set_visible(self->elevated_marker, gaudit_session_elevated());
-    gtk_widget_set_visible(self->as_user, !gaudit_session_elevated());
-    gtk_box_append(GTK_BOX(title_box), self->elevated_marker);
-    GtkWidget *title = gtk_label_new(_("Audit Center"));
-    gtk_widget_add_css_class(title, "title");
-    gtk_box_append(GTK_BOX(title_box), title);
-    adw_header_bar_set_title_widget(sidebar_header, title_box);
+    adw_header_bar_set_title_widget(sidebar_header,
+                                    titled(switch_new(self, FALSE), _("Audit Center"), NULL));
     adw_header_bar_pack_end(sidebar_header, primary_menu_button());
 
     AdwToolbarView *sidebar_view = ADW_TOOLBAR_VIEW(adw_toolbar_view_new());
@@ -1606,6 +1682,7 @@ static void gaudit_window_init(GauditWindow *self)
         adw_navigation_page_new(GTK_WIDGET(self->side_nav), GAUDIT_APP_NAME));
     adw_navigation_split_view_set_content(self->split,
         adw_navigation_page_new(GTK_WIDGET(self->content), GAUDIT_APP_NAME));
+    g_signal_connect(self->split, "notify::collapsed", G_CALLBACK(on_collapsed), self);
 
     GtkWidget *toasts = adw_toast_overlay_new();
     adw_toast_overlay_set_child(ADW_TOAST_OVERLAY(toasts), GTK_WIDGET(self->split));
@@ -1623,10 +1700,8 @@ static void gaudit_window_init(GauditWindow *self)
 void gaudit_window_set_elevated(GauditWindow *self, gboolean elevated)
 {
     g_return_if_fail(GAUDIT_IS_WINDOW(self));
-    if (!elevated)
-        gtk_menu_button_popdown(GTK_MENU_BUTTON(self->elevated_marker));
-    gtk_widget_set_visible(self->elevated_marker, elevated);
-    gtk_widget_set_visible(self->as_user, !elevated);
+    (void)elevated;  /* the session's own state, read by each switch */
+    switches_update(self);
     fill_check_rows(self);  /* "needs administrator rights" follows the switch */
 }
 
@@ -1683,6 +1758,24 @@ void gaudit_window_task_running(GauditWindow *self, gsize task_index)
     fill_check_row(self, task_index);
 }
 
+void gaudit_window_task_waiting(GauditWindow *self, gsize task_index, gboolean waiting)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    if (task_index >= GAUDIT_WINDOW_MAX_TASKS)
+        return;
+    self->results[task_index].waiting = waiting;
+    fill_check_row(self, task_index);
+}
+
+/* A disc in the accent colour behind the switch while a check waits for
+ * administrator rights: not an error, it shows where the switch is. */
+void gaudit_window_set_attention(GauditWindow *self, gboolean on)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    self->attention = on;
+    switches_update(self);
+}
+
 void gaudit_window_task_failed(GauditWindow *self, gsize task_index, gaudit_run_status status)
 {
     g_return_if_fail(GAUDIT_IS_WINDOW(self));
@@ -1690,9 +1783,11 @@ void gaudit_window_task_failed(GauditWindow *self, gsize task_index, gaudit_run_
         return;
     /* Nothing new: an earlier result stays; otherwise the row says why. */
     self->results[task_index].running = FALSE;
+    self->results[task_index].waiting = FALSE;
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
-    gboolean admin = task_index < n_tasks && tasks[task_index].needs_admin;
+    gboolean admin = task_index < n_tasks
+                     && gaudit_task_home_needs_admin(&tasks[task_index], home_level(self));
     self->results[task_index].note =
         status == GAUDIT_RUN_CANCELLED && !admin ? _("Not checked: it was stopped")
         : status == GAUDIT_RUN_CANCELLED ? _("Not checked: no password was given, or it was stopped")
@@ -1700,6 +1795,14 @@ void gaudit_window_task_failed(GauditWindow *self, gsize task_index, gaudit_run_
         : status == GAUDIT_RUN_OK ? _("Another check is running. Try again when it has finished")
         : _("The check could not be completed");
     fill_check_row(self, task_index);
+}
+
+void gaudit_window_toast(GauditWindow *self, const char *text)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self) && text != NULL);
+    GtkWidget *overlay = adw_application_window_get_content(ADW_APPLICATION_WINDOW(self));
+    if (ADW_IS_TOAST_OVERLAY(overlay))
+        adw_toast_overlay_add_toast(ADW_TOAST_OVERLAY(overlay), adw_toast_new(text));
 }
 
 void gaudit_window_set_worst(GauditWindow *self, gaudit_verdict worst)

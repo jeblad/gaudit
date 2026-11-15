@@ -9,6 +9,8 @@
 #include "snap-runner.h"
 
 #include <dirent.h>
+#include <errno.h>
+#include <stdio.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <string.h>
@@ -132,6 +134,100 @@ static gaudit_backend_status package_state(unsigned *out_obsolete, unsigned *out
     return status;
 }
 
+static gaudit_backend_status package_counts(unsigned *out_obsolete, unsigned *out_upgradable,
+                                            unsigned *out_security)
+{
+    if (out_obsolete == NULL || out_upgradable == NULL || out_security == NULL)
+        return GAUDIT_BACKEND_ERROR;
+    gaudit_deb_counts counts;
+    gaudit_backend_status status =
+        gaudit_deb_scan("/var/lib/dpkg/status", "/var/lib/apt/lists",
+                        "/etc/apt/preferences", "/etc/apt/preferences.d", &counts);
+    if (status == GAUDIT_BACKEND_OK) {
+        *out_obsolete = counts.obsolete;
+        *out_upgradable = counts.upgradable;
+        *out_security = counts.security;
+    }
+    return status;
+}
+
+/* Whether a systemd timer is on: enabled (a link in timers.target.wants)
+ * and not masked; 0 when its unit is not installed at all. Read from the
+ * filesystem, never from systemctl. 1, 0, or -1 when it cannot be told. */
+static int timer_on(const char *name)
+{
+    static const char *const unit_dirs[] = { "/usr/lib/systemd/system", "/lib/systemd/system" };
+    char path[256];
+    struct stat st;
+    int installed = 0;
+    for (size_t i = 0; i < COUNT_OF(unit_dirs); i++) {
+        snprintf(path, sizeof path, "%s/%s", unit_dirs[i], name);
+        if (stat(path, &st) == 0 && S_ISREG(st.st_mode))
+            installed = 1;
+    }
+    if (!installed)
+        return 0;
+    snprintf(path, sizeof path, "/etc/systemd/system/%s", name);
+    if (lstat(path, &st) == 0) {
+        char target[64];
+        ssize_t n = S_ISLNK(st.st_mode) ? readlink(path, target, sizeof target - 1) : -1;
+        if (n > 0) {
+            target[n] = '\0';
+            if (strcmp(target, "/dev/null") == 0)
+                return 0;  /* masked */
+        }
+    }
+    snprintf(path, sizeof path, "/etc/systemd/system/timers.target.wants/%s", name);
+    if (lstat(path, &st) == 0)
+        return 1;
+    return errno == ENOENT ? 0 : -1;
+}
+
+/* apt's daily job (apt.systemd.daily) looks for updates every
+ * Update-Package-Lists days and runs unattended-upgrade when
+ * Unattended-Upgrade is on; both only through the two timers. */
+static gaudit_backend_status update_settings(gaudit_update_settings *out)
+{
+    if (out == NULL)
+        return GAUDIT_BACKEND_ERROR;
+    const char *file = "/etc/apt/apt.conf", *dir = "/etc/apt/apt.conf.d";
+    long days, install, download;
+    out->check_days = gaudit_apt_periodic(file, dir, "Update-Package-Lists", &days)
+                      == GAUDIT_BACKEND_OK && days >= 0 ? days : -1;
+    out->download = gaudit_apt_periodic(file, dir, "Download-Upgradeable-Packages", &download)
+                    == GAUDIT_BACKEND_OK ? download != 0 : -1;
+    out->install = access("/usr/bin/unattended-upgrade", X_OK) != 0 ? 0
+                 : gaudit_apt_periodic(file, dir, "Unattended-Upgrade", &install)
+                   == GAUDIT_BACKEND_OK ? install != 0 : -1;
+    out->check_timer = timer_on("apt-daily.timer");
+    out->install_timer = timer_on("apt-daily-upgrade.timer");
+    /* Touched each time the daily job has run unattended-upgrade. */
+    struct stat st;
+    if (stat("/var/lib/apt/periodic/upgrade-stamp", &st) == 0 && S_ISREG(st.st_mode))
+        out->last_install = st.st_mtime;
+    else
+        out->last_install = errno == ENOENT ? 0 : -1;
+    /* dpkg writes its status file whenever it installs, updates or removes
+     * a package, by hand or automatically. */
+    out->last_change = stat("/var/lib/dpkg/status", &st) == 0 && S_ISREG(st.st_mode)
+                       ? st.st_mtime : -1;
+    /* Graphical tools that set up or run updates, found by the package
+     * database (never by a file on PATH). With one of them, gAudit leaves
+     * the setting to it. */
+    static const char *const tools[] = {
+        "software-properties-gtk", "software-properties-qt", "update-manager", "synaptic",
+        "gnome-software", "plasma-discover", "app-center", NULL,
+    };
+    unsigned n = 0;
+    /* gAudit's own drop-in (src/plugins/updates/helper/automatic.h), so the
+     * setting it made can be removed again from the app. */
+    out->own_setting = lstat("/etc/apt/apt.conf.d/52gaudit-automatic-updates", &st) == 0 ? 1
+                     : errno == ENOENT ? 0 : -1;
+    out->admin_tools = gaudit_deb_installed_names("/var/lib/dpkg/status", tools, out->admin_names,
+                                                  sizeof out->admin_names, &n) == 0 ? (int)n : -1;
+    return GAUDIT_BACKEND_OK;
+}
+
 #define FLATPAK_TIMEOUT_MS 5000
 
 static gaudit_backend_status flatpak_state(gaudit_flatpak_state *out)
@@ -171,6 +267,8 @@ static const gaudit_pkg_backend debian_pkg = {
     .last_index_update = last_index_update,
     .automatic_updates = automatic_updates,
     .package_state = package_state,
+    .package_counts = package_counts,
+    .update_settings = update_settings,
     .sourceless_packages = sourceless_packages,
     .flatpak_state = flatpak_state,
     .snap_state = snap_state,

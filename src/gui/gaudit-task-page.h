@@ -59,6 +59,29 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
                                        const char *const *run_args, GauditFixedFn on_fixed,
                                        gpointer data, GDestroyNotify data_free);
 
+/* One way of writing gAudit's own configuration, through the helper:
+ * label for the button and the confirmation, summary in plain language
+ * (what is written where, what it does), command the session's run
+ * (e.g. "run automatic-updates-on"). */
+typedef struct {
+    const char *label;
+    const char *summary;
+    const char *command;
+} GauditConfAction;
+
+/* A fix page that changes configuration: problem and how as on any fix
+ * page, then the buttons for apply and undo (either may be NULL), each
+ * confirmed with its summary first. The run waits for administrator
+ * rights like any other (the switch); the page then says what happened.
+ * after (may be NULL) is called once something was written or removed,
+ * to check again. */
+AdwNavigationPage *gaudit_fix_page_new_conf(const char *title, const char *problem,
+                                            const char *how, const char *note,
+                                            const GauditConfAction *apply,
+                                            const GauditConfAction *undo,
+                                            GauditFixedFn after, gpointer data,
+                                            GDestroyNotify data_free);
+
 /* Page 0, information about the plugin: its icon, name and short
  * description, then what it does, in full. Built from the plugin's
  * description, all plain text: no markup and no links, so a plugin cannot

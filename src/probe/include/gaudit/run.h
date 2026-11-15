@@ -7,6 +7,10 @@
  *   (integrity-file ...) one finding of the package integrity check (at most
  *                       GAUDIT_INTEGRITY_SHOWN, before the result)
  *   (integrity ...)     the package integrity result
+ *   (conf ...)          what writing a configuration did: its template, the
+ *                       action (on, remove) and the result (conf-write.h's
+ *                       names: written, unchanged, removed, not-there,
+ *                       foreign, edited, precondition, unsafe, error)
  *   (end (status S))    always last; S is a gaudit_run_status */
 #pragma once
 
@@ -68,11 +72,21 @@ typedef struct {
     char path[256];
 } gaudit_integrity_file;
 
+typedef struct {
+    char template_id[64];
+    char action[16];
+    char result[16];
+} gaudit_conf_report;
+
+/* 1 if result is one of the names a configuration write can give. */
+int gaudit_conf_result_known(const char *result);
+
 typedef enum {
     GAUDIT_RUN_EVENT_ELEVATED,
     GAUDIT_RUN_EVENT_FIREWALL,
     GAUDIT_RUN_EVENT_INTEGRITY_FILE,
     GAUDIT_RUN_EVENT_INTEGRITY,
+    GAUDIT_RUN_EVENT_CONF,
     GAUDIT_RUN_EVENT_END,
 } gaudit_run_event_type;
 
@@ -82,6 +96,7 @@ typedef struct {
     gaudit_firewall_report firewall;    /* _FIREWALL */
     gaudit_integrity_file file;         /* _INTEGRITY_FILE */
     gaudit_integrity_report integrity;  /* _INTEGRITY */
+    gaudit_conf_report conf;            /* _CONF */
     gaudit_run_status status;           /* _END */
 } gaudit_run_event;
 

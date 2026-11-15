@@ -38,6 +38,7 @@
 #include "report.h"
 #include "fix-mode.h"
 #include "secrets-mode.h"
+#include "updates-mode.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -100,8 +101,11 @@ static const struct {
     { "run firewall",  "firewall\n",  5 * 60 * 1000L },
     { "run integrity", "integrity\n", 20 * 60 * 1000L },  /* the helper allows 15 */
     { "elevate",       NULL,          5 * 60 * 1000L },
+    /* Writing gAudit's own configuration (conf-write.h), on request. */
+    { "run automatic-updates-on",     "automatic-updates-on\n",     5 * 60 * 1000L },
+    { "run automatic-updates-remove", "automatic-updates-remove\n", 5 * 60 * 1000L },
 };
-enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_ELEVATE, RUN_KINDS };
+enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_ELEVATE, RUN_CONF_ON, RUN_CONF_REMOVE, RUN_KINDS };
 #define MAX_HELPER_OUT   (256 * 1024)     /* over a whole session */
 #define MAX_LINE_LEN     1024
 
@@ -185,6 +189,7 @@ typedef struct {
     gaudit_integrity_report integrity;
     gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
     unsigned n_files;
+    gaudit_conf_report conf;
 } session_state;
 
 static void close_helper_input(session_state *st)
@@ -358,6 +363,26 @@ static int on_helper_line(char *line, void *ctx)
         return -1;  /* nothing else comes unasked */
     if (st->kind == RUN_INTEGRITY)
         return on_integrity_line(st, line, &failed, summary);
+    if (st->kind == RUN_CONF_ON || st->kind == RUN_CONF_REMOVE) {
+        gaudit_run_event ev;
+        if (!st->have_result && gaudit_run_parse_line(line, &ev) == 0
+            && ev.type == GAUDIT_RUN_EVENT_CONF
+            && strcmp(ev.conf.action, st->kind == RUN_CONF_ON ? "on" : "remove") == 0) {
+            st->have_result = 1;
+            st->conf = ev.conf;
+            return 0;
+        }
+        if (gaudit_sexpr_parse(line, "helper", summary, 4) != 0)
+            return -1;
+        st->running = 0;
+        if (failed == 0 && st->have_result) {
+            gaudit_run_event res = { .type = GAUDIT_RUN_EVENT_CONF, .conf = st->conf };
+            if (emit(&res) != 0)
+                return -1;
+            return emit_end(GAUDIT_RUN_OK);
+        }
+        return emit_end(GAUDIT_RUN_FAILED);
+    }
     if (!st->have_result && gaudit_sexpr_parse(line, "firewall", fw, sizeof fw / sizeof fw[0]) == 0) {
         st->have_result = 1;
         st->fw = (gaudit_firewall_report){
@@ -673,6 +698,8 @@ int main(int argc, char *argv[])
                                             (size_t)(argc - 3));
     if (argc == 2 && strcmp(argv[1], "packages") == 0)
         return list_packages();
+    if (argc == 3 && strcmp(argv[1], "updates") == 0)
+        return gaudit_updates_mode(argv[2]);
 #if GAUDIT_DEVELOPER_BUILD
     /* Developer builds only: see the pages for missing software. */
     static const char pretend[] = "--pretend-missing=";
@@ -682,6 +709,6 @@ int main(int argc, char *argv[])
         return status_refresh();
     }
 #endif
-    fputs("usage: gaudit-orchestrator [session | packages | secrets quick|full [folder ...] | report <plugin-id> | fix <id> <root> [path]]\n", stderr);
+    fputs("usage: gaudit-orchestrator [session | packages | updates quick | secrets quick|full [folder ...] | report <plugin-id> | fix <id> <root> [path]]\n", stderr);
     return 2;
 }

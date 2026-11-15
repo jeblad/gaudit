@@ -6,6 +6,7 @@
 
 #include "gaudit-orchestrator.h"
 #include "gaudit-run-page.h"
+#include "gaudit-session.h"
 #include "gaudit-task-page.h"
 
 AdwNavigationPage *gaudit_page_wrap(GtkWidget *content, const char *title, const char *tag)
@@ -81,7 +82,8 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
     GtkWidget *what = wrapped_label(problem);
     gtk_widget_add_css_class(what, "title-4");
     gtk_box_append(GTK_BOX(box), what);
-    gtk_box_append(GTK_BOX(box), wrapped_label(how));
+    GtkWidget *how_label = wrapped_label(how);
+    gtk_box_append(GTK_BOX(box), how_label);
     if (command != NULL) {
         GtkWidget *field = gaudit_command_field_new_run(command, run_args);
         /* The run button, if any, carries what to do after a fix. */
@@ -111,7 +113,180 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
     GtkWidget *scroller = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), clamp);
-    return gaudit_page_wrap(scroller, title, "fix");
+    AdwNavigationPage *page = gaudit_page_wrap(scroller, title, "fix");
+    /* For the configuration page, which adds its buttons after how. */
+    g_object_set_data(G_OBJECT(page), "gaudit-fix-box", box);
+    g_object_set_data(G_OBJECT(page), "gaudit-fix-how", how_label);
+    return page;
+}
+
+/* --- Changing configuration ------------------------------------------------ */
+
+typedef struct {
+    GtkWidget *result;     /* weak: says what happened */
+    GtkWidget *buttons;    /* weak: insensitive while a run is under way */
+    GauditConfAction apply, undo;
+    GauditFixedFn after;
+    gpointer data;
+    GDestroyNotify data_free;
+    int refs;
+} ConfPage;
+
+static void conf_page_unref(gpointer p)
+{
+    ConfPage *c = p;
+    if (--c->refs > 0)
+        return;
+    if (c->result != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(c->result), (gpointer *)&c->result);
+    if (c->buttons != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(c->buttons), (gpointer *)&c->buttons);
+    if (c->data_free != NULL && c->data != NULL)
+        c->data_free(c->data);
+    g_free(c);
+}
+
+/* What the helper's result means, in gAudit's own words. */
+static const char *conf_result_text(const char *result)
+{
+    static const struct { const char *name, *text; } texts[] = {
+        { "written",      N_("Done. gAudit's setting is written; it is checked again now.") },
+        { "unchanged",    N_("It was already set up this way, so nothing was changed.") },
+        { "removed",      N_("Done. gAudit's setting is removed; it is checked again now.") },
+        { "not-there",    N_("There was no setting of gAudit's to remove.") },
+        { "foreign",      N_("A file of that name that gAudit did not write is already there, so nothing was changed.") },
+        { "edited",       N_("gAudit's file has been changed since it was written, so it was left as it is.") },
+        { "precondition", N_("Something it needs is missing or not as expected, so nothing was written.") },
+        { "unsafe",       N_("A folder on the way can be changed by others, so nothing was written.") },
+    };
+    for (gsize i = 0; i < G_N_ELEMENTS(texts); i++)
+        if (g_strcmp0(result, texts[i].name) == 0)
+            return _(texts[i].text);
+    return _("It could not be done, so nothing was changed.");
+}
+
+static void conf_say(ConfPage *c, const char *text)
+{
+    if (c->result == NULL)
+        return;
+    gtk_label_set_text(GTK_LABEL(c->result), text);
+    gtk_widget_set_visible(c->result, TRUE);
+}
+
+static void on_conf_done(gaudit_run_status status, const GauditRunResult *result, gpointer user_data)
+{
+    ConfPage *c = user_data;
+    if (c->buttons != NULL)
+        gtk_widget_set_sensitive(c->buttons, TRUE);
+    if (status == GAUDIT_RUN_CANCELLED)
+        conf_say(c, _("Cancelled, so nothing was changed."));
+    else if (status == GAUDIT_RUN_DENIED)
+        conf_say(c, _("The password was not accepted, so nothing was changed."));
+    else if (status != GAUDIT_RUN_OK || result == NULL || result->kind != GAUDIT_RESULT_CONF)
+        conf_say(c, _("It could not be done, so nothing was changed."));
+    else {
+        conf_say(c, conf_result_text(result->conf.result));
+        if ((g_strcmp0(result->conf.result, "written") == 0
+             || g_strcmp0(result->conf.result, "removed") == 0) && c->after != NULL)
+            c->after(c->data);
+    }
+    conf_page_unref(c);
+}
+
+typedef struct {
+    ConfPage *page;
+    const GauditConfAction *action;
+} ConfAsk;
+
+static void on_conf_answer(AdwAlertDialog *dialog, const char *response, gpointer user_data)
+{
+    (void)dialog;
+    ConfAsk *ask = user_data;
+    ConfPage *c = ask->page;
+    if (g_strcmp0(response, "apply") == 0) {
+        c->refs++;
+        if (c->buttons != NULL)
+            gtk_widget_set_sensitive(c->buttons, FALSE);
+        conf_say(c, _("Under way. It needs administrator rights: use the switch beside the title if asked."));
+        if (!gaudit_session_run(ask->action->command, NULL, on_conf_done, c)) {
+            if (c->buttons != NULL)
+                gtk_widget_set_sensitive(c->buttons, TRUE);
+            conf_say(c, _("It is already under way."));
+            conf_page_unref(c);
+        }
+    }
+    conf_page_unref(c);
+    g_free(ask);
+}
+
+/* Confirmed first, with what it does in plain language. */
+static void on_conf_clicked(GtkButton *button, gpointer user_data)
+{
+    ConfPage *c = user_data;
+    const GauditConfAction *action = g_object_get_data(G_OBJECT(button), "gaudit-action");
+    AdwDialog *dialog = adw_alert_dialog_new(action->label, action->summary);
+    adw_alert_dialog_add_responses(ADW_ALERT_DIALOG(dialog), "cancel", _("_Cancel"),
+                                   "apply", action->label, NULL);
+    adw_alert_dialog_set_default_response(ADW_ALERT_DIALOG(dialog), "cancel");
+    adw_alert_dialog_set_close_response(ADW_ALERT_DIALOG(dialog), "cancel");
+    ConfAsk *ask = g_new0(ConfAsk, 1);
+    ask->page = c;
+    ask->action = action;
+    c->refs++;
+    g_signal_connect(dialog, "response", G_CALLBACK(on_conf_answer), ask);
+    adw_dialog_present(dialog, GTK_WIDGET(button));
+}
+
+AdwNavigationPage *gaudit_fix_page_new_conf(const char *title, const char *problem,
+                                            const char *how, const char *note,
+                                            const GauditConfAction *apply,
+                                            const GauditConfAction *undo,
+                                            GauditFixedFn after, gpointer data,
+                                            GDestroyNotify data_free)
+{
+    AdwNavigationPage *page = gaudit_fix_page_new(title, problem, how, NULL, note, NULL,
+                                                  NULL, NULL, NULL);
+    GtkWidget *box = g_object_get_data(G_OBJECT(page), "gaudit-fix-box");
+    GtkWidget *how_label = g_object_get_data(G_OBJECT(page), "gaudit-fix-how");
+    ConfPage *c = g_new0(ConfPage, 1);
+    c->refs = 1;
+    c->after = after;
+    c->data = data;
+    c->data_free = data_free;
+    if (apply != NULL)
+        c->apply = *apply;
+    if (undo != NULL)
+        c->undo = *undo;
+
+    /* Side by side, as a dialog's buttons: undo first, apply at the end. */
+    GtkWidget *buttons = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_set_halign(buttons, GTK_ALIGN_START);
+    const GauditConfAction *which[] = { undo != NULL ? &c->undo : NULL,
+                                        apply != NULL ? &c->apply : NULL };
+    for (gsize i = 0; i < G_N_ELEMENTS(which); i++) {
+        if (which[i] == NULL)
+            continue;
+        GtkWidget *b = gtk_button_new_with_label(which[i]->label);
+        if (i == 1)
+            gtk_widget_add_css_class(b, "suggested-action");
+        gtk_widget_add_css_class(b, "pill");
+        g_object_set_data(G_OBJECT(b), "gaudit-action", (gpointer)which[i]);
+        c->refs++;
+        g_signal_connect_data(b, "clicked", G_CALLBACK(on_conf_clicked), c,
+                              (GClosureNotify)(void (*)(void))conf_page_unref, 0);
+        gtk_box_append(GTK_BOX(buttons), b);
+    }
+    GtkWidget *result = wrapped_label("");
+    gtk_widget_set_visible(result, FALSE);
+    c->buttons = buttons;
+    c->result = result;
+    g_object_add_weak_pointer(G_OBJECT(buttons), (gpointer *)&c->buttons);
+    g_object_add_weak_pointer(G_OBJECT(result), (gpointer *)&c->result);
+    /* After the explanation, before the note. */
+    gtk_box_insert_child_after(GTK_BOX(box), buttons, how_label);
+    gtk_box_insert_child_after(GTK_BOX(box), result, buttons);
+    conf_page_unref(c);  /* the buttons hold it now */
+    return page;
 }
 
 static void on_teaser_expanded(GObject *object, GParamSpec *pspec, gpointer user_data)

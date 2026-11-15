@@ -11,10 +11,20 @@
 
 /* The built-in plugins, each in its own folder under src/plugins/. */
 static const GauditTaskInfo *const tasks[] = {
-    &gaudit_plugin_firewall,
+    &gaudit_plugin_private_files,  /* first, as on Home */
     &gaudit_plugin_updates,
-    &gaudit_plugin_private_files,
+    &gaudit_plugin_firewall,
 };
+
+/* A command without its helper part ("user x then run y" -> "user x"). */
+static const char *user_part(const char *command)
+{
+    const char *then = command != NULL ? strstr(command, " then ") : NULL;
+    if (then == NULL)
+        return command;
+    g_autofree char *head = g_strndup(command, (gsize)(then - command));
+    return g_intern_string(head);
+}
 
 const GauditTaskInfo *gaudit_tasks_get(gsize *n_tasks)
 {
@@ -23,9 +33,19 @@ const GauditTaskInfo *gaudit_tasks_get(gsize *n_tasks)
     static gsize once;
     if (g_once_init_enter(&once)) {
         const gaudit_pkg_backend *pkg = gaudit_pkg_backend_default();
-        for (gsize i = 0; i < G_N_ELEMENTS(tasks); i++)
-            if (tasks[i]->backend == NULL || (pkg != NULL && g_strcmp0(tasks[i]->backend, pkg->name) == 0))
-                available[n_available++] = *tasks[i];
+        for (gsize i = 0; i < G_N_ELEMENTS(tasks); i++) {
+            if (tasks[i]->backend != NULL && (pkg == NULL || g_strcmp0(tasks[i]->backend, pkg->name) != 0))
+                continue;
+            GauditTaskInfo *t = &available[n_available++];
+            *t = *tasks[i];
+            if (t->helper_backend != NULL
+                && (pkg == NULL || g_strcmp0(t->helper_backend, pkg->name) != 0)) {
+                /* Kept for the life of the process, as the table itself. */
+                t->run_command = user_part(t->run_command);
+                for (int l = 0; l < GAUDIT_LEVEL_COUNT; l++)
+                    t->home_commands[l] = user_part(t->home_commands[l]);
+            }
+        }
         g_once_init_leave(&once, 1);
     }
     *n_tasks = n_available;
@@ -42,6 +62,17 @@ const char *gaudit_task_home_command(const GauditTaskInfo *task, guint level)
     if (task->home_level > 0 && task->home_level <= level)
         return task->run_command;
     return NULL;
+}
+
+gboolean gaudit_command_needs_admin(const char *command)
+{
+    return command != NULL
+           && (g_str_has_prefix(command, "run ") || strstr(command, " then run ") != NULL);
+}
+
+gboolean gaudit_task_home_needs_admin(const GauditTaskInfo *task, guint level)
+{
+    return gaudit_command_needs_admin(gaudit_task_home_command(task, level));
 }
 
 guint gaudit_task_home_from(const GauditTaskInfo *task)

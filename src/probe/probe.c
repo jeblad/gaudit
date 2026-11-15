@@ -6,16 +6,9 @@
 #include <string.h>
 
 static const char *const probe_ids[GAUDIT_PROBE_COUNT] = {
-    [GAUDIT_PROBE_PACKAGE_SYSTEM]       = "status.package-system",
-    [GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS] = "status.other-package-systems",
     [GAUDIT_PROBE_ANTIVIRUS]            = "status.antivirus",
     [GAUDIT_PROBE_FIREWALL]             = "status.firewall",
     [GAUDIT_PROBE_LISTENING]            = "status.listening",
-    [GAUDIT_PROBE_AUTO_UPDATES]         = "status.auto-updates",
-    [GAUDIT_PROBE_SECURITY_SOURCE]      = "status.security-source",
-    [GAUDIT_PROBE_PACKAGE_INDEX]        = "status.package-index",
-    [GAUDIT_PROBE_PENDING_UPGRADES]     = "status.pending-upgrades",
-    [GAUDIT_PROBE_OBSOLETE_PACKAGES]    = "status.obsolete-packages",
     [GAUDIT_PROBE_FLATPAK]              = "status.flatpak",
     [GAUDIT_PROBE_SNAP]                 = "status.snap",
 };
@@ -37,49 +30,6 @@ static gaudit_verdict any_present(const gaudit_pkg_backend *pkg, const char *con
     return GAUDIT_VERDICT_WARNING;
 }
 
-/* A backend without the function, or one that says it is not implemented,
- * cannot check this here: "not supported", which is not the same as
- * "could not find out". */
-static int unsupported(gaudit_backend_status status)
-{
-    return status == GAUDIT_BACKEND_NOT_IMPLEMENTED;
-}
-
-static void index_age(const gaudit_pkg_backend *pkg, int64_t now, gaudit_probe_result *r)
-{
-    int64_t epoch = 0;
-    if (pkg->last_index_update == NULL) {
-        r->unsupported = 1;
-        return;
-    }
-    gaudit_backend_status status = pkg->last_index_update(&epoch);
-    if (status != GAUDIT_BACKEND_OK) {
-        r->unsupported = unsupported(status);
-        return;
-    }
-    if (epoch > now)
-        return;  /* from the future: clock or tampering, unknown */
-    r->age_seconds = now - epoch;
-    r->verdict = r->age_seconds > GAUDIT_PROBE_INDEX_MAX_AGE ? GAUDIT_VERDICT_WARNING
-                                                             : GAUDIT_VERDICT_OK;
-}
-
-static void auto_updates(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
-{
-    int enabled = 0;
-    if (pkg->automatic_updates == NULL) {
-        r->unsupported = 1;
-        return;
-    }
-    gaudit_backend_status status = pkg->automatic_updates(&enabled);
-    if (status != GAUDIT_BACKEND_OK) {
-        r->unsupported = unsupported(status);
-        return;
-    }
-    r->verdict = enabled ? GAUDIT_VERDICT_OK : GAUDIT_VERDICT_WARNING;
-}
-
-/* A mirror may lag behind, and security updates must not wait for it. */
 /* Informs only: without root, Home cannot tell whether a firewall stands
  * in front of these services (the firewall check on page 2 can). */
 static void listening(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
@@ -94,43 +44,6 @@ static void listening(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
     r->count = services;
     r->extra_count = own;
     r->verdict = GAUDIT_VERDICT_OK;
-}
-
-static void security_source(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
-{
-    if (pkg->security_sources == NULL) {
-        r->applicable = 0;  /* no separate security source on this system */
-        return;
-    }
-    unsigned official = 0, mirror = 0;
-    gaudit_backend_status status =
-        pkg->security_sources(&official, &mirror, r->text, sizeof r->text);
-    if (status != GAUDIT_BACKEND_OK)
-        return;  /* unknown */
-    if (official == 0 && mirror == 0) {
-        r->applicable = 0;  /* no security suite configured at all (e.g. Debian unstable) */
-        return;
-    }
-    r->verdict = mirror > 0 ? GAUDIT_VERDICT_WARNING : GAUDIT_VERDICT_OK;
-}
-
-static void package_state(const gaudit_pkg_backend *pkg,
-                          gaudit_probe_result *pending, gaudit_probe_result *obsolete)
-{
-    unsigned n_obsolete = 0, n_upgradable = 0;
-    if (pkg->package_state == NULL) {
-        pending->unsupported = obsolete->unsupported = 1;
-        return;
-    }
-    gaudit_backend_status status = pkg->package_state(&n_obsolete, &n_upgradable);
-    if (status != GAUDIT_BACKEND_OK) {
-        pending->unsupported = obsolete->unsupported = unsupported(status);
-        return;  /* both stay unknown */
-    }
-    pending->count = n_upgradable;
-    pending->verdict = n_upgradable > 0 ? GAUDIT_VERDICT_WARNING : GAUDIT_VERDICT_OK;
-    obsolete->count = n_obsolete;
-    obsolete->verdict = n_obsolete > 0 ? GAUDIT_VERDICT_WARNING : GAUDIT_VERDICT_OK;
 }
 
 static void flatpak(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
@@ -200,22 +113,6 @@ static void snap(const gaudit_pkg_backend *pkg, int64_t now, gaudit_probe_result
                      ? GAUDIT_VERDICT_WARNING : GAUDIT_VERDICT_OK;
 }
 
-/* Package systems with installed packages that this backend does not check:
- * their packages are invisible to every other check, so say so. */
-static void other_package_systems(const gaudit_pkg_backend *pkg, gaudit_probe_result *r)
-{
-    if (pkg->package_systems_present == NULL)
-        return;  /* stays not applicable */
-    unsigned mask = pkg->package_systems_present();
-    if (pkg->own_package_system >= 0 && pkg->own_package_system < GAUDIT_PKGSYS_COUNT)
-        mask &= ~(1u << pkg->own_package_system);
-    if (mask == 0)
-        return;
-    r->applicable = 1;
-    r->mask = mask;
-    r->verdict = GAUDIT_VERDICT_WARNING;
-}
-
 void gaudit_probe_collect(const gaudit_pkg_backend *pkg, int64_t now,
                           gaudit_probe_result out[GAUDIT_PROBE_COUNT])
 {
@@ -231,20 +128,13 @@ void gaudit_probe_init(gaudit_probe_result out[GAUDIT_PROBE_COUNT])
         out[k].verdict = GAUDIT_VERDICT_UNKNOWN;
         out[k].applicable = 1;
     }
-    out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable = 0;
-    out[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable = 0;
 }
 
 #define BIT(k) (1u << (k))
 
-/* Each task fills the kinds it lists; package_state finds two at once. */
+/* Each task fills the kinds it lists. */
 static const unsigned task_kinds[GAUDIT_PROBE_TASK_COUNT] = {
-    BIT(GAUDIT_PROBE_PACKAGE_SYSTEM) | BIT(GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS),
     BIT(GAUDIT_PROBE_ANTIVIRUS) | BIT(GAUDIT_PROBE_FIREWALL),
-    BIT(GAUDIT_PROBE_AUTO_UPDATES),
-    BIT(GAUDIT_PROBE_SECURITY_SOURCE),
-    BIT(GAUDIT_PROBE_PACKAGE_INDEX),
-    BIT(GAUDIT_PROBE_PENDING_UPGRADES) | BIT(GAUDIT_PROBE_OBSOLETE_PACKAGES),
     BIT(GAUDIT_PROBE_FLATPAK),
     BIT(GAUDIT_PROBE_SNAP),
     BIT(GAUDIT_PROBE_LISTENING),
@@ -259,43 +149,21 @@ void gaudit_probe_run_task(int task, const gaudit_pkg_backend *pkg,
                            const gaudit_pkg_backend *expected, int64_t now,
                            gaudit_probe_result out[GAUDIT_PROBE_COUNT])
 {
-    if (task == 0 && expected != NULL && expected != pkg) {
-        gaudit_probe_result *r = &out[GAUDIT_PROBE_PACKAGE_SYSTEM];
-        r->applicable = 1;
-        r->verdict = GAUDIT_VERDICT_WARNING;
-        snprintf(r->detail, sizeof r->detail, "%s",
-                 expected->package_system != NULL ? expected->package_system : "");
-    }
+    (void)expected;
     if (pkg == NULL)
         return;
     switch (task) {
     case 0:
-        other_package_systems(pkg, &out[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS]);
-        break;
-    case 1:
         out[GAUDIT_PROBE_ANTIVIRUS].verdict = any_present(pkg, antivirus_caps);
         out[GAUDIT_PROBE_FIREWALL].verdict = any_present(pkg, firewall_caps);
         break;
-    case 2:
-        auto_updates(pkg, &out[GAUDIT_PROBE_AUTO_UPDATES]);
-        break;
-    case 3:
-        security_source(pkg, &out[GAUDIT_PROBE_SECURITY_SOURCE]);
-        break;
-    case 4:
-        index_age(pkg, now, &out[GAUDIT_PROBE_PACKAGE_INDEX]);
-        break;
-    case 5:
-        package_state(pkg, &out[GAUDIT_PROBE_PENDING_UPGRADES],
-                      &out[GAUDIT_PROBE_OBSOLETE_PACKAGES]);
-        break;
-    case 6:
+    case 1:
         flatpak(pkg, &out[GAUDIT_PROBE_FLATPAK]);
         break;
-    case 7:
+    case 2:
         snap(pkg, now, &out[GAUDIT_PROBE_SNAP]);
         break;
-    case 8:
+    case 3:
         listening(pkg, &out[GAUDIT_PROBE_LISTENING]);
         break;
     default:

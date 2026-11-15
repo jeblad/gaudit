@@ -157,6 +157,8 @@ foreach(rule loop alloc io eval bad)
 endforeach()
 configure_file(${PROJECT_SOURCE_DIR}/src/plugins/private-files/rules/report.scm
                ${TEST_RULES}/core.private-files/report.scm COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/src/plugins/updates/rules/report.scm
+               ${TEST_RULES}/core.updates/report.scm COPYONLY)
 add_executable(test-engine ${PROJECT_SOURCE_DIR}/src/engine/main.c ${PROJECT_SOURCE_DIR}/src/engine/confine.c)
 target_compile_definitions(test-engine PRIVATE _GNU_SOURCE ENGINE_RULES_DIR="${TEST_RULES}")
 target_link_libraries(test-engine PRIVATE PkgConfig::GUILE gaudit_sandbox gaudit_config)
@@ -176,3 +178,18 @@ add_executable(test_fix test_fix.c ${PROJECT_SOURCE_DIR}/src/plugins/private-fil
 target_compile_definitions(test_fix PRIVATE _GNU_SOURCE)
 target_include_directories(test_fix PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/private-files/orchestrator)
 add_test(NAME fix COMMAND test_fix)
+
+# Writing configuration as root: gAudit's own files only.
+add_executable(test_conf_write test_conf_write.c ${PROJECT_SOURCE_DIR}/src/backend/debian/apt-conf.c)
+target_compile_definitions(test_conf_write PRIVATE _GNU_SOURCE)
+target_include_directories(test_conf_write PRIVATE ${PROJECT_SOURCE_DIR}/src/backend/debian
+                           ${PROJECT_SOURCE_DIR}/src/backend/include)
+target_link_libraries(test_conf_write PRIVATE gaudit_sandbox)
+add_test(NAME conf-write COMMAND test_conf_write)
+
+# The Updates collection: line format and facts from a made-up backend.
+add_executable(test_updates test_updates.c ${PROJECT_SOURCE_DIR}/src/plugins/updates/orchestrator/updates.c)
+target_compile_definitions(test_updates PRIVATE _GNU_SOURCE)
+target_include_directories(test_updates PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/updates/orchestrator)
+target_link_libraries(test_updates PRIVATE gaudit_probe)
+add_test(NAME updates COMMAND test_updates)

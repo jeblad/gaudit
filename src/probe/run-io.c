@@ -21,6 +21,36 @@ gaudit_verdict gaudit_firewall_verdict(const gaudit_firewall_report *r)
     return GAUDIT_VERDICT_WARNING;
 }
 
+int gaudit_conf_result_known(const char *result)
+{
+    static const char *const names[] = {
+        "written", "unchanged", "removed", "not-there", "foreign",
+        "edited", "precondition", "unsafe", "error",
+    };
+    for (size_t i = 0; result != NULL && i < sizeof names / sizeof names[0]; i++)
+        if (strcmp(result, names[i]) == 0)
+            return 1;
+    return 0;
+}
+
+/* A template id or action: [a-z0-9._-], not empty. */
+static int plain_word(const char *s)
+{
+    if (s == NULL || *s == '\0')
+        return 0;
+    for (const char *c = s; *c != '\0'; c++)
+        if (!((*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') || *c == '.' || *c == '_' || *c == '-'))
+            return 0;
+    return 1;
+}
+
+static int conf_valid(const gaudit_conf_report *c)
+{
+    return plain_word(c->template_id)
+        && (strcmp(c->action, "on") == 0 || strcmp(c->action, "remove") == 0)
+        && gaudit_conf_result_known(c->result);
+}
+
 gaudit_verdict gaudit_integrity_verdict(const gaudit_integrity_report *r)
 {
     if (r == NULL)
@@ -78,6 +108,12 @@ int gaudit_run_format(const gaudit_run_event *ev, char *buf, size_t len)
                      r->seconds);
         break;
     }
+    case GAUDIT_RUN_EVENT_CONF:
+        if (!conf_valid(&ev->conf))
+            return -1;
+        n = snprintf(buf, len, "(conf (template \"%s\") (action \"%s\") (result \"%s\"))\n",
+                     ev->conf.template_id, ev->conf.action, ev->conf.result);
+        break;
     case GAUDIT_RUN_EVENT_END:
         n = snprintf(buf, len, "(end (status %d))\n", (int)ev->status);
         break;
@@ -164,6 +200,18 @@ int gaudit_run_parse_line(const char *line, gaudit_run_event *out)
         if (!integrity_consistent(r) || r->verdict != gaudit_integrity_verdict(r))
             return -1;
         ev.type = GAUDIT_RUN_EVENT_INTEGRITY;
+        *out = ev;
+        return 0;
+    }
+    const gaudit_sexpr_field conf[] = {
+        { .key = "template", .text = ev.conf.template_id, .text_len = sizeof ev.conf.template_id },
+        { .key = "action",   .text = ev.conf.action,      .text_len = sizeof ev.conf.action },
+        { .key = "result",   .text = ev.conf.result,      .text_len = sizeof ev.conf.result },
+    };
+    if (gaudit_sexpr_parse(copy, "conf", conf, 3) == 0) {
+        if (!conf_valid(&ev.conf))
+            return -1;
+        ev.type = GAUDIT_RUN_EVENT_CONF;
         *out = ev;
         return 0;
     }

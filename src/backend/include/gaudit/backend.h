@@ -70,6 +70,23 @@ typedef enum {
 typedef void (*gaudit_sourceless_fn)(const char *name, const char *arch, const char *version,
                                      gaudit_sourceless_group group, const char *offered, void *ctx);
 
+/* How updates are looked for and installed, as the system has it. Each
+ * field is -1 when it cannot be told. */
+typedef struct {
+    long check_days;       /* days between looking for updates; 0 never */
+    int install;           /* updates installed automatically (on Debian and Ubuntu as
+                              unattended-upgrades is set up: security updates at least) */
+    int download;          /* updates downloaded automatically */
+    int check_timer;       /* the timer that looks for updates is on */
+    int install_timer;     /* the timer that installs them is on */
+    int64_t last_install;  /* when updates were last installed automatically; 0 never */
+    int64_t last_change;   /* when packages were last installed or updated, by any means */
+    int admin_tools;       /* admin tools installed that can set updates up (Software
+                              Updater, Synaptic, ...): how many */
+    char admin_names[128]; /* their package names, ", " between */
+    int own_setting;       /* gAudit's own drop-in for automatic updates is there */
+} gaudit_update_settings;
+
 typedef struct gaudit_capability {
     const char *id;
     const char *const *paths;     /* absolute paths, NULL-terminated */
@@ -112,6 +129,14 @@ typedef struct gaudit_pkg_backend {
     /* Installed packages no software source offers any more, and packages
      * an upgrade would update. */
     gaudit_backend_status (*package_state)(unsigned *out_obsolete, unsigned *out_upgradable);
+
+    /* As package_state, and of the upgrades those that are security updates.
+     * NULL where the backend cannot tell security updates apart. */
+    gaudit_backend_status (*package_counts)(unsigned *out_obsolete, unsigned *out_upgradable,
+                                            unsigned *out_security);
+
+    /* How updates are looked for and installed. NULL where not supported. */
+    gaudit_backend_status (*update_settings)(gaudit_update_settings *out);
 
     /* The packages package_state counts as without a source, one call
      * each, sorted into groups. NULL where the backend cannot list them. */

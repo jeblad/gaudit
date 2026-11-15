@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
-/* Status probe verdicts, driven by a fake backend. */
+/* Status probe verdicts, driven by a fake backend. The update rows are
+ * the Updates plugin's now (tests/test_updates.c and the engine test). */
 #include "gaudit/probe.h"
 
 #include <stdio.h>
@@ -31,13 +32,6 @@ static const gaudit_capability cap_absent  = { "absent",  absent_paths,  no_pack
 static struct {
     int antivirus;
     int firewall;
-    gaudit_backend_status index_status;
-    int64_t index_epoch;
-    gaudit_backend_status updates_status;
-    int updates_enabled;
-    gaudit_backend_status packages_status;
-    unsigned obsolete;
-    unsigned upgradable;
     gaudit_backend_status flatpak_status;
     gaudit_flatpak_state flatpak;
 } fake;
@@ -49,25 +43,6 @@ static const gaudit_capability *fake_capability(const char *id)
     if (strcmp(id, "ufw") == 0)
         return fake.firewall ? &cap_present : &cap_absent;
     return NULL;  /* e.g. firewalld: unknown on this fake distro */
-}
-
-static gaudit_backend_status fake_index(int64_t *out_epoch)
-{
-    *out_epoch = fake.index_epoch;
-    return fake.index_status;
-}
-
-static gaudit_backend_status fake_updates(int *out_enabled)
-{
-    *out_enabled = fake.updates_enabled;
-    return fake.updates_status;
-}
-
-static gaudit_backend_status fake_packages(unsigned *out_obsolete, unsigned *out_upgradable)
-{
-    *out_obsolete = fake.obsolete;
-    *out_upgradable = fake.upgradable;
-    return fake.packages_status;
 }
 
 static gaudit_backend_status fake_flatpak(gaudit_flatpak_state *out)
@@ -85,31 +60,9 @@ static gaudit_backend_status fake_snap(gaudit_snap_state *out)
     return fake_snap_status;
 }
 
-static gaudit_backend_status fake_sec_status;
-static unsigned fake_sec_official, fake_sec_mirror;
-
-static gaudit_backend_status fake_security(unsigned *official, unsigned *mirror,
-                                           char *host, size_t len)
-{
-    *official = fake_sec_official;
-    *mirror = fake_sec_mirror;
-    snprintf(host, len, "%s", fake_sec_mirror ? "mirror.example.org" : "");
-    return fake_sec_status;
-}
-
-static unsigned fake_present_mask;
-
-static unsigned fake_present(void)
-{
-    return fake_present_mask;
-}
-
 static const gaudit_pkg_backend fake_pkg = {
     .name = "fake",
     .capability = fake_capability,
-    .last_index_update = fake_index,
-    .automatic_updates = fake_updates,
-    .package_state = fake_packages,
     .flatpak_state = fake_flatpak,
 };
 
@@ -117,13 +70,6 @@ static void all_good(void)
 {
     fake.antivirus = 1;
     fake.firewall = 1;
-    fake.index_status = GAUDIT_BACKEND_OK;
-    fake.index_epoch = NOW - DAY / 2;
-    fake.updates_status = GAUDIT_BACKEND_OK;
-    fake.updates_enabled = 1;
-    fake.packages_status = GAUDIT_BACKEND_OK;
-    fake.obsolete = 0;
-    fake.upgradable = 0;
     fake.flatpak_status = GAUDIT_BACKEND_OK;
     fake.flatpak = (gaudit_flatpak_state){ .apps = 5 };
 }
@@ -148,40 +94,12 @@ int main(void)
         CHECK(r[k].id != NULL && strncmp(r[k].id, "status.", 7) == 0);
         CHECK(!r[k].applicable || r[k].verdict == GAUDIT_VERDICT_OK);
     }
-    CHECK(r[GAUDIT_PROBE_PACKAGE_INDEX].age_seconds == DAY / 2);
 
     /* Missing programs. */
     all_good(); fake.antivirus = 0;
     CHECK(run(GAUDIT_PROBE_ANTIVIRUS) == GAUDIT_VERDICT_WARNING);
     all_good(); fake.firewall = 0;
     CHECK(run(GAUDIT_PROBE_FIREWALL) == GAUDIT_VERDICT_WARNING);
-
-    /* Package index age, including the boundary. */
-    all_good(); fake.index_epoch = NOW - GAUDIT_PROBE_INDEX_MAX_AGE;
-    CHECK(run(GAUDIT_PROBE_PACKAGE_INDEX) == GAUDIT_VERDICT_OK);
-    all_good(); fake.index_epoch = NOW - GAUDIT_PROBE_INDEX_MAX_AGE - 1;
-    CHECK(run(GAUDIT_PROBE_PACKAGE_INDEX) == GAUDIT_VERDICT_WARNING);
-    all_good(); fake.index_epoch = NOW + DAY;   /* from the future */
-    CHECK(run(GAUDIT_PROBE_PACKAGE_INDEX) == GAUDIT_VERDICT_UNKNOWN);
-    all_good(); fake.index_status = GAUDIT_BACKEND_UNAVAILABLE;
-    CHECK(run(GAUDIT_PROBE_PACKAGE_INDEX) == GAUDIT_VERDICT_UNKNOWN);
-
-    /* Automatic updates. */
-    all_good(); fake.updates_enabled = 0;
-    CHECK(run(GAUDIT_PROBE_AUTO_UPDATES) == GAUDIT_VERDICT_WARNING);
-    all_good(); fake.updates_status = GAUDIT_BACKEND_ERROR;
-    CHECK(run(GAUDIT_PROBE_AUTO_UPDATES) == GAUDIT_VERDICT_UNKNOWN);
-
-    /* Package state: counts carried through, both rows from one scan. */
-    all_good(); fake.upgradable = 3; fake.obsolete = 2;
-    gaudit_probe_collect(&fake_pkg, NOW, r);
-    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].verdict == GAUDIT_VERDICT_WARNING);
-    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].count == 3);
-    CHECK(r[GAUDIT_PROBE_OBSOLETE_PACKAGES].verdict == GAUDIT_VERDICT_WARNING);
-    CHECK(r[GAUDIT_PROBE_OBSOLETE_PACKAGES].count == 2);
-    all_good(); fake.packages_status = GAUDIT_BACKEND_UNAVAILABLE;
-    CHECK(run(GAUDIT_PROBE_PENDING_UPGRADES) == GAUDIT_VERDICT_UNKNOWN);
-    CHECK(run(GAUDIT_PROBE_OBSOLETE_PACKAGES) == GAUDIT_VERDICT_UNKNOWN);
 
     /* Flatpak: counts, and when the row does not apply. */
     all_good(); fake.flatpak.eol_apps = 2; fake.flatpak.eol_unused = 3;
@@ -207,51 +125,12 @@ int main(void)
     all_good(); fake.flatpak_status = GAUDIT_BACKEND_ERROR;
     CHECK(run(GAUDIT_PROBE_FLATPAK) == GAUDIT_VERDICT_UNKNOWN);
 
-    /* A backend without package functions (e.g. the generic one), or one
-     * that says "not implemented": not supported, which is not unknown. */
+    /* A backend without the functions (e.g. the generic one). */
     static const gaudit_pkg_backend bare_pkg = { .name = "bare", .capability = fake_capability };
     all_good();
     gaudit_probe_collect(&bare_pkg, NOW, r);
-    CHECK(r[GAUDIT_PROBE_AUTO_UPDATES].unsupported);
-    CHECK(r[GAUDIT_PROBE_PACKAGE_INDEX].unsupported);
-    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported);
-    CHECK(r[GAUDIT_PROBE_OBSOLETE_PACKAGES].unsupported);
-    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].verdict == GAUDIT_VERDICT_UNKNOWN);
     CHECK(!r[GAUDIT_PROBE_ANTIVIRUS].unsupported && r[GAUDIT_PROBE_ANTIVIRUS].verdict == GAUDIT_VERDICT_OK);
     CHECK(!r[GAUDIT_PROBE_FLATPAK].applicable);
-    all_good(); fake.packages_status = GAUDIT_BACKEND_NOT_IMPLEMENTED;
-    gaudit_probe_collect(&fake_pkg, NOW, r);
-    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported && r[GAUDIT_PROBE_OBSOLETE_PACKAGES].unsupported);
-    all_good(); fake.packages_status = GAUDIT_BACKEND_ERROR;  /* could not tell: unknown, not unsupported */
-    gaudit_probe_collect(&fake_pkg, NOW, r);
-    CHECK(!r[GAUDIT_PROBE_PENDING_UPGRADES].unsupported);
-    CHECK(r[GAUDIT_PROBE_PENDING_UPGRADES].verdict == GAUDIT_VERDICT_UNKNOWN);
-
-    /* Source of security updates. */
-    {
-        static const gaudit_pkg_backend sec_pkg = { .name = "sec", .capability = fake_capability,
-                                                    .security_sources = fake_security };
-        fake_sec_status = GAUDIT_BACKEND_OK;
-        fake_sec_official = 1; fake_sec_mirror = 0;
-        gaudit_probe_collect(&sec_pkg, NOW, r);
-        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].applicable);
-        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].verdict == GAUDIT_VERDICT_OK);
-        fake_sec_official = 0; fake_sec_mirror = 1;
-        gaudit_probe_collect(&sec_pkg, NOW, r);
-        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].verdict == GAUDIT_VERDICT_WARNING);
-        CHECK(strcmp(r[GAUDIT_PROBE_SECURITY_SOURCE].text, "mirror.example.org") == 0);
-        fake_sec_official = 1; fake_sec_mirror = 1;  /* one mirror is enough to warn */
-        gaudit_probe_collect(&sec_pkg, NOW, r);
-        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].verdict == GAUDIT_VERDICT_WARNING);
-        fake_sec_official = 0; fake_sec_mirror = 0;  /* no security suite */
-        gaudit_probe_collect(&sec_pkg, NOW, r);
-        CHECK(!r[GAUDIT_PROBE_SECURITY_SOURCE].applicable);
-        fake_sec_status = GAUDIT_BACKEND_ERROR;
-        gaudit_probe_collect(&sec_pkg, NOW, r);
-        CHECK(r[GAUDIT_PROBE_SECURITY_SOURCE].verdict == GAUDIT_VERDICT_UNKNOWN);
-        gaudit_probe_collect(&fake_pkg, NOW, r);  /* backend without the function */
-        CHECK(!r[GAUDIT_PROBE_SECURITY_SOURCE].applicable);
-    }
 
     /* Snap. */
     static const gaudit_pkg_backend snap_pkg = { .name = "snap", .capability = fake_capability,
@@ -287,46 +166,6 @@ int main(void)
         CHECK(SNAP_RUN(fresh, GAUDIT_BACKEND_ERROR).verdict == GAUDIT_VERDICT_UNKNOWN);
     }
 #undef SNAP_RUN
-
-    /* Package systems this backend does not check. */
-    static const gaudit_pkg_backend deb_like = {
-        .name = "deb-like", .capability = fake_capability,
-        .own_package_system = GAUDIT_PKGSYS_DPKG, .package_systems_present = fake_present,
-    };
-    static const gaudit_pkg_backend generic_like = {
-        .name = "generic-like", .capability = fake_capability,
-        .own_package_system = -1, .package_systems_present = fake_present,
-    };
-    fake_present_mask = 1u << GAUDIT_PKGSYS_DPKG;                    /* only its own */
-    gaudit_probe_collect(&deb_like, NOW, r);
-    CHECK(!r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable);
-    fake_present_mask = (1u << GAUDIT_PKGSYS_DPKG) | (1u << GAUDIT_PKGSYS_RPM) | (1u << GAUDIT_PKGSYS_NIX);
-    gaudit_probe_collect(&deb_like, NOW, r);
-    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable);
-    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].verdict == GAUDIT_VERDICT_WARNING);
-    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].mask
-          == ((1u << GAUDIT_PKGSYS_RPM) | (1u << GAUDIT_PKGSYS_NIX)));
-    fake_present_mask = 1u << GAUDIT_PKGSYS_PORTAGE;                 /* Gentoo, no backend */
-    gaudit_probe_collect(&generic_like, NOW, r);
-    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable);
-    CHECK(r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].mask == 1u << GAUDIT_PKGSYS_PORTAGE);
-    fake_present_mask = 0;
-    gaudit_probe_collect(&generic_like, NOW, r);
-    CHECK(!r[GAUDIT_PROBE_OTHER_PACKAGE_SYSTEMS].applicable);
-
-    /* Expectation from the distribution vs what was detected. */
-    static const gaudit_pkg_backend expected_pkg = { .name = "expected", .package_system = "dpkg/apt" };
-    all_good();
-    gaudit_probe_collect_ex(&fake_pkg, &expected_pkg, NOW, r);  /* expected one not found */
-    CHECK(r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
-    CHECK(r[GAUDIT_PROBE_PACKAGE_SYSTEM].verdict == GAUDIT_VERDICT_WARNING);
-    CHECK(strcmp(r[GAUDIT_PROBE_PACKAGE_SYSTEM].detail, "dpkg/apt") == 0);
-    gaudit_probe_collect_ex(&fake_pkg, &fake_pkg, NOW, r);      /* as expected */
-    CHECK(!r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
-    gaudit_probe_collect_ex(&fake_pkg, NULL, NOW, r);           /* no expectation */
-    CHECK(!r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
-    gaudit_probe_collect(&fake_pkg, NOW, r);
-    CHECK(!r[GAUDIT_PROBE_PACKAGE_SYSTEM].applicable);
 
     /* No backend: everything unknown, ids still set. */
     gaudit_probe_collect(NULL, NOW, r);

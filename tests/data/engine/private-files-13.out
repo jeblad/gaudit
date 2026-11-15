@@ -1,4 +1,5 @@
 (report (verdict ok) (title (msgn "{n} secret found, only you can read it" "{n} secrets found, only you can read them" 1 (n 1))) (description (msg "Secrets only you can read are normal. This means none were found that others can read, not that every secret was found.")))
+(home (verdict ok) (title (msgn "{n} secret found, only you can read it" "{n} secrets found, only you can read them" 1 (n 1))) (subtitle (msg "Nothing needs attention")))
 (section (title (msg "Only you can read these")) (description (msg "This is how secrets should be kept. Listed so you know where they are.")))
 (row (verdict ok) (title (text "~/.netrc")) (subtitle (msg "{kind} · {mode}" (kind (msg "Stored logins (.netrc)")) (mode "0600"))))
 (note (msgn "{n} finding was checked again at {when}, after a fix; the rest is from the search." "{n} findings were checked again, the last at {when}, after a fix; the rest is from the search." 1 (n 1) (when "14:32")))

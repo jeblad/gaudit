@@ -27,7 +27,6 @@ const GauditTaskInfo gaudit_plugin_firewall = {
     .home_tooltip = N_("Thorough check of the firewall"),
     .home_level = GAUDIT_LEVEL_NORMAL,  /* under a second */
     .home_title = N_("Firewall rules"),
-    .needs_admin = TRUE,
     .run_waiting = N_("Reading the firewall rules needs the administrator password."),
     .run_running = N_("Checking the firewall…"),
 };

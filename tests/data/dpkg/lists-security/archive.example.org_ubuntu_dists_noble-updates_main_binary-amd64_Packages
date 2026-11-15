@@ -1,0 +1,7 @@
+Package: a
+Architecture: amd64
+Version: 1.0-3
+
+Package: b
+Architecture: amd64
+Version: 1.0-2

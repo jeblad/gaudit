@@ -20,7 +20,11 @@ G_BEGIN_DECLS
  * command (its last word is the collection's level, e.g. "quick"); full:
  * made with the plugin's parameters (Run on Parameters), not for Home. */
 void gaudit_cache_store(const GauditTaskInfo *task, const char *command, GPtrArray *lines,
-                        gboolean full);
+                        gboolean full, const char *const *args);
+
+/* The parameters a full cached collection was made with (borrowed; NULL
+ * for none, or a simplified one), so it can be made again the same way. */
+const char *const *gaudit_cache_args(const GauditTaskInfo *task);
 
 /* Whether task's cached collection is a full one: its report is then the
  * report, otherwise the simplified one Home made. */

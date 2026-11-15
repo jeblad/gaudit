@@ -57,6 +57,14 @@
          GNOME icon library's pegged-wheels-symbolic, Jakub Steiner, CC0,
          under its own name. -->
     <file preprocess="xml-stripblanks" alias="gaudit-run-symbolic.svg">icons/scalable/actions/gaudit-run-symbolic.svg</file>
+    <!-- The page's context menu in the content's header bar: the Yaru icon
+         theme's view-more-symbolic, (c) 2018 Sam Hewitt, CC-BY-SA-4.0
+         (https://github.com/ubuntu/yaru), renamed. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-context-menu-symbolic.svg">icons/scalable/actions/gaudit-context-menu-symbolic.svg</file>
+    <!-- Reload in the content's header bar: adwaita-icon-theme's
+         view-refresh-symbolic (LGPL-3.0, as above), renamed. Not mirrored
+         for right-to-left: clockwise is a clock's way, not reading's. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-reload-symbolic.svg">icons/scalable/actions/gaudit-reload-symbolic.svg</file>
     <!-- The Private Files plugin's sidebar icon: adwaita-icon-theme's
          dialog-password-symbolic (LGPL-3.0, as above), renamed. -->
     <file preprocess="xml-stripblanks" alias="gaudit-private-files-symbolic.svg">icons/scalable/actions/gaudit-private-files-symbolic.svg</file>

@@ -17,6 +17,7 @@ typedef struct {
     GPtrArray *lines;
     char *command;
     gboolean full;
+    GStrv args;
     char when[16];
 } Entry;
 
@@ -27,11 +28,12 @@ static void entry_free(gpointer p)
     Entry *e = p;
     g_ptr_array_unref(e->lines);
     g_free(e->command);
+    g_strfreev(e->args);
     g_free(e);
 }
 
 void gaudit_cache_store(const GauditTaskInfo *task, const char *command, GPtrArray *lines,
-                        gboolean full)
+                        gboolean full, const char *const *args)
 {
     g_return_if_fail(task != NULL && command != NULL && lines != NULL);
     if (cache == NULL)
@@ -40,6 +42,7 @@ void gaudit_cache_store(const GauditTaskInfo *task, const char *command, GPtrArr
     e->lines = g_ptr_array_ref(lines);
     e->command = g_strdup(command);
     e->full = full;
+    e->args = args != NULL ? g_strdupv((char **)args) : NULL;
     g_autoptr(GDateTime) now = g_date_time_new_now_local();
     g_autofree char *when = g_date_time_format(now, "%H:%M");
     g_strlcpy(e->when, when != NULL ? when : "", sizeof e->when);
@@ -52,6 +55,12 @@ GPtrArray *gaudit_cache_lines(const GauditTaskInfo *task, const char **when)
     if (when != NULL)
         *when = e != NULL ? e->when : NULL;
     return e != NULL ? e->lines : NULL;
+}
+
+const char *const *gaudit_cache_args(const GauditTaskInfo *task)
+{
+    Entry *e = cache != NULL ? g_hash_table_lookup(cache, task->id) : NULL;
+    return e != NULL ? (const char *const *)e->args : NULL;
 }
 
 gboolean gaudit_cache_full(const GauditTaskInfo *task)

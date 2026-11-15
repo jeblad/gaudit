@@ -159,7 +159,10 @@ static void on_recheck_done(gboolean broken, gpointer user_data)
         g_autoptr(GPtrArray) next = patched(r->lines, r->item, r->line);
         if (next != NULL) {
             g_autofree char *command = g_strdup(gaudit_cache_command(task));
-            gaudit_cache_store(task, command, next, gaudit_cache_full(task));
+            g_auto(GStrv) args = gaudit_cache_args(task) != NULL
+                ? g_strdupv((char **)gaudit_cache_args(task)) : NULL;
+            gaudit_cache_store(task, command, next, gaudit_cache_full(task),
+                               (const char *const *)args);
             gaudit_cache_changed(task);
         }
     }

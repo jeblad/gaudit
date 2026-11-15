@@ -271,6 +271,16 @@ void gaudit_task_set_read_limit(const GauditTaskInfo *task, guint bytes)
         g_settings_set_uint(settings, "read-limit", bytes);
 }
 
+void gaudit_task_reset_parameters(const GauditTaskInfo *task)
+{
+    g_autoptr(GSettings) settings = gaudit_task_settings(task);
+    if (settings == NULL)
+        return;
+    static const char *const keys[] = { "folders", "removed-places", "read-limit", "with-caches" };
+    for (gsize i = 0; i < G_N_ELEMENTS(keys); i++)
+        g_settings_reset(settings, keys[i]);
+}
+
 gboolean gaudit_task_with_caches(const GauditTaskInfo *task)
 {
     g_autoptr(GSettings) settings = task->param_caches ? gaudit_task_settings(task) : NULL;

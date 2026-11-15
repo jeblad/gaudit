@@ -59,6 +59,28 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
                                        const char *const *run_args, GauditFixedFn on_fixed,
                                        gpointer data, GDestroyNotify data_free);
 
+/* Page 0, information about the plugin: its icon, name and short
+ * description, then what it does, in full. Built from the plugin's
+ * description, all plain text: no markup and no links, so a plugin cannot
+ * look like gAudit. */
+typedef enum {
+    GAUDIT_INFO_PLAIN,       /* no page of the plugin's to speak of */
+    GAUDIT_INFO_PARAMETERS,  /* opened from Parameters */
+    GAUDIT_INFO_SIMPLIFIED,  /* opened from the simplified report Home made */
+    GAUDIT_INFO_REPORT,      /* opened from the (full) report */
+    GAUDIT_INFO_HOME,        /* Home's own information page */
+} GauditInfoFrom;
+
+/* from: the page it was opened from, which gets a block of its own. */
+AdwNavigationPage *gaudit_plugin_about_page_new(const GauditTaskInfo *task, GauditInfoFrom from);
+
+/* Home's information page, in the same shape: what Home shows, why, and
+ * how its levels, groups and password work. */
+AdwNavigationPage *gaudit_home_info_page_new(void);
+
+/* The plugin's About dialog: name, icon, version, owner, license, source. */
+void gaudit_plugin_about_dialog(const GauditTaskInfo *task, GtkWidget *parent);
+
 /* Page 1 for a task: settings, or an explanation if software is missing. */
 AdwNavigationPage *gaudit_task_page_new(const GauditTaskInfo *task,
                                        const gaudit_pkg_backend *pkg);

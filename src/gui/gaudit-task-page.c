@@ -11,10 +11,13 @@
 AdwNavigationPage *gaudit_page_wrap(GtkWidget *content, const char *title, const char *tag)
 {
     AdwToolbarView *toolbar = ADW_TOOLBAR_VIEW(adw_toolbar_view_new());
-    adw_toolbar_view_add_top_bar(toolbar, adw_header_bar_new());
+    GtkWidget *header = adw_header_bar_new();
+    adw_toolbar_view_add_top_bar(toolbar, header);
     adw_toolbar_view_set_content(toolbar, content);
 
     AdwNavigationPage *page = adw_navigation_page_new(GTK_WIDGET(toolbar), title);
+    /* The window puts the page's Reload and context menu in it. */
+    g_object_set_data(G_OBJECT(page), "gaudit-header", header);
     if (tag != NULL)
         adw_navigation_page_set_tag(page, tag);
     return page;
@@ -173,7 +176,10 @@ static void on_start_clicked(GtkButton *button, gpointer user_data)
     GtkWidget *nav = gtk_widget_get_ancestor(GTK_WIDGET(button), ADW_TYPE_NAVIGATION_VIEW);
     g_return_if_fail(nav != NULL);
 
-    /* TODO: hand the selected parameters to the orchestrator. */
+    /* In the window, the report takes the page's place (it has its own
+     * sidebar entry); pushed only where there is no window to ask. */
+    if (gtk_widget_activate_action(GTK_WIDGET(button), "win.start", NULL))
+        return;
     adw_navigation_view_push(ADW_NAVIGATION_VIEW(nav), gaudit_run_page_new(task));
 }
 
@@ -359,6 +365,169 @@ static AdwPreferencesGroup *read_limit_group(const GauditTaskInfo *task)
         adw_preferences_group_add(group, GTK_WIDGET(caches));
     }
     return group;
+}
+
+/* --- Page 0: about the plugin ---------------------------------------------- */
+
+static void add_text(AdwPreferencesGroup *group, const char *text)
+{
+    GtkWidget *label = gtk_label_new(text);
+    gtk_label_set_use_markup(GTK_LABEL(label), FALSE);
+    gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+    adw_preferences_group_add(group, label);
+}
+
+/* A block about the page page 0 was opened from: concretely what those
+ * parameters, or that report, are. */
+static void add_from(AdwPreferencesPage *page, const GauditTaskInfo *task, GauditInfoFrom from)
+{
+    const char *text = from == GAUDIT_INFO_PARAMETERS ? task->about_parameters
+                     : from == GAUDIT_INFO_PLAIN ? NULL : task->about_report;
+    gboolean home = from == GAUDIT_INFO_HOME;
+    if (from == GAUDIT_INFO_PLAIN || (text == NULL && from == GAUDIT_INFO_PARAMETERS))
+        return;
+    /* Set apart as a card with the page's own icon, as in the sidebar: it
+     * is about where the user came from. No accent: that marks a page's
+     * default action. */
+    AdwPreferencesGroup *group = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+    gboolean params = from == GAUDIT_INFO_PARAMETERS;
+    adw_preferences_group_set_title(group, params ? _("How: the Parameters")
+                                           : home ? _("How: Home") : _("How: This Report"));
+    GtkWidget *card = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    gtk_widget_add_css_class(card, "card");
+    GtkWidget *icon = gtk_image_new_from_icon_name(params ? "preferences-system-symbolic"
+                                                   : home ? "gaudit-home-symbolic"
+                                                          : "gaudit-documents-symbolic");
+    gtk_image_set_pixel_size(GTK_IMAGE(icon), 32);
+    gtk_widget_set_valign(icon, GTK_ALIGN_START);
+    gtk_widget_set_margin_top(icon, 12);
+    gtk_widget_set_margin_start(icon, 12);
+    gtk_widget_add_css_class(icon, "dim-label");
+    gtk_box_append(GTK_BOX(card), icon);
+    GtkWidget *texts = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_set_hexpand(texts, TRUE);
+    gtk_widget_set_margin_top(texts, 12);
+    gtk_widget_set_margin_bottom(texts, 12);
+    gtk_widget_set_margin_end(texts, 12);
+    const char *kind = from == GAUDIT_INFO_SIMPLIFIED
+        ? _("This is the simplified report Home made: it uses none of the parameters, "
+            "so it is the same every time. Run on Parameters gives the full report.")
+        : from == GAUDIT_INFO_REPORT
+        ? _("This is the full report, made with the parameters as they were when it ran.") : NULL;
+    for (int i = 0; i < 2; i++) {
+        const char *t = i == 0 ? kind : (text != NULL ? _(text) : NULL);
+        if (t == NULL)
+            continue;
+        GtkWidget *label = gtk_label_new(t);
+        gtk_label_set_use_markup(GTK_LABEL(label), FALSE);
+        gtk_label_set_wrap(GTK_LABEL(label), TRUE);
+        gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
+        gtk_box_append(GTK_BOX(texts), label);
+    }
+    gtk_box_append(GTK_BOX(card), texts);
+    adw_preferences_group_add(group, card);
+    adw_preferences_page_add(page, group);
+}
+
+AdwNavigationPage *gaudit_plugin_about_page_new(const GauditTaskInfo *task, GauditInfoFrom from)
+{
+    AdwPreferencesPage *page = ADW_PREFERENCES_PAGE(adw_preferences_page_new());
+    /* A header: the plugin's own icon, as in the sidebar, and its name. */
+    AdwPreferencesGroup *head = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
+    gtk_widget_set_halign(box, GTK_ALIGN_CENTER);
+    GtkWidget *icon = gtk_image_new_from_icon_name(task->icon);
+    gtk_image_set_pixel_size(GTK_IMAGE(icon), 64);
+    gtk_widget_add_css_class(icon, "dim-label");
+    gtk_box_append(GTK_BOX(box), icon);
+    GtkWidget *name = gtk_label_new(_(task->title));
+    gtk_label_set_use_markup(GTK_LABEL(name), FALSE);
+    gtk_label_set_wrap(GTK_LABEL(name), TRUE);
+    gtk_label_set_justify(GTK_LABEL(name), GTK_JUSTIFY_CENTER);
+    gtk_widget_add_css_class(name, "title-1");
+    gtk_box_append(GTK_BOX(box), name);
+    /* The short description under the name, as an About dialog has it. */
+    GtkWidget *summary = gtk_label_new(_(task->summary));
+    gtk_label_set_use_markup(GTK_LABEL(summary), FALSE);
+    gtk_label_set_wrap(GTK_LABEL(summary), TRUE);
+    gtk_label_set_justify(GTK_LABEL(summary), GTK_JUSTIFY_CENTER);
+    gtk_label_set_max_width_chars(GTK_LABEL(summary), 50);
+    gtk_widget_add_css_class(summary, "dim-label");
+    gtk_box_append(GTK_BOX(box), summary);
+    adw_preferences_group_add(head, box);
+    adw_preferences_page_add(page, head);
+
+    /* The main point here: what the plugin does, in full. */
+    AdwPreferencesGroup *what = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+    adw_preferences_group_set_title(what, _("What It Does"));
+    GtkWidget *details = gtk_label_new(_(task->details));
+    gtk_label_set_use_markup(GTK_LABEL(details), FALSE);
+    gtk_label_set_wrap(GTK_LABEL(details), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(details), 0.0f);
+    adw_preferences_group_add(what, details);
+    adw_preferences_page_add(page, what);
+
+    /* Why it matters, then how, for the page the user came from. */
+    if (task->why != NULL) {
+        AdwPreferencesGroup *why = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
+        adw_preferences_group_set_title(why, _("Why It Matters"));
+        add_text(why, _(task->why));
+        adw_preferences_page_add(page, why);
+    }
+    add_from(page, task, from);
+
+    /* Inside the plugin the content's title becomes "<plugin> › Information". */
+    return gaudit_page_wrap(GTK_WIDGET(page), _("Information"), "about");
+}
+
+AdwNavigationPage *gaudit_home_info_page_new(void)
+{
+    /* Home is not a plugin, but its page reads the same way: Home's own
+     * texts in the shape of a plugin's description. */
+    static const GauditTaskInfo home = {
+        .id = "home",
+        .title = N_("Home"),
+        .summary = N_("Overall status"),
+        .icon = "gaudit-home-symbolic",
+        .details = N_("Home shows the state of this computer at a glance. At the top, which "
+                      "computer this is and how gAudit checks it. Below, one group for each "
+                      "check, with a short summary of what it found: a check mark when all is "
+                      "well, a warning where something needs your attention. The shield at the "
+                      "top sums them all up."),
+        .why = N_("Security problems are easy to miss when they are spread over many places: an "
+                  "update that never ran, a firewall that is off, a key others can read. One "
+                  "page shows whether the basics are in place, without you having to know where "
+                  "to look. A check mark means no signs of trouble were found, not that the "
+                  "computer is proven safe."),
+        .about_report = N_("Report Level decides how thorough Home is: Quick is fast and runs "
+                           "every time Home opens; higher levels look further and take longer. "
+                           "The reports here are simplified: they use no parameters, so they are "
+                           "the same every time.\n\n"
+                           "The arrow in a group's title leads to that check's report. Checks "
+                           "that need administrator rights wait until you switch to administrator "
+                           "with the button at the top of the sidebar; Home never asks for the "
+                           "password when it opens."),
+    };
+    AdwNavigationPage *page = gaudit_plugin_about_page_new(&home, GAUDIT_INFO_HOME);
+    return page;
+}
+
+void gaudit_plugin_about_dialog(const GauditTaskInfo *task, GtkWidget *parent)
+{
+    /* As gAudit's own About dialog. The built-in plugins are part of gAudit:
+     * its owner, license and source. A plugin from another owner gives its
+     * own, and says it is not reviewed by gAudit, once such plugins exist. */
+    AdwDialog *about = adw_about_dialog_new();
+    AdwAboutDialog *a = ADW_ABOUT_DIALOG(about);
+    adw_about_dialog_set_application_name(a, _(task->title));
+    adw_about_dialog_set_application_icon(a, task->icon);
+    adw_about_dialog_set_comments(a, _(task->summary));
+    adw_about_dialog_set_version(a, GAUDIT_VERSION);
+    adw_about_dialog_set_developer_name(a, GAUDIT_DEVELOPER);
+    adw_about_dialog_set_license_type(a, GTK_LICENSE_GPL_3_0_ONLY);
+    adw_about_dialog_set_website(a, GAUDIT_WEBSITE);
+    adw_dialog_present(about, parent);
 }
 
 /* --- Page 1: settings ----------------------------------------------------- */

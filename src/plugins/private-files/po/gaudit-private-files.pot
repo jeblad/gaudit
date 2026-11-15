@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 02:19+0100\n"
+"POT-Creation-Date: 2026-11-15 03:20+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,62 +18,62 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: src/plugins/private-files/gaudit-private-files.c:216
+#: src/plugins/private-files/gaudit-private-files.c:219
 msgid "Others can change what is in your home folder."
 msgstr ""
 
 #. Translators: %s is a file name, e.g. "~/.netrc".
-#: src/plugins/private-files/gaudit-private-files.c:219
+#: src/plugins/private-files/gaudit-private-files.c:222
 #, c-format
 msgid "Every account on this computer can read %s."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:220
+#: src/plugins/private-files/gaudit-private-files.c:223
 #, c-format
 msgid "Members of a group can read %s."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:225
+#: src/plugins/private-files/gaudit-private-files.c:228
 msgid ""
 "It belongs to another account, so only that account or the administrator can "
 "change who may read it."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:228
+#: src/plugins/private-files/gaudit-private-files.c:231
 msgid ""
 "Run this command in a terminal. Others can still see the names of your "
 "files, but no longer change them."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:233
+#: src/plugins/private-files/gaudit-private-files.c:236
 msgid ""
 "Its name has characters that cannot be shown exactly here, so no command is "
 "given. In the file manager, open its properties and let only you read it."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:236
+#: src/plugins/private-files/gaudit-private-files.c:239
 msgid ""
 "Run this command in a terminal. Afterwards only you can read it; it stays "
 "where it is."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:242
+#: src/plugins/private-files/gaudit-private-files.c:245
 msgid ""
 "It is on a network folder: the server decides who can read it, so this may "
 "not be enough. Check it on the server too."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:245
+#: src/plugins/private-files/gaudit-private-files.c:248
 msgid ""
 "Afterwards, check again: it should then be listed under the files only you "
 "can read."
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:247
+#: src/plugins/private-files/gaudit-private-files.c:250
 msgid "Close Your Home Folder"
 msgstr ""
 
-#: src/plugins/private-files/gaudit-private-files.c:247
+#: src/plugins/private-files/gaudit-private-files.c:250
 msgid "Make It Private"
 msgstr ""
 

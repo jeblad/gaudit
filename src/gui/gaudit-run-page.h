@@ -12,6 +12,11 @@ G_BEGIN_DECLS
 
 AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task);
 
+/* The run that made the task's cached collection, again with the same
+ * parameters (Home's simplified one stays simplified); without a cache,
+ * the full run with the parameters as they are now. For Reload. */
+AdwNavigationPage *gaudit_run_page_again(const GauditTaskInfo *task);
+
 /* The report from the task's cached collection, without collecting again.
  * NULL if nothing is cached. */
 AdwNavigationPage *gaudit_cached_report_page_new(const GauditTaskInfo *task);

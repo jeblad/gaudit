@@ -26,6 +26,7 @@ typedef struct {
     GPtrArray *lines;  /* COLLECTION: its lines (char *), each checked by the plugin */
     gboolean full;     /* started with the plugin's parameters (Run on Parameters);
                           FALSE for Home's runs, whose reports are simplified */
+    GStrv args;        /* full: the parameters it was started with */
 } GauditRunResult;
 
 /* The verdict of a result (unknown for a collection: its report decides). */

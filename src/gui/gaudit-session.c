@@ -83,6 +83,7 @@ static void end_run(gaudit_run_status status)
     g_array_unref(run->observers);
     if (run->result.lines != NULL)
         g_ptr_array_unref(run->result.lines);
+    g_strfreev(run->result.args);
     g_free(run->command);
     g_strfreev(run->args);
     g_free(run);
@@ -236,6 +237,7 @@ gboolean gaudit_session_run_args(const char *command, const char *const *extra,
     run->command = g_strdup(command);
     run->args = extra != NULL ? g_strdupv((char **)extra) : g_new0(char *, 1);
     run->result.full = extra != NULL;
+    run->result.args = extra != NULL ? g_strdupv((char **)extra) : NULL;
     run->on_progress = on_progress;
     run->on_done = on_done_fn;
     run->user_data = user_data;

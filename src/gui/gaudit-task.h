@@ -24,7 +24,10 @@ typedef struct {
     const char *id;
     const char *title;
     const char *summary;   /* one sentence */
-    const char *details;   /* longer explanation for non-technical users */
+    const char *details;   /* longer explanation for non-technical users: what it does */
+    const char *why;       /* why it matters to the user, N_() */
+    const char *about_parameters;  /* page 0 opened from Parameters: what they do, N_() */
+    const char *about_report;      /* page 0 opened from a report: what it shows, N_() */
     const char *icon;
     const char *const *capabilities;  /* NULL-terminated, resolved by the backend */
     const GauditTaskParam *params;
@@ -102,6 +105,10 @@ GStrv gaudit_task_folders_split(const GauditTaskInfo *task, GStrv *places);
  * (the default otherwise). */
 guint gaudit_task_read_limit(const GauditTaskInfo *task);
 void gaudit_task_set_read_limit(const GauditTaskInfo *task, guint bytes);
+
+/* Every parameter back to its default; the generated ones (the file
+ * manager's places) made again, none taken off the list. */
+void gaudit_task_reset_parameters(const GauditTaskInfo *task);
 
 /* Whether caches are searched too (default no). */
 gboolean gaudit_task_with_caches(const GauditTaskInfo *task);

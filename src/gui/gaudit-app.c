@@ -203,6 +203,22 @@ static void start_level_job(GauditApp *app, GauditWindow *view, gboolean with_ad
     level_next(job);
 }
 
+/* Reload on Home: Home's checks again, as when the app opens, and the
+ * reports at the chosen level; it is an explicit act, so those that need
+ * the password ask for it. */
+static void refresh_status(GauditApp *self, GauditWindow *view);
+
+static void on_reload_home(GSimpleAction *action, GVariant *param, gpointer app)
+{
+    (void)action;
+    (void)param;
+    GtkWindow *win = gtk_application_get_active_window(GTK_APPLICATION(app));
+    if (!GAUDIT_IS_WINDOW(win))
+        return;
+    refresh_status(GAUDIT_APP(app), GAUDIT_WINDOW(win));
+    start_level_job(GAUDIT_APP(app), GAUDIT_WINDOW(win), TRUE);
+}
+
 static void on_run_level(GSimpleAction *action, GVariant *param, gpointer app)
 {
     (void)action;
@@ -333,6 +349,7 @@ static const GActionEntry app_actions[] = {
     { .name = "about",       .activate = on_about },
     { .name = "quit",        .activate = on_quit },
     { .name = "run-level",    .activate = on_run_level },
+    { .name = "reload-home",  .activate = on_reload_home },
     { .name = "elevate",      .activate = on_elevate },
 };
 
@@ -410,7 +427,8 @@ static void on_session_result(const char *command, const GauditRunResult *result
     for (gsize i = found; i == found; i++) {
         if (result->kind == GAUDIT_RESULT_COLLECTION) {
             /* Kept for the session; the plugin's report on it decides. */
-            gaudit_cache_store(&tasks[i], command, result->lines, result->full);
+            gaudit_cache_store(&tasks[i], command, result->lines, result->full,
+                               (const char *const *)result->args);
             CachedReport *c = g_new0(CachedReport, 1);
             c->app = g_object_ref(self);
             c->task = i;

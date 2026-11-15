@@ -16,7 +16,8 @@
 typedef struct {
     AdwStatusPage *status;  /* weak: the page may be left while the run goes on */
     const GauditTaskInfo *task;
-    GStrv args;             /* the run's parameters (the plugin's folders) */
+    char *command;          /* the run's command (the plugin's own, or Home's for a reload) */
+    GStrv args;             /* the run's parameters (the plugin's folders); NULL: Home's run */
     guint tick_id;          /* shows the progress of a run as the user */
     gint64 next_ask;        /* when to ask whether to go on (monotonic, µs) */
     GtkWidget *ask;         /* weak: the "keep going?" buttons, while shown */
@@ -257,6 +258,7 @@ static void job_free(RunJob *job)
     if (job->status != NULL)
         g_object_remove_weak_pointer(G_OBJECT(job->status), (gpointer *)&job->status);
     g_strfreev(job->args);
+    g_free(job->command);
     g_free(job);
 }
 
@@ -374,7 +376,7 @@ static void on_run_done(gaudit_run_status status, const GauditRunResult *result,
         ReportJob *rj = g_new0(ReportJob, 1);
         rj->job = job;
         rj->lines = g_ptr_array_ref(result->lines);
-        gaudit_report_run(job->task, job->task->run_command, rj->lines, on_report, rj);
+        gaudit_report_run(job->task, job->command, rj->lines, on_report, rj);
         return;
     } else if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_FIREWALL) {
         job->firewall = result->firewall;
@@ -525,7 +527,7 @@ static void start_or_ask(RunJob *job)
         if (job->status != NULL)
             adw_status_page_set_title(job->status, job->task->needs_admin
                                       ? _("Waiting for the password") : _(job->task->run_running));
-        if (!gaudit_session_run_args(job->task->run_command, (const char *const *)job->args,
+        if (!gaudit_session_run_args(job->command, (const char *const *)job->args,
                                      on_progress, on_run_done, job)) {
             show(job, "dialog-warning-symbolic", _("The check could not be started"), NULL);
             job_free(job);
@@ -534,7 +536,7 @@ static void start_or_ask(RunJob *job)
         watch_progress(job);
         return;
     }
-    if (gaudit_session_running_is(job->task->run_command, (const char *const *)job->args)) {
+    if (gaudit_session_running_is(job->command, (const char *const *)job->args)) {
         /* The same parameters: that run is this one. */
         if (job->status != NULL) {
             adw_status_page_set_title(job->status, _("In progress, processing…"));
@@ -593,7 +595,18 @@ AdwNavigationPage *gaudit_cached_report_page_new(const GauditTaskInfo *task)
     return page;
 }
 
+static AdwNavigationPage *gaudit_run_page_new_with(const GauditTaskInfo *task, const char *command,
+                                                   const char *const *args, gboolean fresh);
+
 AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)
+{
+    return gaudit_run_page_new_with(task, task->run_command, NULL, TRUE);
+}
+
+/* page 2 for command with args (NULL: Home's, simplified); fresh: the
+ * plugin's own parameters as they are now. */
+static AdwNavigationPage *gaudit_run_page_new_with(const GauditTaskInfo *task, const char *command,
+                                                   const char *const *args, gboolean fresh)
 {
     AdwStatusPage *status = ADW_STATUS_PAGE(adw_status_page_new());
 #if ADW_CHECK_VERSION(1, 6, 0)
@@ -614,8 +627,20 @@ AdwNavigationPage *gaudit_run_page_new(const GauditTaskInfo *task)
     job->status = status;
     job->task = task;
     /* The parameters as they are now: changing them later is another run. */
-    job->args = gaudit_task_run_args(task);
+    job->command = g_strdup(command);
+    job->args = fresh ? gaudit_task_run_args(task) : args != NULL ? g_strdupv((char **)args) : NULL;
     g_object_add_weak_pointer(G_OBJECT(status), (gpointer *)&job->status);
     start_or_ask(job);
     return page;
+}
+
+AdwNavigationPage *gaudit_run_page_again(const GauditTaskInfo *task)
+{
+    const char *command = gaudit_cache_command(task);
+    if (command == NULL || gaudit_cache_full(task))
+        return gaudit_run_page_new_with(task, command != NULL ? command : task->run_command,
+                                        command != NULL ? gaudit_cache_args(task) : NULL,
+                                        command == NULL);
+    /* Home's collection: the same again, simplified. */
+    return gaudit_run_page_new_with(task, command, NULL, FALSE);
 }

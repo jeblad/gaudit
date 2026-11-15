@@ -919,19 +919,181 @@ static void title_in_folder(GauditWindow *self, AdwNavigationPage *page)
     g_object_set_data(G_OBJECT(page), "gaudit-titled", GINT_TO_POINTER(1));
 }
 
+/* --- The content's header bar: Reload and the page's context menu ----------
+ *
+ * At the end of the header bar: the context menu for the page shown (often
+ * the same for all of a plugin's pages), and Reload beside it, which starts
+ * the page's current process again: Home's checks on Home, the collection
+ * behind a report (with the same parameters) on a report or a run. Pages
+ * without a process (Parameters, a fix) have no Reload. */
+
+static void open_entry(GauditWindow *self, int entry);
+static void go_home(GauditWindow *self, gboolean show);
+static void content_set(GauditWindow *self, AdwNavigationPage *page);
+
+static void on_reload_clicked(GtkButton *button, gpointer user_data)
+{
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    AdwNavigationPage *page = g_object_get_data(G_OBJECT(button), "gaudit-page");
+    const char *tag = page != NULL ? adw_navigation_page_get_tag(page) : NULL;
+    if (g_strcmp0(tag, "home") == 0) {
+        gtk_widget_activate_action(GTK_WIDGET(button), "app.reload-home", NULL);
+        return;
+    }
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    if (self->folder < 0 || (gsize)self->folder >= n_tasks)
+        return;
+    if (g_strcmp0(tag, tasks[self->folder].id) == 0) {
+        /* On Parameters, its process is making the parameters: back to the
+         * defaults, the generated ones made again, and the page with them. */
+        gaudit_task_reset_parameters(&tasks[self->folder]);
+        open_entry(self, 0);
+        GtkWidget *overlay = gtk_widget_get_ancestor(GTK_WIDGET(self->content), ADW_TYPE_TOAST_OVERLAY);
+        if (overlay != NULL)
+            adw_toast_overlay_add_toast(ADW_TOAST_OVERLAY(overlay),
+                                        adw_toast_new(_("The parameters are set back")));
+        return;
+    }
+    AdwNavigationPage *again = gaudit_run_page_again(&tasks[self->folder]);
+    title_in_folder(self, again);
+    content_set(self, again);
+}
+
+/* Home's information page, on top of Home: back leads to Home. */
+static void on_home_info(GSimpleAction *action, GVariant *param, gpointer user_data)
+{
+    (void)action;
+    (void)param;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    AdwNavigationPage *page = gaudit_home_info_page_new();
+    /* Translators: the content's title, "<page> › <page>", here "Home › Information". */
+    g_autofree char *title = g_strdup_printf(_("%s › %s"), _("Home"), _("Information"));
+    adw_navigation_page_set_title(page, title);
+    adw_navigation_view_push(self->content, page);
+    gtk_list_box_unselect_all(self->sidebar);  /* none of the sidebar's entries */
+}
+
+/* The plugin's About dialog. */
+static void on_about_plugin(GSimpleAction *action, GVariant *param, gpointer user_data)
+{
+    (void)action;
+    (void)param;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    if (self->folder >= 0 && (gsize)self->folder < n_tasks)
+        gaudit_plugin_about_dialog(&tasks[self->folder], GTK_WIDGET(self));
+}
+
+/* Page 0, on top of the page shown: back leads to where the user was. */
+static void on_plugin_info(GSimpleAction *action, GVariant *param, gpointer user_data)
+{
+    (void)action;
+    (void)param;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    if (self->folder >= 0 && (gsize)self->folder < n_tasks) {
+        /* What it was opened from: Parameters, or a report (simplified or full). */
+        const GauditTaskInfo *task = &tasks[self->folder];
+        AdwNavigationPage *shown = adw_navigation_view_get_visible_page(self->content);
+        const char *tag = shown != NULL ? adw_navigation_page_get_tag(shown) : NULL;
+        GauditInfoFrom from = GAUDIT_INFO_PLAIN;
+        if (g_strcmp0(tag, task->id) == 0)
+            from = GAUDIT_INFO_PARAMETERS;
+        else if (g_strcmp0(tag, "report") == 0 || g_strcmp0(tag, "run") == 0)
+            from = gaudit_cache_lines(task, NULL) != NULL && !gaudit_cache_full(task)
+                   ? GAUDIT_INFO_SIMPLIFIED : GAUDIT_INFO_REPORT;
+        adw_navigation_view_push(self->content, gaudit_plugin_about_page_new(task, from));
+        /* Page 0 is none of the folder's entries: nothing marked. */
+        if (self->folder_list != NULL)
+            gtk_list_box_unselect_all(self->folder_list);
+    }
+}
+
+static void decorate(GauditWindow *self, AdwNavigationPage *page)
+{
+    AdwHeaderBar *header = page != NULL ? g_object_get_data(G_OBJECT(page), "gaudit-header") : NULL;
+    if (header == NULL || g_object_get_data(G_OBJECT(page), "gaudit-decorated") != NULL)
+        return;
+    g_object_set_data(G_OBJECT(page), "gaudit-decorated", GINT_TO_POINTER(1));
+    const char *tag = adw_navigation_page_get_tag(page);
+    gboolean home = g_strcmp0(tag, "home") == 0;
+    gboolean in_plugin = !home && self->folder >= 0;
+    /* At the end: first packed is outermost, so the menu, then Reload. */
+    if (home) {
+        /* Home's menu: its information page and About gAudit, as a
+         * plugin's has its information and its About (no plugin entries). */
+        GMenu *menu = g_menu_new();
+        g_menu_append(menu, _("Information"), "win.home-info");
+        /* Translators: %s is the application name, which is not translated. */
+        g_autofree char *about = g_strdup_printf(_("About %s"), GAUDIT_APP_NAME);
+        g_menu_append(menu, about, "app.about");
+        GtkWidget *button = gtk_menu_button_new();
+        gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), "gaudit-context-menu-symbolic");
+        gtk_menu_button_set_menu_model(GTK_MENU_BUTTON(button), G_MENU_MODEL(menu));
+        gtk_widget_set_tooltip_text(button, _("Menu for this page"));
+        gtk_accessible_update_property(GTK_ACCESSIBLE(button), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                       _("Menu for this page"), -1);
+        g_object_unref(menu);
+        adw_header_bar_pack_end(header, button);
+    }
+    if (in_plugin) {
+        GMenu *menu = g_menu_new();
+        gsize n_tasks;
+        const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+        /* Kept simple: the pages are in the sidebar already. */
+        g_autofree char *label = g_strdup_printf(_("About %s"), _(tasks[self->folder].title));
+        g_menu_append(menu, _("Information"), "win.plugin-info");
+        g_menu_append(menu, label, "win.about-plugin");
+        GtkWidget *button = gtk_menu_button_new();
+        gtk_menu_button_set_icon_name(GTK_MENU_BUTTON(button), "gaudit-context-menu-symbolic");
+        gtk_menu_button_set_menu_model(GTK_MENU_BUTTON(button), G_MENU_MODEL(menu));
+        gtk_widget_set_tooltip_text(button, _("Menu for this page"));
+        gtk_accessible_update_property(GTK_ACCESSIBLE(button), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                       _("Menu for this page"), -1);
+        g_object_unref(menu);
+        adw_header_bar_pack_end(header, button);
+    }
+    gsize n_tasks;
+    const GauditTaskInfo *all = gaudit_tasks_get(&n_tasks);
+    gboolean params = in_plugin && (gsize)self->folder < n_tasks
+                      && g_strcmp0(tag, all[self->folder].id) == 0
+                      && (all[self->folder].param_folders || all[self->folder].param_read_limit
+                          || all[self->folder].param_caches);
+    if (home || params || g_strcmp0(tag, "report") == 0 || g_strcmp0(tag, "run") == 0) {
+        const char *tip = home ? _("Check again")
+                        : params ? _("Set the parameters back")
+                        : _("Collect again with the same settings");
+        GtkWidget *reload = gtk_button_new_from_icon_name("gaudit-reload-symbolic");
+        gtk_widget_set_tooltip_text(reload, tip);
+        gtk_accessible_update_property(GTK_ACCESSIBLE(reload), GTK_ACCESSIBLE_PROPERTY_LABEL, tip, -1);
+        g_object_set_data(G_OBJECT(reload), "gaudit-page", page);
+        g_signal_connect(reload, "clicked", G_CALLBACK(on_reload_clicked), self);
+        adw_header_bar_pack_end(header, reload);
+    }
+}
+
 /* Pages pushed inside a plugin (a run, a fix) get the plugin in their title. */
 static void on_content_pushed(AdwNavigationView *nav, gpointer user_data)
 {
-    title_in_folder(GAUDIT_WINDOW(user_data), adw_navigation_view_get_visible_page(nav));
+    AdwNavigationPage *page = adw_navigation_view_get_visible_page(nav);
+    title_in_folder(GAUDIT_WINDOW(user_data), page);
+    decorate(GAUDIT_WINDOW(user_data), page);
 }
 
-/* The content: Home, with page on top (NULL: Home alone), so the content's
- * back button leads back to Home, as the folder's back button does. */
+/* The content: one page that has an entry in the sidebar (page; NULL for
+ * Home), alone at the bottom, so it has no back button: the user moves
+ * between such pages with the sidebar, which marks where they are. Pages
+ * without an entry (a fix, information) are pushed on top of it and so
+ * get a back button, a clear way back (John, 2026-11-15). */
 static void content_set(GauditWindow *self, AdwNavigationPage *page)
 {
-    AdwNavigationPage *pages[2] = { build_home(self), page };
+    AdwNavigationPage *root = page != NULL ? page : build_home(self);
+    decorate(self, root);
     self->syncing = TRUE;
-    adw_navigation_view_replace(self->content, pages, page != NULL ? 2 : 1);
+    adw_navigation_view_replace(self->content, &root, 1);
     self->syncing = FALSE;
 }
 
@@ -1120,14 +1282,38 @@ static void on_content_popped(AdwNavigationView *nav, AdwNavigationPage *page, g
     (void)page;
     GauditWindow *self = GAUDIT_WINDOW(user_data);
     AdwNavigationPage *visible = adw_navigation_view_get_visible_page(nav);
-    if (self->syncing || self->folder < 0 || visible == NULL
-        || g_strcmp0(adw_navigation_page_get_tag(visible), "home") != 0)
+    if (self->syncing || visible == NULL)
         return;
-    self->syncing = TRUE;
-    adw_navigation_view_pop_to_tag(self->side_nav, "sidebar");
-    self->syncing = FALSE;
-    self->folder = -1;
-    select_root(self, 0);
+    /* Back from a page without a sidebar entry: the entry of the page now
+     * shown is marked again. The content never goes back past the page
+     * the sidebar chose, so the folder stays as it is. */
+    const char *tag = adw_navigation_page_get_tag(visible);
+    if (self->folder < 0) {
+        if (g_strcmp0(tag, "home") == 0)
+            select_root(self, 0);
+        return;
+    }
+    if (g_strcmp0(tag, "report") == 0 || g_strcmp0(tag, "run") == 0)
+        select_folder_row(self, 1);
+    else if (g_strcmp0(tag, "about") != 0 && g_strcmp0(tag, "fix") != 0)
+        select_folder_row(self, 0);
+}
+
+/* Run on Parameters: the report is a page with its own sidebar entry, so
+ * the content changes to it (no back button) and the entry is marked. */
+static void on_start(GSimpleAction *action, GVariant *param, gpointer user_data)
+{
+    (void)action;
+    (void)param;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    if (self->folder < 0 || (gsize)self->folder >= n_tasks)
+        return;
+    AdwNavigationPage *page = gaudit_run_page_new(&tasks[self->folder]);
+    title_in_folder(self, page);
+    content_set(self, page);
+    select_folder_row(self, 1);
 }
 
 /* subtitle may be NULL. */
@@ -1171,9 +1357,7 @@ static GtkWidget *primary_menu_button(void)
     GMenu *section = g_menu_new();
     g_menu_append(section, _("_Preferences"), "app.preferences");
     g_menu_append(section, _("_Keyboard Shortcuts"), "app.shortcuts");
-    /* Translators: %s is the application name, which is not translated. */
-    g_autofree char *about = g_strdup_printf(_("_About %s"), GAUDIT_APP_NAME);
-    g_menu_append(section, about, "app.about");
+    /* About gAudit is in Home's context menu, beside Home's information. */
 
     GMenu *menu = g_menu_new();
     g_menu_append_section(menu, NULL, G_MENU_MODEL(section));
@@ -1409,6 +1593,13 @@ static void gaudit_window_init(GauditWindow *self)
     self->content = ADW_NAVIGATION_VIEW(adw_navigation_view_new());
     g_signal_connect(self->content, "popped", G_CALLBACK(on_content_popped), self);
     g_signal_connect(self->content, "pushed", G_CALLBACK(on_content_pushed), self);
+    static const GActionEntry entries[] = {
+        { .name = "about-plugin", .activate = on_about_plugin },
+        { .name = "plugin-info", .activate = on_plugin_info },
+        { .name = "home-info", .activate = on_home_info },
+        { .name = "start", .activate = on_start },
+    };
+    g_action_map_add_action_entries(G_ACTION_MAP(self), entries, G_N_ELEMENTS(entries), self);
 
     self->split = ADW_NAVIGATION_SPLIT_VIEW(adw_navigation_split_view_new());
     adw_navigation_split_view_set_sidebar(self->split,

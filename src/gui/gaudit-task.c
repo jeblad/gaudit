@@ -52,6 +52,16 @@ guint gaudit_task_home_from(const GauditTaskInfo *task)
     return GAUDIT_LEVEL_COUNT;
 }
 
+const GauditTaskInfo *gaudit_task_by_id(const char *id)
+{
+    gsize n_tasks;
+    const GauditTaskInfo *all = gaudit_tasks_get(&n_tasks);
+    for (gsize i = 0; id != NULL && i < n_tasks; i++)
+        if (strcmp(all[i].id, id) == 0)
+            return &all[i];
+    return NULL;
+}
+
 const GauditTaskInfo *gaudit_task_for_command(const char *command, gsize *index)
 {
     gsize n_tasks;

@@ -70,6 +70,9 @@ const char *gaudit_task_home_command(const GauditTaskInfo *task, guint level);
 /* The lowest level task has a Home report at; GAUDIT_LEVEL_COUNT for none. */
 guint gaudit_task_home_from(const GauditTaskInfo *task);
 
+/* The task with this id on this system, or NULL. */
+const GauditTaskInfo *gaudit_task_by_id(const char *id);
+
 /* The task that runs command (its own or a Home one), with its index; NULL
  * for none. */
 const GauditTaskInfo *gaudit_task_for_command(const char *command, gsize *index);

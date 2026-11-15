@@ -67,7 +67,8 @@ GtkWidget *gaudit_verdict_icon_new(gaudit_verdict verdict)
 
 AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, const char *how,
                                        const char *command, const char *note,
-                                       const char *const *run_args)
+                                       const char *const *run_args, GauditFixedFn on_fixed,
+                                       gpointer data, GDestroyNotify data_free)
 {
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
     gtk_widget_set_margin_top(box, 24);
@@ -78,8 +79,24 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
     gtk_widget_add_css_class(what, "title-4");
     gtk_box_append(GTK_BOX(box), what);
     gtk_box_append(GTK_BOX(box), wrapped_label(how));
-    if (command != NULL)
-        gtk_box_append(GTK_BOX(box), gaudit_command_field_new_run(command, run_args));
+    if (command != NULL) {
+        GtkWidget *field = gaudit_command_field_new_run(command, run_args);
+        /* The run button, if any, carries what to do after a fix. */
+        GtkWidget *run = NULL;
+        for (GtkWidget *c = gtk_widget_get_first_child(field); c != NULL && run == NULL;
+             c = gtk_widget_get_next_sibling(c))
+            for (GtkWidget *d = gtk_widget_get_first_child(c); d != NULL; d = gtk_widget_get_next_sibling(d))
+                if (g_object_get_data(G_OBJECT(d), "gaudit-run") != NULL)
+                    run = d;
+        if (run != NULL && on_fixed != NULL) {
+            g_object_set_data(G_OBJECT(run), "gaudit-fixed", (gpointer)on_fixed);
+            g_object_set_data_full(G_OBJECT(run), "gaudit-fixed-data", data, data_free);
+            data_free = NULL;
+        }
+        gtk_box_append(GTK_BOX(box), field);
+    }
+    if (data_free != NULL && data != NULL)
+        data_free(data);
     if (note != NULL) {
         GtkWidget *small = wrapped_label(note);
         gtk_widget_add_css_class(small, "dim-label");
@@ -433,6 +450,8 @@ typedef struct {
     GtkWidget *result;   /* weak: the line under the field */
     gboolean fixed;
     guint mode;
+    GauditFixedFn on_fixed;
+    gpointer data;       /* the page's, held by the button */
 } FixRun;
 
 static void fix_run_free(FixRun *r)
@@ -471,6 +490,8 @@ static void on_fix_done(gboolean broken, gpointer user_data)
     }
     if (r->button != NULL)
         gtk_widget_set_sensitive(r->button, !(r->fixed && !broken));
+    if (!broken && r->fixed && r->on_fixed != NULL && r->button != NULL)
+        r->on_fixed(r->data);
     fix_run_free(r);
 }
 
@@ -489,6 +510,8 @@ static void on_run_clicked(GtkButton *button, gpointer user_data)
     r->button = GTK_WIDGET(button);
     g_object_add_weak_pointer(G_OBJECT(button), (gpointer *)&r->button);
     r->result = g_object_get_data(G_OBJECT(button), "gaudit-result");
+    r->on_fixed = (GauditFixedFn)g_object_get_data(G_OBJECT(button), "gaudit-fixed");
+    r->data = g_object_get_data(G_OBJECT(button), "gaudit-fixed-data");
     if (r->result != NULL)
         g_object_add_weak_pointer(G_OBJECT(r->result), (gpointer *)&r->result);
     gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);

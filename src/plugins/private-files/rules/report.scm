@@ -9,6 +9,7 @@
 ;;          (collection (area (index I) (path "...") (status S) (remote 0|1) (exact 0|1)) ...
 ;;                      (area-stats (index I) (entries N) (seconds T) (truncated 0|1) (caches C)) ...
 ;;                      (read-limit (bytes N))
+;;                      (rechecked (count N) (when "HH:MM"))
 ;;                      (secret (area I) (path "...") (reason "...") (mode M) (reach R)
 ;;                              (owned 0|1) (exact 0|1)) ...
 ;;                      (secrets (status S) (count N) (shown M) (others A)
@@ -257,6 +258,17 @@
                                 n (list 'n n))))
         '())))
 
+;; Findings checked again after a fix, since the collection: said, so the
+;; report is not taken for a whole new search.
+(define (rechecked-notes entries)
+  (let ((r (first-with 'rechecked entries)))
+    (if r
+        (list (list 'note (msgn (N_ "{n} finding was checked again at {when}, after a fix; the rest is from the search."
+                                    "{n} findings were checked again, the last at {when}, after a fix; the rest is from the search.")
+                                (field r 'count)
+                                (list 'n (field r 'count)) (list 'when (field r 'when)))))
+        '())))
+
 (define (read-limit-notes entries)
   (let ((r (first-with 'read-limit entries)))
     (if (and r (not (= (field r 'bytes) default-read-limit)))
@@ -317,5 +329,6 @@
          (area-notes areas)
          (stats-notes searched stats)
          (read-limit-notes entries)
+         (rechecked-notes entries)
          (caches-notes stats)
          (notes summary stats (count-of problem? findings))))))

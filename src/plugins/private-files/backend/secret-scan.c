@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <linux/openat2.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
 #define MAX_DEPTH    12
@@ -401,26 +403,111 @@ int gaudit_secret_scan(const char *home, uid_t uid, gaudit_secret_fn fn, void *c
     return scan_from(home, uid, 1, 1, fn, ctx, stats);
 }
 
-int gaudit_secret_scan_area(const char *root, uid_t uid, gaudit_secret_fn fn, void *ctx,
-                            gaudit_secret_stats *stats)
+/* Whether group and others can get through every folder above root, from
+ * "/" down (looked at, never listed). -1 if one cannot be looked at. */
+static int above_root(const char *root, int *group, int *other)
 {
-    if (root == NULL || root[0] != '/')
-        return -1;
-    /* The folders above root, from "/" down, only looked at, never listed:
-     * a closed one protects everything below it. */
     char path[PATH_MAX];
     if (snprintf(path, sizeof path, "%s", root) >= (int)sizeof path)
         return -1;
-    int group = 1, other = 1;
+    *group = 1;
+    *other = 1;
     for (char *slash = strrchr(path, '/'); slash != NULL; slash = strrchr(path, '/')) {
         *slash = '\0';
         struct stat sb;
         if (stat(path[0] != '\0' ? path : "/", &sb) != 0)
             return -1;
-        group = group && (sb.st_mode & S_IXGRP) != 0;
-        other = other && (sb.st_mode & S_IXOTH) != 0;
+        *group = *group && (sb.st_mode & S_IXGRP) != 0;
+        *other = *other && (sb.st_mode & S_IXOTH) != 0;
         if (path[0] == '\0')
             break;
     }
+    return 0;
+}
+
+int gaudit_secret_scan_area(const char *root, uid_t uid, gaudit_secret_fn fn, void *ctx,
+                            gaudit_secret_stats *stats)
+{
+    if (root == NULL || root[0] != '/')
+        return -1;
+    /* The folders above root: a closed one protects everything below it. */
+    int group, other;
+    if (above_root(root, &group, &other) != 0)
+        return -1;
     return scan_from(root, uid, group, other, fn, ctx, stats);
+}
+
+/* rel's folder beneath root_fd, no symbolic link on the way, and whether
+ * group and others get through every folder from root down to it. */
+static int open_folder(int root_fd, const char *rel, int *group, int *other)
+{
+    int fd = dup(root_fd);
+    char part[PATH_MAX];
+    const char *p = rel;
+    for (const char *slash = strchr(p, '/'); fd >= 0 && slash != NULL; slash = strchr(p, '/')) {
+        size_t n = (size_t)(slash - p);
+        if (n == 0 || n >= sizeof part) {
+            close(fd);
+            return -1;
+        }
+        memcpy(part, p, n);
+        part[n] = '\0';
+        struct open_how how = { .flags = O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW,
+                                .resolve = RESOLVE_BENEATH | RESOLVE_NO_SYMLINKS };
+        int next = (int)syscall(SYS_openat2, fd, part, &how, sizeof how);
+        close(fd);
+        fd = next;
+        struct stat sb;
+        if (fd < 0 || fstat(fd, &sb) != 0) {
+            if (fd >= 0)
+                close(fd);
+            return -1;
+        }
+        *group = *group && (sb.st_mode & S_IXGRP) != 0;
+        *other = *other && (sb.st_mode & S_IXOTH) != 0;
+        p = slash + 1;
+    }
+    return fd;
+}
+
+int gaudit_secret_check_one(const char *root, int outside_home, const char *rel, uid_t uid,
+                            gaudit_secret_hit *out)
+{
+    if (root == NULL || root[0] != '/' || rel == NULL || rel[0] == '\0' || rel[0] == '/'
+        || strstr(rel, "..") != NULL || out == NULL)
+        return -1;
+    int group = 1, other = 1;
+    if (outside_home && above_root(root, &group, &other) != 0)
+        return -1;
+    int root_fd = open(root, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    struct stat sb;
+    if (root_fd < 0 || fstat(root_fd, &sb) != 0) {
+        if (root_fd >= 0)
+            close(root_fd);
+        return -1;
+    }
+    group = group && (sb.st_mode & S_IXGRP) != 0;
+    other = other && (sb.st_mode & S_IXOTH) != 0;
+    int dir = open_folder(root_fd, rel, &group, &other);
+    close(root_fd);
+    if (dir < 0)
+        return 0;  /* gone, or no longer reached the same way */
+    const char *name = strrchr(rel, '/') != NULL ? strrchr(rel, '/') + 1 : rel;
+    int found = 0;
+    if (fstatat(dir, name, &sb, AT_SYMLINK_NOFOLLOW) == 0 && S_ISREG(sb.st_mode)) {
+        const char *reason = name_reason(rel, name);
+        unsigned reads = 0;
+        if (reason == NULL && sb.st_size > 0 && (size_t)sb.st_size <= read_limit && !no_sniff_name(name))
+            reason = content_reason(dir, name, &reads);
+        if (reason != NULL) {
+            *out = (gaudit_secret_hit){
+                .rel = rel, .reason = reason, .mode = sb.st_mode & 07777,
+                .owned = sb.st_uid == uid, .gid = sb.st_gid,
+                .reach = reach_of(sb.st_mode, group, other),
+            };
+            found = 1;
+        }
+    }
+    close(dir);
+    return found;
 }

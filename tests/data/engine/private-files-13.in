@@ -1,0 +1,7 @@
+(input (system (host "test") (distro "Ubuntu 26.04 LTS") (backend "debian"))
+       (level "full")
+       (collection
+        (area (index 0) (path "/home/test") (status 0) (remote 0) (exact 1))
+        (secret (area 0) (path ".netrc") (reason "netrc") (mode 384) (reach 0) (owned 1) (exact 1))
+        (rechecked (count 1) (when "14:32"))
+        (secrets (status 0) (count 1) (shown 1) (others 0) (groups 0) (truncated 0))))

@@ -286,6 +286,55 @@ typedef struct {
     GPtrArray *lines;
 } ReportJob;
 
+/* A report page follows its task's cache: a finding checked again after a
+ * fix makes the report again in place, so going back from the fix page
+ * shows it as it is now. */
+typedef struct {
+    AdwStatusPage *status;  /* weak */
+    const GauditTaskInfo *task;
+    guint watch;
+} Follow;
+
+static void follow_free(gpointer p, GObject *gone)
+{
+    (void)gone;
+    Follow *f = p;
+    gaudit_cache_unwatch(f->watch);
+    g_free(f);
+}
+
+static void on_report(GauditReport *report, gpointer user_data);
+
+static void on_cache_changed(const GauditTaskInfo *task, gpointer user_data)
+{
+    Follow *f = user_data;
+    const char *command = gaudit_cache_command(task);
+    GPtrArray *lines = gaudit_cache_lines(task, NULL);
+    if (task != f->task || f->status == NULL || command == NULL || lines == NULL)
+        return;
+    RunJob *job = g_new0(RunJob, 1);
+    job->status = f->status;
+    job->task = task;
+    g_object_add_weak_pointer(G_OBJECT(f->status), (gpointer *)&job->status);
+    ReportJob *rj = g_new0(ReportJob, 1);
+    rj->job = job;
+    rj->lines = g_ptr_array_ref(lines);
+    gaudit_report_run(task, command, rj->lines, on_report, rj);
+}
+
+static void follow(AdwStatusPage *status, const GauditTaskInfo *task)
+{
+    if (g_object_get_data(G_OBJECT(status), "gaudit-follows") != NULL)
+        return;
+    Follow *f = g_new0(Follow, 1);
+    f->status = status;  /* cleared with the page: follow_free runs first */
+    f->task = task;
+    f->watch = gaudit_cache_watch(on_cache_changed, f);
+    g_object_set_data(G_OBJECT(status), "gaudit-follows", GINT_TO_POINTER(1));
+    /* The page gone: so is the watch. */
+    g_object_weak_ref(G_OBJECT(status), follow_free, f);
+}
+
 static void on_report(GauditReport *report, gpointer user_data)
 {
     ReportJob *rj = user_data;
@@ -295,6 +344,7 @@ static void on_report(GauditReport *report, gpointer user_data)
         d->task = job->task;
         d->lines = g_ptr_array_ref(rj->lines);
         gaudit_report_show(job->status, report, job->task->text_domain, fix_page, d, fix_data_free);
+        follow(job->status, job->task);
     } else if (report == NULL) {
         show(job, "dialog-warning-symbolic", _("The report could not be made"),
              _("The check ran, but its report could not be put together."));

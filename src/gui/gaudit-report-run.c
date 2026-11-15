@@ -66,6 +66,41 @@ const char *gaudit_cache_command(const GauditTaskInfo *task)
     return e != NULL ? e->command : NULL;
 }
 
+typedef struct {
+    guint id;
+    GauditCacheChangedFn fn;
+    gpointer data;
+} Watch;
+
+static GArray *watches;  /* Watch */
+static guint next_watch = 1;
+
+guint gaudit_cache_watch(GauditCacheChangedFn fn, gpointer user_data)
+{
+    if (watches == NULL)
+        watches = g_array_new(FALSE, FALSE, sizeof(Watch));
+    Watch w = { next_watch++, fn, user_data };
+    g_array_append_val(watches, w);
+    return w.id;
+}
+
+void gaudit_cache_unwatch(guint id)
+{
+    for (guint i = 0; watches != NULL && i < watches->len; i++)
+        if (g_array_index(watches, Watch, i).id == id) {
+            g_array_remove_index(watches, i);
+            return;
+        }
+}
+
+void gaudit_cache_changed(const GauditTaskInfo *task)
+{
+    /* A copy: a watcher may unwatch while it is told. */
+    g_autoptr(GArray) now = watches != NULL ? g_array_copy(watches) : NULL;
+    for (guint i = 0; now != NULL && i < now->len; i++)
+        g_array_index(now, Watch, i).fn(task, g_array_index(now, Watch, i).data);
+}
+
 /* --- Making a report ---------------------------------------------------- */
 
 typedef struct {

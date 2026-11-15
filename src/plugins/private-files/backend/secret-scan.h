@@ -61,6 +61,13 @@ int gaudit_secret_scan(const char *home, uid_t uid, gaudit_secret_fn fn, void *c
 int gaudit_secret_scan_set_read_limit(size_t bytes);
 size_t gaudit_secret_scan_read_limit(void);
 
+/* One file checked again, as the scan would judge it (after a fix): rel
+ * beneath root, opened without following any symbolic link; reach from
+ * root down, and from "/" when outside_home. 1 still a secret (in *out;
+ * out->rel is rel), 0 gone or no longer a secret, -1 cannot be checked. */
+int gaudit_secret_check_one(const char *root, int outside_home, const char *rel, uid_t uid,
+                            gaudit_secret_hit *out);
+
 /* Whether caches are searched too (default: left out). */
 void gaudit_secret_scan_set_caches(int search);
 

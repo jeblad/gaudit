@@ -8,6 +8,11 @@
  *   (area (index I) (path "...") (status S) (remote 0|1) (exact 0|1))  before its search
  *   (area-stats (index I) (entries N) (seconds T) (truncated 0|1) (caches C))  after it, full only
  *   (read-limit (bytes N))                       full only: files up to N had their start read
+ *   (rechecked (count N) (when "HH:MM"))         findings checked again after a fix (GUI)
+ *
+ * "gaudit-orchestrator secrets item <area> <root> <path>" checks one
+ * finding again: a (secret ...) line as above, or (secret-gone) when it is
+ * gone or no longer a secret.
  *   (secret (area I) (path "...") (reason "...") (mode M) (reach R) (owned 0|1) (exact 0|1))
  *   (secrets (status S) (count N) (shown M) (others A) (groups B) (truncated 0|1))  last
  *
@@ -97,7 +102,8 @@ int gaudit_secrets_format_area_stats(const gaudit_secret_area_stats *a, char *bu
 
 /* One line, strictly: 1 a finding (in *f), 2 the summary (in *s), -1
  * anything else. An area line is 3, read with gaudit_secrets_parse_area;
- * an area-stats line 4, a read-limit line 5. */
+ * an area-stats line 4, a read-limit line 5, a rechecked line 6,
+ * (secret-gone) 7. */
 int gaudit_secrets_parse_line(const char *line, gaudit_secret_finding *f, gaudit_secrets_summary *s);
 
 /* An area line, strictly: 0 (in *a), -1 anything else. */

@@ -363,8 +363,75 @@ int gaudit_private_files_collect(const struct passwd *pw, int deep, const char *
     return fflush(out) == 0 ? 0 : 1;
 }
 
+/* For the known locations check of one path. */
+typedef struct {
+    const char *rel;
+    int found;
+    gaudit_private_rule rule;
+} item_known;
+
+static void on_item_known(const char *rel, gaudit_private_rule rule, void *ctx)
+{
+    item_known *k = ctx;
+    const char *mine = strcmp(k->rel, ".") == 0 ? "" : k->rel;
+    if (strcmp(rel, mine) == 0) {
+        k->found = 1;
+        k->rule = rule;
+    }
+}
+
+/* "secrets item <area> <root> <path>": one finding checked again, by the
+ * same rules as the collection (the known locations first, for the home
+ * folder). Area 0 is always the home folder from the password database,
+ * whatever root says. */
+static int check_item(const char *index_text, const char *root, const char *rel)
+{
+    char *end;
+    unsigned long index = strtoul(index_text, &end, 10);
+    const struct passwd *pw = getpwuid(getuid());
+    if (*end != '\0' || index >= GAUDIT_SECRETS_MAX_AREAS || pw == NULL || pw->pw_dir == NULL
+        || rel == NULL || rel[0] == '\0' || rel[0] == '/' || strstr(rel, "..") != NULL)
+        return 2;
+    if (index == 0)
+        root = pw->pw_dir;
+    scan_state st = { 0 };
+    st.me = pw;
+    st.own_gid_private = own_private_group(pw);
+    snprintf(st.home, sizeof st.home, "%s", pw->pw_dir);
+    st.area = (unsigned)index;
+    st.kept = calloc(1, sizeof *st.kept);
+    if (st.kept == NULL)
+        return 1;
+    if (index == 0) {
+        item_known k = { .rel = rel };
+        gid_t own_gid = st.own_gid_private ? pw->pw_gid : (gid_t)-1;
+        if (gaudit_private_files_each(pw->pw_dir, getuid(), own_gid, on_item_known, &k) >= 0 && k.found)
+            on_known(strcmp(rel, ".") == 0 ? "" : rel, k.rule, &st);
+    }
+    if (st.n_kept == 0 && strcmp(rel, ".") != 0) {
+        gaudit_secret_hit hit;
+        int r = gaudit_secret_check_one(root, index > 0, rel, getuid(), &hit);
+        if (r < 0) {
+            free(st.kept);
+            return 1;
+        }
+        if (r == 1)
+            on_hit(&hit, &st);
+    }
+    char line[1024];
+    int ok;
+    if (st.n_kept == 1)
+        ok = gaudit_secrets_format_finding(&st.kept[0], line, sizeof line) == 0 && fputs(line, stdout) != EOF;
+    else
+        ok = fputs("(secret-gone)\n", stdout) != EOF;
+    free(st.kept);
+    return ok && fflush(stdout) == 0 ? 0 : 1;
+}
+
 int gaudit_private_files_secrets(const char *level, const char *const *folders, size_t n_folders)
 {
+    if (level != NULL && strcmp(level, "item") == 0)
+        return n_folders == 3 ? check_item(folders[0], folders[1], folders[2]) : 2;
     /* "--with-caches" first, if given: caches are searched too. */
     if (n_folders > 0 && strcmp(folders[0], "--with-caches") == 0) {
         gaudit_secret_scan_set_caches(1);

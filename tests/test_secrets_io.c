@@ -66,6 +66,16 @@ static void test_area(void)
         }
 }
 
+static void test_recheck_lines(void)
+{
+    gaudit_secret_finding f;
+    gaudit_secrets_summary s;
+    CHECK(gaudit_secrets_parse_line("(rechecked (count 2) (when \"14:32\"))", &f, &s) == 6);
+    CHECK(gaudit_secrets_parse_line("(secret-gone)", &f, &s) == 7);
+    CHECK(gaudit_secrets_parse_line("(secret-gone) x", &f, &s) == -1);
+    CHECK(gaudit_secrets_parse_line("(rechecked (count -1) (when \"14:32\"))", &f, &s) == -1);
+}
+
 static void test_reject(void)
 {
     static const char *const bad[] = {
@@ -96,6 +106,7 @@ int main(void)
 {
     test_round_trip();
     test_area();
+    test_recheck_lines();
     test_reject();
     if (failures == 0)
         puts("secrets-io: all checks passed");

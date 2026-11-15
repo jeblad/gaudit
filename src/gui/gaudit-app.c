@@ -381,6 +381,21 @@ static void on_cached_report(GauditReport *report, gpointer user_data)
     g_free(c);
 }
 
+/* A cached collection changed in place (a finding checked again after a
+ * fix): Home's row follows, from the same cache. */
+static void on_cache_changed(const GauditTaskInfo *task, gpointer app)
+{
+    gsize index;
+    const char *command = gaudit_cache_command(task);
+    GPtrArray *lines = gaudit_cache_lines(task, NULL);
+    if (command == NULL || lines == NULL || gaudit_task_for_command(command, &index) != task)
+        return;
+    CachedReport *c = g_new0(CachedReport, 1);
+    c->app = g_object_ref(GAUDIT_APP(app));
+    c->task = index;
+    gaudit_report_run(task, command, lines, on_cached_report, c);
+}
+
 static void on_session_result(const char *command, const GauditRunResult *result,
                               gpointer app)
 {
@@ -442,6 +457,7 @@ static void gaudit_app_startup(GApplication *app)
 {
     G_APPLICATION_CLASS(gaudit_app_parent_class)->startup(app);
     g_unix_signal_add(SIGINT, on_quit_signal, app);
+    gaudit_cache_watch(on_cache_changed, app);
     g_unix_signal_add(SIGTERM, on_quit_signal, app);
 
     /* A selectable label (the command fields) must not select all of its

@@ -6,6 +6,8 @@
 
 #include "gaudit-private-files.h"
 #include "gaudit-task-page.h"
+#include "gaudit-report-run.h"
+#include "gaudit-orchestrator.h"
 #include "secrets.h"
 
 /* The plugin's own texts. */
@@ -39,6 +41,155 @@ static gboolean find_area(GPtrArray *lines, unsigned index, gaudit_secret_area *
         }
     }
     return FALSE;
+}
+
+/* --- Checking a finding again after a fix --------------------------------
+ *
+ * One small collection for that one finding, by the same rules, then its
+ * line in the cache is replaced (or removed when it is gone or no longer a
+ * secret), the summary's counts follow, and a (rechecked ...) line says
+ * so; the report is then made again from the cache. Never a guess from
+ * what the fix should have done. */
+
+typedef struct {
+    GPtrArray *lines;   /* the cached collection the fix page was made from */
+    guint item;
+    char *line;         /* the new line, or NULL when gone */
+    gboolean have;
+} Recheck;
+
+static void recheck_free(gpointer p)
+{
+    Recheck *r = p;
+    g_ptr_array_unref(r->lines);
+    g_free(r->line);
+    g_free(r);
+}
+
+static gboolean on_recheck_line(const char *line, gpointer user_data)
+{
+    Recheck *r = user_data;
+    gaudit_secret_finding f;
+    gaudit_secrets_summary s;
+    int kind = gaudit_secrets_parse_line(line, &f, &s);
+    if (r->have || (kind != 1 && kind != 7))
+        return FALSE;
+    r->have = TRUE;
+    r->line = kind == 1 ? g_strdup(line) : NULL;
+    return TRUE;
+}
+
+static int reach_of_line(const char *line, gboolean *found)
+{
+    gaudit_secret_finding f;
+    gaudit_secrets_summary s;
+    *found = line != NULL && gaudit_secrets_parse_line(line, &f, &s) == 1;
+    return *found ? (int)f.reach : -1;
+}
+
+/* A copy of lines with item replaced (or removed), the summary's counts
+ * following, and the rechecked line counted up. NULL if the lines are not
+ * what they should be. */
+static GPtrArray *patched(GPtrArray *lines, guint item, const char *line)
+{
+    gboolean old_found, new_found;
+    int old_reach = reach_of_line(g_ptr_array_index(lines, item), &old_found);
+    int new_reach = reach_of_line(line, &new_found);
+    if (!old_found)
+        return NULL;
+    g_autoptr(GDateTime) now = g_date_time_new_now_local();
+    g_autofree char *when = g_date_time_format(now, "%H:%M");
+    GPtrArray *out = g_ptr_array_new_with_free_func(g_free);
+    unsigned rechecked = 1;
+    gboolean summary_seen = FALSE;
+    for (guint i = 0; i < lines->len; i++) {
+        const char *l = g_ptr_array_index(lines, i);
+        gaudit_secret_finding f;
+        gaudit_secrets_summary s;
+        int kind = gaudit_secrets_parse_line(l, &f, &s);
+        if (i == item) {
+            if (line != NULL)
+                g_ptr_array_add(out, g_strdup(line));
+            continue;
+        }
+        if (kind == 6) {
+            unsigned n;
+            if (sscanf(l, "(rechecked (count %u)", &n) == 1)
+                rechecked = n + 1;
+            continue;  /* written again below, before the summary */
+        }
+        if (kind == 2) {
+            /* The counts follow the finding's new state. */
+            if (old_reach == GAUDIT_SECRET_OTHERS) s.others--;
+            if (old_reach == GAUDIT_SECRET_GROUP) s.groups--;
+            if (new_reach == GAUDIT_SECRET_OTHERS) s.others++;
+            if (new_reach == GAUDIT_SECRET_GROUP) s.groups++;
+            if (!new_found) {
+                s.count--;
+                s.shown--;
+            }
+            char buf[256], again[128];
+            snprintf(again, sizeof again, "(rechecked (count %u) (when \"%s\"))", rechecked,
+                     when != NULL ? when : "");
+            g_ptr_array_add(out, g_strdup(again));
+            if (gaudit_secrets_format_summary(&s, buf, sizeof buf) != 0) {
+                g_ptr_array_unref(out);
+                return NULL;
+            }
+            buf[strcspn(buf, "\n")] = '\0';
+            g_ptr_array_add(out, g_strdup(buf));
+            summary_seen = TRUE;
+            continue;
+        }
+        g_ptr_array_add(out, g_strdup(l));
+    }
+    if (!summary_seen) {
+        g_ptr_array_unref(out);
+        return NULL;
+    }
+    return out;
+}
+
+static void on_recheck_done(gboolean broken, gpointer user_data)
+{
+    Recheck *r = user_data;
+    const GauditTaskInfo *task = gaudit_task_by_id("core.private-files");
+    /* Only the collection the page was made from: a newer one has seen it. */
+    if (!broken && r->have && task != NULL && gaudit_cache_lines(task, NULL) == r->lines) {
+        g_autoptr(GPtrArray) next = patched(r->lines, r->item, r->line);
+        if (next != NULL) {
+            g_autofree char *command = g_strdup(gaudit_cache_command(task));
+            gaudit_cache_store(task, command, next, gaudit_cache_full(task));
+            gaudit_cache_changed(task);
+        }
+    }
+    recheck_free(r);
+}
+
+/* After the fix: the finding at item checked again. data: a Recheck to start. */
+static void on_fixed(gpointer data)
+{
+    Recheck *proto = data;
+    gaudit_secret_finding f;
+    gaudit_secrets_summary s;
+    gaudit_secret_area area;
+    if (gaudit_secrets_parse_line(g_ptr_array_index(proto->lines, proto->item), &f, &s) != 1
+        || !find_area(proto->lines, f.area, &area))
+        return;
+    Recheck *r = g_new0(Recheck, 1);
+    r->lines = g_ptr_array_ref(proto->lines);
+    r->item = proto->item;
+    g_autofree char *index = g_strdup_printf("%u", f.area);
+    const char *args[] = { "secrets", "item", index, area.path, f.path, NULL };
+    gaudit_orchestrator_start(args, 30, FALSE, on_recheck_line, on_recheck_done, r);
+}
+
+static Recheck *recheck_new(GPtrArray *lines, guint item)
+{
+    Recheck *r = g_new0(Recheck, 1);
+    r->lines = g_ptr_array_ref(lines);
+    r->item = item;
+    return r;
 }
 
 /* The command comes from this fixed table and the collected data, never
@@ -94,5 +245,6 @@ AdwNavigationPage *gaudit_private_files_fix_page(const char *fix_id, GPtrArray *
             : P_("Afterwards, check again: it should then be listed under the files only you can read.");
     }
     return gaudit_fix_page_new(home ? P_("Close Your Home Folder") : P_("Make It Private"),
-                               problem, how, command, note, (const char *const *)run);
+                               problem, how, command, note, (const char *const *)run,
+                               on_fixed, recheck_new(lines, item), recheck_free);
 }

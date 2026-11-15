@@ -142,6 +142,16 @@ int gaudit_secrets_parse_line(const char *line, gaudit_secret_finding *f, gaudit
     };
     if (gaudit_sexpr_parse(copy, "read-limit", limit, 1) == 0)
         return 5;
+    long long rechecked;
+    char when[16];
+    const gaudit_sexpr_field again[] = {
+        { .key = "count", .value = &rechecked, .max = 100000 },
+        { .key = "when",  .text = when, .text_len = sizeof when },
+    };
+    if (gaudit_sexpr_parse(copy, "rechecked", again, 2) == 0)
+        return 6;
+    if (strcmp(copy, "(secret-gone)") == 0)
+        return 7;
     if (strncmp(copy, "(area ", 6) == 0) {
         gaudit_secret_area a;
         return gaudit_secrets_parse_area(copy, &a) == 0 ? 3 : -1;

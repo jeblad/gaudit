@@ -33,6 +33,13 @@ GPtrArray *gaudit_cache_lines(const GauditTaskInfo *task, const char **when);
 /* The command task's cached collection was made by (borrowed; NULL for none). */
 const char *gaudit_cache_command(const GauditTaskInfo *task);
 
+/* Told when a task's cached collection changes in place (a finding checked
+ * again after a fix), so what shows a report from it can make it again. */
+typedef void (*GauditCacheChangedFn)(const GauditTaskInfo *task, gpointer user_data);
+guint gaudit_cache_watch(GauditCacheChangedFn fn, gpointer user_data);
+void gaudit_cache_unwatch(guint id);
+void gaudit_cache_changed(const GauditTaskInfo *task);
+
 /* The report, or NULL when none could be made. Called exactly once. */
 typedef void (*GauditReportDoneFn)(GauditReport *report, gpointer user_data);
 

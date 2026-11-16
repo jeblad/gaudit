@@ -1,0 +1,7 @@
+# sqv's cryptographic policy for a vendor signature that is weaker than
+# expected: the default policy, except that SHA-1 is accepted for
+# signatures. Nothing else weaker. A signature that needs this is shown as
+# weak, and installing it is the user's choice (Install Anyway).
+[hash_algorithms]
+sha1.collision_resistance = "always"
+sha1.second_preimage_resistance = "always"

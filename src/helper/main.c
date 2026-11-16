@@ -340,7 +340,8 @@ static const gaudit_vendor_env vendor_env = {
 #else
     .check_key_owner = 1,
 #endif
-    .gpgv = "/usr/bin/gpgv",
+    .sqv = "/usr/bin/sqv",
+    .weak_policy = GAUDIT_VENDOR_KEYS_DIR "/sha1-only.toml",
     .dpkg_deb = "/usr/bin/dpkg-deb",
     .dpkg_query = "/usr/bin/dpkg-query",
     .dpkg = "/usr/bin/dpkg",

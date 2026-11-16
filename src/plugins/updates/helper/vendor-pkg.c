@@ -94,12 +94,15 @@ void gaudit_vendor_clean(const gaudit_vendor_env *env)
     rmdir(env->cache_dir);  /* an empty folder leaves no trace */
 }
 
-/* Runs argv with a fixed environment, its stdout into out (at most len - 1
- * bytes), stderr to /dev/null. The exit status, or -1. */
-static int run_capture(char *const argv[], char *out, size_t len, long timeout_ms)
+/* Runs argv with a fixed environment (plus extra, NULL for none), its
+ * stdout and stderr together into out (at most len - 1 bytes). The exit
+ * status, or -1. */
+static int run_capture_env(char *const argv[], const char *extra, char *out, size_t len,
+                           long timeout_ms)
 {
-    static char *const env[] = {
-        (char *)"PATH=/usr/sbin:/usr/bin:/sbin:/bin", (char *)"LC_ALL=C", (char *)"HOME=/root", NULL,
+    char *env[] = {
+        (char *)"PATH=/usr/sbin:/usr/bin:/sbin:/bin", (char *)"LC_ALL=C", (char *)"HOME=/root",
+        (char *)extra, NULL,
     };
     int fds[2];
     if (out == NULL || len == 0 || pipe2(fds, O_CLOEXEC) != 0)
@@ -114,7 +117,7 @@ static int run_capture(char *const argv[], char *out, size_t len, long timeout_m
     if (pid == 0) {
         int null = open("/dev/null", O_RDWR | O_CLOEXEC);
         if (null < 0 || dup2(null, STDIN_FILENO) < 0 || dup2(fds[1], STDOUT_FILENO) < 0
-            || dup2(null, STDERR_FILENO) < 0 || chdir("/") != 0)
+            || dup2(fds[1], STDERR_FILENO) < 0 || chdir("/") != 0)
             _exit(126);
         execve(argv[0], argv, env);
         _exit(127);
@@ -154,33 +157,12 @@ static int run_capture(char *const argv[], char *out, size_t len, long timeout_m
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
+static int run_capture(char *const argv[], char *out, size_t len, long timeout_ms)
+{
+    return run_capture_env(argv, NULL, out, len, timeout_ms);
+}
+
 /* --- The signature -------------------------------------------------------- */
-
-const char *gaudit_vendor_hash_name(int hash)
-{
-    switch (hash) {
-    case 1:  return "MD5";
-    case 2:  return "SHA1";
-    case 3:  return "RIPEMD160";
-    case 8:  return "SHA256";
-    case 9:  return "SHA384";
-    case 10: return "SHA512";
-    case 11: return "SHA224";
-    case 12: return "SHA3-256";
-    case 14: return "SHA3-512";
-    default: return "";
-    }
-}
-
-static int count_of(const char *hay, size_t len, const char *needle)
-{
-    int n = 0;
-    size_t nl = strlen(needle);
-    for (size_t i = 0; i + nl <= len; i++)
-        if (memcmp(hay + i, needle, nl) == 0)
-            n++;
-    return n;
-}
 
 static int hex_of(const char *s, size_t n)
 {
@@ -192,56 +174,25 @@ static int hex_of(const char *s, size_t n)
     return 1;
 }
 
-int gaudit_vendor_signed_parts(const char *sig, size_t len, gaudit_vendor_part *parts, size_t max)
+int gaudit_vendor_listed_parts(const char *text, gaudit_vendor_part *parts, size_t max)
 {
-    static const char begin[] = "-----BEGIN PGP SIGNED MESSAGE-----\n";
-    static const char sig_begin[] = "\n-----BEGIN PGP SIGNATURE-----\n";
-    static const char sig_end[] = "-----END PGP SIGNATURE-----";
-    if (sig == NULL || len < sizeof begin || memchr(sig, '\0', len) != NULL
-        || memcmp(sig, begin, sizeof begin - 1) != 0
-        || count_of(sig, len, "-----BEGIN PGP") != 2 || count_of(sig, len, sig_begin) != 1
-        || count_of(sig, len, sig_end) != 1)
+    if (text == NULL || parts == NULL)
         return -1;
-    /* Nothing but the signature's end, and a newline, after it. */
-    const char *end = NULL;
-    for (size_t i = 0; i + sizeof sig_end - 1 <= len; i++)
-        if (memcmp(sig + i, sig_end, sizeof sig_end - 1) == 0)
-            end = sig + i + sizeof sig_end - 1;
-    if (end == NULL || !(end == sig + len || (end + 1 == sig + len && *end == '\n')))
-        return -1;
-    /* The armor headers ("Hash: SHA1"), then an empty line, then the text. */
-    const char *p = sig + sizeof begin - 1;
-    const char *stop = NULL;
-    for (size_t i = 0; i + sizeof sig_begin - 1 <= len; i++)
-        if (memcmp(sig + i, sig_begin, sizeof sig_begin - 1) == 0)
-            stop = sig + i + 1;  /* the text ends with the newline before it */
-    if (stop == NULL || stop < p)
-        return -1;
-    while (p < stop && *p != '\n') {
-        const char *nl = memchr(p, '\n', (size_t)(stop - p));
-        if (nl == NULL || strncmp(p, "Hash: ", 6) != 0)
-            return -1;
-        p = nl + 1;
-    }
-    if (p >= stop || *p != '\n')
-        return -1;
-    p++;
     int role = 0, files = 0, n = 0;
-    while (p < stop) {
-        const char *nl = memchr(p, '\n', (size_t)(stop - p));
-        size_t ll = nl != NULL ? (size_t)(nl - p) : (size_t)(stop - p);
+    for (const char *p = text; *p != '\0';) {
+        const char *nl = strchr(p, '\n');
+        size_t ll = nl != NULL ? (size_t)(nl - p) : strlen(p);
         char line[512];
         if (ll >= sizeof line)
             return -1;
         memcpy(line, p, ll);
         line[ll] = '\0';
-        p += ll + 1;
-        const char *l = strncmp(line, "- ", 2) == 0 ? line + 2 : line;  /* dash-escaped */
-        if (files && l[0] == '\t') {
+        p += ll + (nl != NULL);
+        if (files && line[0] == '\t') {
             gaudit_vendor_part part;
             char size[32];
             if ((size_t)n >= max
-                || sscanf(l + 1, "%32s %40s %31s %63s", part.md5, part.sha1, size, part.name) != 4
+                || sscanf(line + 1, "%32s %40s %31s %63s", part.md5, part.sha1, size, part.name) != 4
                 || !hex_of(part.md5, 32) || !hex_of(part.sha1, 40) || size[0] == '-')
                 return -1;
             char *e;
@@ -256,52 +207,71 @@ int gaudit_vendor_signed_parts(const char *sig, size_t len, gaudit_vendor_part *
             continue;
         }
         files = 0;
-        if (strncmp(l, "Files:", 6) == 0)
+        if (strncmp(line, "Files:", 6) == 0)
             files = 1;
-        else if (strcmp(l, "Role: builder") == 0)
+        else if (strcmp(line, "Role: builder") == 0)
             role = 1;
     }
     return role && n > 0 ? n : -1;
 }
 
-int gaudit_vendor_gpgv_status(const char *status, char fingerprint[41], int *hash)
+int gaudit_vendor_sqv_result(int exit_status, const char *output, char fingerprint[41])
 {
-    if (status == NULL || fingerprint == NULL || hash == NULL)
+    if (output == NULL || fingerprint == NULL)
         return -1;
-    int good = 0, valid = 0, nopub = 0, other = 0;
     fingerprint[0] = '\0';
-    for (const char *p = status; *p != '\0';) {
+    if (exit_status != 0)
+        return strstr(output, "Missing key") != NULL ? -2 : -1;
+    /* On success sqv names the key of each good signature, one per line:
+     * exactly one, and nothing else that looks like a key. */
+    int keys = 0;
+    for (const char *p = output; *p != '\0';) {
         const char *nl = strchr(p, '\n');
         size_t ll = nl != NULL ? (size_t)(nl - p) : strlen(p);
-        char line[512];
-        if (ll < sizeof line) {
-            memcpy(line, p, ll);
-            line[ll] = '\0';
-            char tok[12][64] = { { 0 } };
-            int nt = sscanf(line, "%63s %63s %63s %63s %63s %63s %63s %63s %63s %63s %63s %63s",
-                            tok[0], tok[1], tok[2], tok[3], tok[4], tok[5], tok[6], tok[7],
-                            tok[8], tok[9], tok[10], tok[11]);
-            if (nt >= 2 && strcmp(tok[0], "[GNUPG:]") == 0) {
-                if (strcmp(tok[1], "GOODSIG") == 0)
-                    good++;
-                else if (strcmp(tok[1], "VALIDSIG") == 0 && nt == 12 && strlen(tok[11]) == 40) {
-                    valid++;
-                    memcpy(fingerprint, tok[11], 40);  /* length checked above */
-                    fingerprint[40] = '\0';
-                    *hash = atoi(tok[9]);
-                } else if (strcmp(tok[1], "NO_PUBKEY") == 0)
-                    nopub++;
-                else if (strcmp(tok[1], "BADSIG") == 0 || strcmp(tok[1], "ERRSIG") == 0
-                         || strcmp(tok[1], "EXPSIG") == 0 || strcmp(tok[1], "EXPKEYSIG") == 0
-                         || strcmp(tok[1], "REVKEYSIG") == 0 || strcmp(tok[1], "VALIDSIG") == 0)
-                    other++;
-            }
+        int hex = ll == 40;
+        for (size_t i = 0; hex && i < 40; i++)
+            hex = (p[i] >= '0' && p[i] <= '9') || (p[i] >= 'A' && p[i] <= 'F');
+        if (hex) {
+            memcpy(fingerprint, p, 40);
+            fingerprint[40] = '\0';
+            keys++;
         }
-        p = nl != NULL ? nl + 1 : p + ll;
+        p += ll + (nl != NULL);
     }
-    if (nopub > 0 && good == 0)
-        return -2;
-    return good == 1 && valid == 1 && other == 0 && nopub == 0 ? 0 : -1;
+    if (keys != 1) {
+        fingerprint[0] = '\0';
+        return -1;
+    }
+    return 0;
+}
+
+int gaudit_vendor_sqv_check(const gaudit_vendor_env *env, const char *key, const char *sigf,
+                            const char *textf, char fpr[41], int *weak)
+{
+    /* sqv, strict first: a signature its default policy accepts is
+     * verified; one it accepts only when SHA-1 is allowed is weak, and the
+     * user's choice; anything else is refused. Only what sqv authenticated
+     * is read on: the key's fingerprint it names, and the text it wrote
+     * (which it may write even when it refuses, so only on success). */
+    char said[4096];
+    char *sqv[] = {
+        (char *)env->sqv, (char *)"--keyring", (char *)key, (char *)"--output", (char *)textf,
+        (char *)"--cleartext", (char *)sigf, NULL,
+    };
+    *weak = 0;
+    unlink(textf);
+    int st = gaudit_vendor_sqv_result(run_capture(sqv, said, sizeof said, 60 * 1000), said, fpr);
+    if (st == -1) {
+        char policy[700];
+        snprintf(policy, sizeof policy, "SEQUOIA_CRYPTO_POLICY=%s", env->weak_policy);
+        unlink(textf);
+        st = gaudit_vendor_sqv_result(run_capture_env(sqv, policy, said, sizeof said, 60 * 1000),
+                                      said, fpr);
+        *weak = st == 0;
+    }
+    if (st != 0)
+        unlink(textf);
+    return st;
 }
 
 /* --- Checking ------------------------------------------------------------- */
@@ -537,11 +507,11 @@ void gaudit_vendor_verify(const gaudit_vendor_env *env, const char *id, const ch
     gaudit_vendor_clean(env);
     if (ensure_cache(env) != 0)
         return;
-    char deb[640], sigf[640], ok_file[640], home[640], key[640];
+    char deb[640], sigf[640], textf[640], ok_file[640], key[640];
     path_in(env, id, ".deb", deb, sizeof deb);
     path_in(env, id, ".sig", sigf, sizeof sigf);
+    path_in(env, id, ".txt", textf, sizeof textf);
     path_in(env, id, ".ok", ok_file, sizeof ok_file);
-    snprintf(home, sizeof home, "%s/gnupg", env->cache_dir);
     snprintf(key, sizeof key, "%s/%s", env->keys_dir, v->key_file);
 
     const char *copied = copy_in(path, deb);
@@ -565,22 +535,21 @@ void gaudit_vendor_verify(const gaudit_vendor_env *env, const char *id, const ch
     if (lstat(key, &kst) != 0 || !S_ISREG(kst.st_mode) || (kst.st_mode & 022) != 0
         || (env->check_key_owner && kst.st_uid != 0))
         return;
-    if (write_text(sigf, sig) != 0 || mkdir(home, 0700) != 0)
+    /* The policy that allows SHA-1, gAudit's own as the key file is. */
+    struct stat pst;
+    if (lstat(env->weak_policy, &pst) != 0 || !S_ISREG(pst.st_mode) || (pst.st_mode & 022) != 0
+        || (env->check_key_owner && pst.st_uid != 0))
         return;
-    char status[8192];
-    char *gpgv[] = {
-        (char *)env->gpgv, (char *)"--homedir", home, (char *)"--keyring", key,
-        (char *)"--status-fd", (char *)"1", (char *)"--", sigf, NULL,
-    };
-    int rc = run_capture(gpgv, status, sizeof status, 60 * 1000);
+    if (write_text(sigf, sig) != 0)
+        return;
     char fpr[41];
-    int hash = 0;
-    int st = gaudit_vendor_gpgv_status(status, fpr, &hash);
+    int weak = 0;
+    int st = gaudit_vendor_sqv_check(env, key, sigf, textf, fpr, &weak);
     if (st == -2) {
         out->result = "unknown-key";
         return;
     }
-    if (rc != 0 || st != 0) {
+    if (st != 0) {
         out->result = "bad-signature";
         return;
     }
@@ -592,15 +561,21 @@ void gaudit_vendor_verify(const gaudit_vendor_env *env, const char *id, const ch
         out->result = "unknown-key";
         return;
     }
-    snprintf(out->hash, sizeof out->hash, "%s", gaudit_vendor_hash_name(hash));
-    if (hash == 1) {
-        out->result = "weak-md5";
+    if (weak)
+        snprintf(out->hash, sizeof out->hash, "%s", "SHA1");  /* the only thing the policy allows */
+
+    /* Every part, as the authenticated text lists it; nothing more, nothing less. */
+    static char text[MAX_SIG + 1];
+    int tfd = open(textf, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+    ssize_t tn = tfd >= 0 ? read(tfd, text, sizeof text - 1) : -1;
+    if (tfd >= 0)
+        close(tfd);
+    if (tn < 0) {
+        out->result = "mismatch";
         return;
     }
-    int weak = hash == 2 || hash == 3 || out->hash[0] == '\0';
-
-    /* Every part, as the signature lists it; nothing more, nothing less. */
-    int n_listed = gaudit_vendor_signed_parts(sig, sig_len, listed, MAX_PARTS);
+    text[tn] = '\0';
+    int n_listed = gaudit_vendor_listed_parts(text, listed, MAX_PARTS);
     if (n_listed != n_parts) {
         out->result = "mismatch";
         return;
@@ -659,6 +634,7 @@ void gaudit_vendor_verify(const gaudit_vendor_env *env, const char *id, const ch
     if (write_text(ok_file, mark) != 0)
         return;
     unlink(sigf);
+    unlink(textf);
     out->result = weak ? "weak" : "verified";
 }
 

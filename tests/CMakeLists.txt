@@ -206,7 +206,8 @@ add_test(NAME apt-ops COMMAND test_apt_ops)
 # Known vendor packages, the helper's side: the signed list, gpgv's status,
 # the arguments, SHA-1, the shipped key, refusals before any signature.
 add_executable(test_vendor test_vendor.c)
-target_compile_definitions(test_vendor PRIVATE _GNU_SOURCE KEYS_DIR="${GAUDIT_BUILD_VENDOR_KEYS_DIR}")
+target_compile_definitions(test_vendor PRIVATE _GNU_SOURCE KEYS_DIR="${GAUDIT_BUILD_VENDOR_KEYS_DIR}"
+    SIG_FILE="${CMAKE_CURRENT_SOURCE_DIR}/data/vendor/zoom-7.2.5.6661-gpgbuilder.asc")
 target_link_libraries(test_vendor PRIVATE gaudit_sandbox)
 add_dependencies(test_vendor vendor-keys)
 add_test(NAME vendor COMMAND test_vendor)

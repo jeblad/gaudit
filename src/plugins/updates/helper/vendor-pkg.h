@@ -2,7 +2,7 @@
 /* Checking and installing a known vendor package (common/vendor.h) on
  * request, as root. The package was downloaded as the user; here it is
  * copied into a folder only root can write, and everything is checked on
- * that copy: the vendor's signature with gpgv and the vendor's key from
+ * that copy: the vendor's signature with sqv and the vendor's key from
  * gAudit's table (its fingerprint, not just any key in the file), every
  * part of the package against the digests the signature lists, the
  * package's name, and that its version is the one asked for and newer
@@ -18,7 +18,8 @@ typedef struct {
     const char *keys_dir;    /* GAUDIT_VENDOR_KEYS_DIR */
     uid_t owner;             /* who must own the folders and the key file (0) */
     int check_key_owner;     /* 0 only in developer builds: the key file is the build tree's */
-    const char *gpgv, *dpkg_deb, *dpkg_query, *dpkg;  /* absolute paths */
+    const char *sqv, *dpkg_deb, *dpkg_query, *dpkg;  /* absolute paths */
+    const char *weak_policy;  /* sqv policy that allows SHA-1 and nothing else weaker */
 } gaudit_vendor_env;
 
 /* What a check or an install gave: result one of run.h's vendor names. */
@@ -49,17 +50,18 @@ typedef struct {
     unsigned long long size;
 } gaudit_vendor_part;
 
-/* The signed text of a dpkg-sig signature (a cleartext-signed message, the
- * whole of sig, nothing before or after it): Role must be "builder", and
- * its Files are listed into parts. Returns how many, or -1 if it is not
- * exactly such a message. */
-int gaudit_vendor_signed_parts(const char *sig, size_t len, gaudit_vendor_part *parts,
-                               size_t max);
+/* The parts the authenticated text of a dpkg-sig signature lists (what
+ * sqv wrote after checking it): Role must be "builder", and its Files are
+ * listed into parts. How many, or -1 if it is not such a text. */
+int gaudit_vendor_listed_parts(const char *text, gaudit_vendor_part *parts, size_t max);
 
-/* gpgv's status lines: exactly one good, valid signature and nothing else
- * about signatures. fingerprint: the primary key's (40 hex digits); hash:
- * OpenPGP's hash algorithm number. 0 on success, -1 bad, -2 no public key. */
-int gaudit_vendor_gpgv_status(const char *status, char fingerprint[41], int *hash);
+/* What sqv said: 0 with fingerprint set when it exited 0 and named exactly
+ * one key; -2 when the key is missing from the keyring; -1 otherwise. */
+int gaudit_vendor_sqv_result(int exit_status, const char *output, char fingerprint[41]);
 
-/* An OpenPGP hash algorithm number's name ("SHA1"); "" for an unknown one. */
-const char *gaudit_vendor_hash_name(int hash);
+/* Checks the cleartext signature in sigf with sqv against the key file:
+ * strict first, then with env->weak_policy (SHA-1 allowed). 0 with fpr set
+ * and *weak telling which, the authenticated text in textf; -2 the key is
+ * missing; -1 refused (textf removed). */
+int gaudit_vendor_sqv_check(const gaudit_vendor_env *env, const char *key, const char *sigf,
+                            const char *textf, char fpr[41], int *weak);

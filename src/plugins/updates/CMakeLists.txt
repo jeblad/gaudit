@@ -43,5 +43,14 @@ foreach(key ${GAUDIT_VENDOR_KEYS})
     VERBATIM)
   list(APPEND _vendor_key_outputs ${_out})
 endforeach()
+# sqv's policy for a signature weaker than expected (SHA-1 only).
+set(_policy_out ${GAUDIT_BUILD_VENDOR_KEYS_DIR}/sha1-only.toml)
+add_custom_command(OUTPUT ${_policy_out}
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${GAUDIT_BUILD_VENDOR_KEYS_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/keys/sha1-only.toml ${_policy_out}
+  COMMAND chmod 0644 ${_policy_out}
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/keys/sha1-only.toml
+  VERBATIM)
+list(APPEND _vendor_key_outputs ${_policy_out})
 add_custom_target(vendor-keys ALL DEPENDS ${_vendor_key_outputs})
 install(FILES ${_vendor_key_outputs} DESTINATION ${GAUDIT_INSTALL_VENDOR_KEYS_DIR})

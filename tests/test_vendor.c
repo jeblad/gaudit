@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Known vendor packages, the helper's side: the signed list of parts is
- * read only from exactly one cleartext-signed message, gpgv's status only
- * counts as good with exactly one good, valid signature, the arguments
+ * read only from what sqv authenticated, sqv's answer only counts as good
+ * with exactly one key named, Zoom's real signature checks as weak (SHA-1)
+ * and a changed text not at all, the arguments
  * take only the download's own path, SHA-1 is right, the key file shipped
  * is the one the table vouches for, and a package is refused before any
  * signature is checked when it is missing or not signed. */
@@ -35,11 +36,6 @@ static int failures;
     "\t1f4449adc837b2397a98b6b8d4ab26f6 dd433030d89f65596cf6eb291b34e34f51d1310b 304599012 data.tar.xz\n"
 #define SIGNED_TAIL "-----BEGIN PGP SIGNATURE-----\n\nAAAA\n=oE4i\n-----END PGP SIGNATURE-----\n"
 
-static int parts_of(const char *text)
-{
-    gaudit_vendor_part parts[8];
-    return gaudit_vendor_signed_parts(text, strlen(text), parts, 8);
-}
 
 /* SHA-1 of the first public key packet in a binary keyring: its v4
  * fingerprint, as 40 upper-case hex digits. */
@@ -98,6 +94,19 @@ static int key_fingerprint(const char *path, char out[41])
 
 static char dir[] = "/tmp/gaudit-vendor-XXXXXX";
 
+static int gaudit_vendor_listed_parts_file(const char *path)
+{
+    static char text[65536];
+    FILE *f = fopen(path, "r");
+    if (f == NULL)
+        return -1;
+    size_t n = fread(text, 1, sizeof text - 1, f);
+    fclose(f);
+    text[n] = '\0';
+    gaudit_vendor_part parts[8];
+    return gaudit_vendor_listed_parts(text, parts, 8);
+}
+
 static int rm_one(const char *path, const struct stat *sb, int flag, struct FTW *ftw)
 {
     (void)sb; (void)flag; (void)ftw;
@@ -131,44 +140,32 @@ int main(void)
     gaudit_sha1_hex(d, hex);
     CHECK(strcmp(hex, "84983e441c3bd26ebaae4aa1f95129e5e54670f1") == 0);
 
-    /* The signed list: dpkg-sig's, exactly. */
+    /* The parts the authenticated text lists: dpkg-sig's, exactly. */
     gaudit_vendor_part parts[8];
-    const char *good = SIGNED_HEAD SIGNED_BODY SIGNED_TAIL;
-    CHECK(gaudit_vendor_signed_parts(good, strlen(good), parts, 8) == 3);
+    CHECK(gaudit_vendor_listed_parts(SIGNED_BODY, parts, 8) == 3);
     CHECK(strcmp(parts[2].name, "data.tar.xz") == 0 && parts[2].size == 304599012ULL
           && strcmp(parts[0].sha1, "7959c969e092f2a5a8604e2287807ac5b1b384ad") == 0);
-    /* Nothing unsigned around it, one message, the builder's role, each part once. */
-    CHECK(parts_of("Files: \n\t" SIGNED_HEAD SIGNED_BODY SIGNED_TAIL) == -1);
-    CHECK(parts_of(SIGNED_HEAD SIGNED_BODY SIGNED_TAIL "\tnot signed\n") == -1);
-    CHECK(parts_of(SIGNED_HEAD SIGNED_BODY SIGNED_TAIL SIGNED_HEAD SIGNED_BODY SIGNED_TAIL) == -1);
-    CHECK(parts_of(SIGNED_HEAD "Role: maintainer\nFiles: \n"
-                   "\t3cf918272ffa5de195752d73f3da3e5e 7959c969e092f2a5a8604e2287807ac5b1b384ad 4 debian-binary\n"
-                   SIGNED_TAIL) == -1);
-    CHECK(parts_of(SIGNED_HEAD SIGNED_BODY
-                   "\t3cf918272ffa5de195752d73f3da3e5e 7959c969e092f2a5a8604e2287807ac5b1b384ad 4 debian-binary\n"
-                   SIGNED_TAIL) == -1);
-    CHECK(parts_of(SIGNED_HEAD "Role: builder\nFiles: \n\tnot-hex 7959c969e092f2a5a8604e2287807ac5b1b384ad 4 x\n"
-                   SIGNED_TAIL) == -1);
-    CHECK(parts_of("-----BEGIN PGP SIGNED MESSAGE-----\nComment: x\n\n" SIGNED_BODY SIGNED_TAIL) == -1);
+    /* The builder's role, each part once, digests as digests. */
+    CHECK(gaudit_vendor_listed_parts("Role: maintainer\nFiles: \n"
+              "\t3cf918272ffa5de195752d73f3da3e5e 7959c969e092f2a5a8604e2287807ac5b1b384ad 4 debian-binary\n",
+              parts, 8) == -1);
+    CHECK(gaudit_vendor_listed_parts(SIGNED_BODY
+              "\t3cf918272ffa5de195752d73f3da3e5e 7959c969e092f2a5a8604e2287807ac5b1b384ad 4 debian-binary\n",
+              parts, 8) == -1);
+    CHECK(gaudit_vendor_listed_parts("Role: builder\nFiles: \n\tnot-hex 7959c969e092f2a5a8604e2287807ac5b1b384ad 4 x\n",
+              parts, 8) == -1);
+    CHECK(gaudit_vendor_listed_parts("", parts, 8) == -1);
 
-    /* gpgv's status: exactly one good, valid signature. */
-    const char *status =
-        "[GNUPG:] NEWSIG\n[GNUPG:] KEY_CONSIDERED 84C365D6CC9A4886CA926BCC4F2197399706AC24 0\n"
-        "[GNUPG:] GOODSIG 4F2197399706AC24 Zoom Communications, Inc. <CryptoOpsCodeSignProd@zoom.us>\n"
-        "[GNUPG:] VALIDSIG 84C365D6CC9A4886CA926BCC4F2197399706AC24 2026-10-30 1793363751 0 4 0 1 2 01 "
-        "84C365D6CC9A4886CA926BCC4F2197399706AC24\n";
+    /* What sqv said: exactly one key named on success. */
     char fpr[41];
-    int hash = 0;
-    CHECK(gaudit_vendor_gpgv_status(status, fpr, &hash) == 0 && hash == 2
+    CHECK(gaudit_vendor_sqv_result(0, "84C365D6CC9A4886CA926BCC4F2197399706AC24\n", fpr) == 0
           && strcmp(fpr, "84C365D6CC9A4886CA926BCC4F2197399706AC24") == 0);
-    CHECK(strcmp(gaudit_vendor_hash_name(hash), "SHA1") == 0 && strcmp(gaudit_vendor_hash_name(8), "SHA256") == 0);
-    CHECK(gaudit_vendor_gpgv_status("[GNUPG:] NEWSIG\n[GNUPG:] ERRSIG 4F2197399706AC24 1 2 01 1793363751 9 x\n"
-                                    "[GNUPG:] NO_PUBKEY 4F2197399706AC24\n", fpr, &hash) == -2);
-    CHECK(gaudit_vendor_gpgv_status("[GNUPG:] BADSIG 4F2197399706AC24 Zoom\n", fpr, &hash) == -1);
-    char twice[2048];
-    snprintf(twice, sizeof twice, "%s%s", status, status);
-    CHECK(gaudit_vendor_gpgv_status(twice, fpr, &hash) == -1);
-    CHECK(gaudit_vendor_gpgv_status("", fpr, &hash) == -1);
+    CHECK(gaudit_vendor_sqv_result(0, "84C365D6CC9A4886CA926BCC4F2197399706AC24\n"
+                                      "84C365D6CC9A4886CA926BCC4F2197399706AC24\n", fpr) == -1);
+    CHECK(gaudit_vendor_sqv_result(0, "", fpr) == -1);
+    CHECK(gaudit_vendor_sqv_result(1, "84C365D6CC9A4886CA926BCC4F2197399706AC24\n", fpr) == -1);
+    CHECK(gaudit_vendor_sqv_result(1, "Missing key 84C365D6CC9A4886CA926BCC4F2197399706AC24, which is "
+                                      "needed to verify signature.\n", fpr) == -2);
 
     /* Only the download's own path, one word, nothing above it. */
     CHECK(gaudit_vendor_verify_args_ok("zoom", "7.2.5.6661", "/home/u/.cache/gaudit/vendor/zoom.deb"));
@@ -205,8 +202,8 @@ int main(void)
     snprintf(deb, sizeof deb, "%s/zoom.deb", home);
     gaudit_vendor_env env = {
         .cache_dir = cache, .keys_dir = KEYS_DIR, .owner = getuid(), .check_key_owner = 0,
-        .gpgv = "/usr/bin/false", .dpkg_deb = "/usr/bin/false", .dpkg_query = "/usr/bin/false",
-        .dpkg = "/usr/bin/false",
+        .sqv = "/usr/bin/false", .dpkg_deb = "/usr/bin/false", .dpkg_query = "/usr/bin/false",
+        .dpkg = "/usr/bin/false", .weak_policy = KEYS_DIR "/sha1-only.toml",
     };
     gaudit_vendor_outcome o;
     gaudit_vendor_verify(&env, "zoom", "7.2.5.6661", deb, &o);
@@ -230,6 +227,35 @@ int main(void)
         gaudit_vendor_verify(&env, "zoom", "7.2.5.6661", deb, &o);
         CHECK(strcmp(o.result, "no-file") == 0);
     }
+    /* sqv on Zoom's real signature: weak (SHA-1) but good, the key's
+     * fingerprint named; one changed byte in the signed text, refused. */
+    if (access("/usr/bin/sqv", X_OK) == 0) {
+        gaudit_vendor_env real = env;
+        real.sqv = "/usr/bin/sqv";
+        char text[300], changed[300];
+        snprintf(text, sizeof text, "%s/text.txt", dir);
+        int weak = -1;
+        CHECK(gaudit_vendor_sqv_check(&real, KEYS_DIR "/zoom.gpg", SIG_FILE, text, fpr, &weak) == 0
+              && weak == 1 && strcmp(fpr, "84C365D6CC9A4886CA926BCC4F2197399706AC24") == 0);
+        CHECK(gaudit_vendor_listed_parts_file(text) == 3);
+        /* The same, with "builder" changed to "builded". */
+        FILE *in = fopen(SIG_FILE, "r");
+        char buf[8192];
+        size_t n = in != NULL ? fread(buf, 1, sizeof buf - 1, in) : 0;
+        if (in != NULL)
+            fclose(in);
+        buf[n] = '\0';
+        char *role = strstr(buf, "Role: builder");
+        if (role != NULL)
+            memcpy(role + 6, "builded", 7);
+        snprintf(changed, sizeof changed, "%s/changed.asc", dir);
+        put(changed, buf, n);
+        CHECK(gaudit_vendor_sqv_check(&real, KEYS_DIR "/zoom.gpg", changed, text, fpr, &weak) == -1);
+        CHECK(access(text, F_OK) != 0);  /* nothing it wrote is left to read */
+    } else {
+        fputs("vendor: no /usr/bin/sqv, the real signature not checked\n", stderr);
+    }
+
     /* Installing without a checked copy installs nothing; nothing is left behind. */
     gaudit_vendor_install(&env, "zoom", 1, &o);
     CHECK(strcmp(o.result, "not-verified") == 0);

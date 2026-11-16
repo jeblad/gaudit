@@ -4,6 +4,7 @@
 #include <glib/gi18n.h>
 
 #include "gaudit-window.h"
+#include "gaudit-environ.h"
 #include "gaudit-crossfade.h"
 #include "gaudit-category.h"
 #include "gaudit-firewall-text.h"
@@ -845,6 +846,24 @@ static AdwNavigationPage *build_home(GauditWindow *self)
                                       host[0] != '\0' ? host : _("Unknown host name"));
         adw_action_row_set_subtitle(id_row, system);
         adw_preferences_group_add(machine, GTK_WIDGET(id_row));
+        /* gAudit was started with variables that load other code; it
+         * started itself again without them. Said plainly, also that it
+         * proves nothing: such code may have run before they were gone. */
+        const char *removed = gaudit_environ_removed();
+        if (removed != NULL) {
+            AdwActionRow *env_row = ADW_ACTION_ROW(adw_action_row_new());
+            adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(env_row), FALSE);
+            adw_preferences_row_set_title(ADW_PREFERENCES_ROW(env_row),
+                                          _("gAudit was started with settings that load other code"));
+            /* Translators: %s is a list of environment variable names, e.g. "LD_PRELOAD, GTK_MODULES". */
+            g_autofree char *sub = g_strdup_printf(
+                _("Removed before gAudit opened: %s. Code they pointed to may have run all the same, "
+                  "so look into where they came from."), removed);
+            adw_action_row_set_subtitle(env_row, sub);
+            adw_action_row_set_subtitle_lines(env_row, 0);
+            adw_action_row_add_prefix(env_row, gaudit_verdict_icon_new(GAUDIT_VERDICT_WARNING));
+            adw_preferences_group_add(machine, GTK_WIDGET(env_row));
+        }
         gtk_box_append(GTK_BOX(box), GTK_WIDGET(machine));
 
         gtk_box_append(GTK_BOX(box), build_level(self));

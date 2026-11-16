@@ -98,6 +98,24 @@ add_link_options(
 
 find_package(PkgConfig REQUIRED)
 
+# Outside developer builds, nothing that runs or is read is ever taken from
+# the build or the source tree: there the developer (or anything running as
+# them) can change it, and the helper runs as root. A build that would is
+# refused here, so it cannot be made by mistake.
+if(NOT GAUDIT_DEVELOPER_BUILD)
+  foreach(_path GAUDIT_HELPER_PATH GAUDIT_ORCHESTRATOR_PATH GAUDIT_ENGINE_PATH GAUDIT_RULES_DIR
+                GAUDIT_VENDOR_KEYS_DIR GAUDIT_LOCALEDIR GAUDIT_PKGLIBEXECDIR GAUDIT_SCHEMA_DIR
+                GAUDIT_FLATPAK_PROBE_PATH GAUDIT_SNAP_PROBE_PATH GAUDIT_DNF_PROBE_PATH
+                GAUDIT_PACMAN_PROBE_PATH)
+    foreach(_tree ${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR})
+      string(FIND "${${_path}}" "${_tree}" _at)
+      if(_at EQUAL 0)
+        message(FATAL_ERROR "${_path} (${${_path}}) is inside ${_tree}: only developer builds "
+                            "may read or run anything from the build or source tree.")
+      endif()
+    endforeach()
+  endforeach()
+endif()
 configure_file(src/config.h.in ${PROJECT_BINARY_DIR}/config.h @ONLY)
 add_library(gaudit_config INTERFACE)
 target_include_directories(gaudit_config INTERFACE ${PROJECT_BINARY_DIR})

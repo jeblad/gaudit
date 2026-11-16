@@ -40,6 +40,7 @@
 #include "secrets-mode.h"
 #include "updates-mode.h"
 #include "apt-ops.h"
+#include "sandbox.h"
 #include "vendor.h"
 
 #include <errno.h>
@@ -821,10 +822,17 @@ int main(int argc, char *argv[])
     pid_t parent = getppid();
     if (prctl(PR_SET_PDEATHSIG, SIGTERM) != 0 || getppid() != parent || parent == 1)
         return 1;
-    if (argc == 1)
-        return status_refresh();
+    /* The session starts pkexec, which is setuid: no_new_privs, and so a
+     * seccomp filter, would keep it from ever becoming root. Every other
+     * mode is confined, and what it starts inherits the filter. */
     if (argc == 2 && strcmp(argv[1], "session") == 0)
         return run_session();
+    int network = argc >= 3 && strcmp(argv[1], "updates") == 0
+                  && (strcmp(argv[2], "latest") == 0 || strcmp(argv[2], "download") == 0);
+    if (gaudit_sandbox_restrict_net(network) != 0)
+        return 1;
+    if (argc == 1)
+        return status_refresh();
     if (argc == 3 && strcmp(argv[1], "report") == 0)
         return gaudit_orchestrator_report(argv[2]);
     if ((argc == 4 || argc == 5) && strcmp(argv[1], "fix") == 0)

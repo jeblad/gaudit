@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit-updates\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 22:08+0100\n"
+"POT-Creation-Date: 2026-11-16 23:33+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -219,11 +219,15 @@ msgstr ""
 #. Translators: the newest version, the one installed, who makes it (three
 #. * times), then the address of their download page.
 #: src/plugins/updates/gaudit-updates.c:370
+#, c-format
 msgid ""
 "Version %s is out; this computer has %s. %s does not sign its package, so "
 "gAudit cannot check that %s made it, and does not install it. Download it "
 "from %s's own page: %s"
-msgstr "Versjon %s er ute; denne datamaskinen har %s. %s signerer ikke pakken sin, så gAudit kan ikke sjekke at %s har laget den, og installerer den ikke. Last den ned fra siden til %s: %s"
+msgstr ""
+"Versjon %s er ute; denne datamaskinen har %s. %s signerer ikke pakken sin, "
+"så gAudit kan ikke sjekke at %s har laget den, og installerer den ikke. Last "
+"den ned fra siden til %s: %s"
 
 #. Translators: the newest version, the one installed, then who makes it.
 #: src/plugins/updates/gaudit-updates.c:379
@@ -451,7 +455,9 @@ msgstr ""
 msgid ""
 "Looking for the newest version here is a fallback for a package without a "
 "source: you chose this package, and there may be a good reason for it."
-msgstr "Å se etter den nyeste versjonen her er en reserveløsning for en pakke uten kilde: du har valgt denne pakken, og det kan være gode grunner til det."
+msgstr ""
+"Å se etter den nyeste versjonen her er en reserveløsning for en pakke uten "
+"kilde: du har valgt denne pakken, og det kan være gode grunner til det."
 
 #: src/plugins/updates/gaudit-updates.c:715
 msgid "Check for a New Version"

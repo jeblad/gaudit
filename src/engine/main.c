@@ -221,14 +221,31 @@ static void *run(void *data)
     return NULL;
 }
 
+/* stdin pointed at /dev/null, once the input is read. */
+static int no_more_input(void)
+{
+    int null = open("/dev/null", O_RDONLY | O_CLOEXEC);
+    if (null < 0)
+        return -1;
+    int rc = dup2(null, STDIN_FILENO) < 0 ? -1 : 0;
+    close(null);
+    return rc;
+}
+
 int main(int argc, char *argv[])
 {
+    /* Nothing the caller left open reaches a rule: only stdin, stdout and
+     * stderr stay. */
+    if (close_range(3, ~0U, 0) != 0)
+        return 2;
     /* Nothing from the caller's environment reaches Guile (GUILE_LOAD_PATH
      * and friends), and nothing is compiled into the user's cache. */
     if (clearenv() != 0 || setenv("GUILE_AUTO_COMPILE", "0", 1) != 0)
         return 2;
     if (argc == 2 && strcmp(argv[1], "selftest") == 0) {
         job self = { .status = 1 };
+        if (no_more_input() != 0)
+            return 2;
         scm_with_guile(run, &self);
         return self.status;
     }
@@ -246,6 +263,12 @@ int main(int argc, char *argv[])
     }
     j.rule = rule;
     j.input = input;
+    /* All input is read: nothing more to read from where it came. */
+    if (no_more_input() != 0) {
+        free(rule);
+        free(input);
+        return 1;
+    }
     scm_with_guile(run, &j);
     free(rule);
     free(input);

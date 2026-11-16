@@ -211,3 +211,23 @@ target_compile_definitions(test_vendor PRIVATE _GNU_SOURCE KEYS_DIR="${GAUDIT_BU
 target_link_libraries(test_vendor PRIVATE gaudit_sandbox)
 add_dependencies(test_vendor vendor-keys)
 add_test(NAME vendor COMMAND test_vendor)
+
+# The GUI's environment: unwanted variables out, started again without them.
+add_executable(test_environ test_environ.c ${PROJECT_SOURCE_DIR}/src/gui/gaudit-environ.c)
+target_include_directories(test_environ PRIVATE ${PROJECT_SOURCE_DIR}/src/gui)
+add_test(NAME environ COMMAND test_environ)
+
+# A build that is not a developer build refuses to read or run anything from
+# the build tree: configuring one with its install prefix inside the build
+# tree must fail.
+add_test(NAME release-paths
+  COMMAND ${CMAKE_COMMAND} -S ${PROJECT_SOURCE_DIR} -B ${CMAKE_CURRENT_BINARY_DIR}/release-paths
+          -DGAUDIT_DEVELOPER_BUILD=OFF
+          -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/release-paths/inst)
+set_tests_properties(release-paths PROPERTIES
+  PASS_REGULAR_EXPRESSION "GAUDIT_HELPER_PATH")
+
+# The orchestrator's filter: network sockets only when asked for.
+add_executable(test_sandbox_net test_sandbox_net.c)
+target_link_libraries(test_sandbox_net PRIVATE gaudit_sandbox)
+add_test(NAME sandbox-net COMMAND test_sandbox_net)

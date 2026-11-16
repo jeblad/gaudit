@@ -5,10 +5,13 @@
 #include <locale.h>
 
 #include "gaudit-app.h"
+#include "gaudit-environ.h"
 #include "gaudit-task.h"
 
 int main(int argc, char *argv[])
 {
+    /* Before anything is loaded: no code from the caller's environment. */
+    gaudit_environ_clean(argv);
     setlocale(LC_ALL, "");
     /* Compiled-in path only: a user-controlled translation catalog could make
      * a red finding read as green. */

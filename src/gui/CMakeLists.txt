@@ -22,6 +22,7 @@ add_custom_command(
 add_executable(gaudit
   ${CMAKE_CURRENT_BINARY_DIR}/gaudit-resources.c
   main.c
+  gaudit-environ.c
   gaudit-app.c
   gaudit-orchestrator.c
   gaudit-run-page.c

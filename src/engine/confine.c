@@ -2,6 +2,7 @@
 #include "confine.h"
 
 #include <errno.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <sched.h>
 #include <seccomp.h>
@@ -44,6 +45,28 @@ int gaudit_engine_confine(void)
     /* clone3 passes its flags in memory, out of the filter's reach. */
     if (rc == 0)
         rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(ENOSYS), SCMP_SYS(clone3), 0);
+    /* Signals only to the engine itself: never to the orchestrator or the
+     * GUI (kill(0, ...) would reach its whole process group). Guile's
+     * collector signals its own threads with tgkill on its own pid, which
+     * stays allowed. */
+    pid_t self = getpid();
+    if (rc == 0)
+        rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(kill), 1,
+                              SCMP_A0(SCMP_CMP_NE, (scmp_datum_t)self));
+    if (rc == 0)
+        rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(tgkill), 1,
+                              SCMP_A0(SCMP_CMP_NE, (scmp_datum_t)self));
+    if (rc == 0)
+        rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(rt_sigqueueinfo), 1,
+                              SCMP_A0(SCMP_CMP_NE, (scmp_datum_t)self));
+    if (rc == 0)
+        rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(rt_tgsigqueueinfo), 1,
+                              SCMP_A0(SCMP_CMP_NE, (scmp_datum_t)self));
+    /* A thread id alone does not say whose thread it is. */
+    if (rc == 0)
+        rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(tkill), 0);
+    if (rc == 0)
+        rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(pidfd_send_signal), 0);
     if (rc == 0)
         rc = seccomp_load(ctx);
     seccomp_release(ctx);
@@ -78,6 +101,11 @@ int gaudit_engine_selftest(void)
     if (pid > 0)
         waitpid(pid, NULL, 0);
     bad += report("new process", pid >= 0);
+    /* Signal 0 only asks whether it may: the parent (the orchestrator),
+     * and the whole process group. */
+    bad += report("signal another process", kill(getppid(), 0) == 0);
+    bad += report("signal the process group", kill(0, 0) == 0);
+    bad += report("read more input", read(STDIN_FILENO, &(char){ 0 }, 1) > 0);
     char *const argv[] = { (char *)"/bin/true", NULL };
     char *const envp[] = { NULL };
     execve("/bin/true", argv, envp);

@@ -48,6 +48,11 @@ static const int denied_syscalls[] = {
 
 int gaudit_sandbox_restrict(void)
 {
+    return gaudit_sandbox_restrict_net(0);
+}
+
+int gaudit_sandbox_restrict_net(int network)
+{
     if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0)
         return -1;
 
@@ -58,9 +63,10 @@ int gaudit_sandbox_restrict(void)
     for (size_t i = 0; i < sizeof denied_syscalls / sizeof denied_syscalls[0] && rc == 0; i++)
         if (denied_syscalls[i] >= 0)  /* not every call exists on every architecture */
             rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), denied_syscalls[i], 0);
-    /* No network: checks read local state only. */
-    static const int families[] = { AF_INET, AF_INET6, AF_PACKET };
-    for (size_t i = 0; i < sizeof families / sizeof families[0] && rc == 0; i++)
+    /* No network: checks read local state only. A raw packet socket never. */
+    static const int families[] = { AF_PACKET, AF_INET, AF_INET6 };
+    size_t n_families = network ? 1 : sizeof families / sizeof families[0];
+    for (size_t i = 0; i < n_families && rc == 0; i++)
         rc = seccomp_rule_add(ctx, SCMP_ACT_ERRNO(EPERM), SCMP_SYS(socket), 1,
                               SCMP_A0(SCMP_CMP_EQ, (scmp_datum_t)families[i]));
     if (rc == 0)

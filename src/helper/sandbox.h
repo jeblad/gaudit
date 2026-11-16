@@ -31,3 +31,7 @@ int gaudit_sandbox_enter(const gaudit_sandbox *spec);
 
 /* Only the no_new_privs + seccomp part; works without root (used by tests). */
 int gaudit_sandbox_restrict(void);
+
+/* The same, with network sockets allowed when network is 1 (raw packet
+ * sockets never): for what must fetch from the network, as the user. */
+int gaudit_sandbox_restrict_net(int network);

@@ -575,8 +575,11 @@ int gaudit_updates_latest_from(const gaudit_pkg_backend *pkg, const gaudit_vendo
 
 /* Runs a fetcher (argv, absolute path first) with an empty environment
  * but LC_ALL=C, at most timeout_ms; its stdout and stderr together into
- * buf, at most len - 1 bytes. Its exit status, or -1. */
-static int run_fetcher(char *const argv[], char *buf, size_t len, long timeout_ms)
+ * buf, at most len - 1 bytes. watch: a file it writes, stopped as soon as
+ * that grows past max_bytes (NULL: none), since wget has no limit of its
+ * own. Its exit status, -1, or -2 when stopped for the size. */
+static int run_fetcher(char *const argv[], char *buf, size_t len, long timeout_ms,
+                       const char *watch, long long max_bytes)
 {
     if (argv == NULL || buf == NULL || len == 0)
         return -1;
@@ -602,6 +605,7 @@ static int run_fetcher(char *const argv[], char *buf, size_t len, long timeout_m
     }
     close(fds[1]);
     size_t used = 0;
+    int too_large = 0;
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
     for (;;) {
@@ -613,8 +617,15 @@ static int run_fetcher(char *const argv[], char *buf, size_t len, long timeout_m
             kill(pid, SIGKILL);
             break;
         }
+        struct stat ws;
+        if (watch != NULL && stat(watch, &ws) == 0 && ws.st_size > max_bytes) {
+            kill(pid, SIGKILL);
+            too_large = 1;
+            break;
+        }
         struct pollfd pfd = { .fd = fds[0], .events = POLLIN };
-        int r = poll(&pfd, 1, left > 60000 ? 60000 : (int)left);
+        long wait = watch != NULL ? 500 : 60000;  /* look at the file twice a second */
+        int r = poll(&pfd, 1, left > wait ? (int)wait : (int)left);
         if (r <= 0)
             continue;
         char chunk[1024];
@@ -633,6 +644,8 @@ static int run_fetcher(char *const argv[], char *buf, size_t len, long timeout_m
     while (waitpid(pid, &status, 0) < 0)
         if (errno != EINTR)
             return -1;
+    if (too_large)
+        return -2;
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
@@ -664,7 +677,7 @@ static int fetch_headers(const char *url, char *buf, size_t len)
     const char *f = fetcher();
     if (f == NULL)
         return -1;
-    run_fetcher(f == WGET ? wget : curl, buf, len, 30 * 1000);
+    run_fetcher(f == WGET ? wget : curl, buf, len, 30 * 1000, NULL, 0);
     return 0;  /* its exit status says nothing here: a refused redirect is an "error" */
 }
 
@@ -713,7 +726,8 @@ static int download_dir(char *dir, size_t len)
 int gaudit_updates_download(const char *id, const char *version)
 {
     const gaudit_vendor_package *v = gaudit_vendor_find(id);
-    if (v == NULL || v->prefix == NULL || !gaudit_vendor_plain_version(version))
+    /* Only what could be checked and installed: never for a vendor without a key. */
+    if (v == NULL || v->prefix == NULL || v->key_file == NULL || !gaudit_vendor_plain_version(version))
         return 2;
     gaudit_update_download dl = { .status = 1 };
     snprintf(dl.id, sizeof dl.id, "%s", v->id);
@@ -740,8 +754,11 @@ int gaudit_updates_download(const char *id, const char *version)
         };
         char out[4096];
         struct stat st;
-        int rc = run_fetcher(f == WGET ? wget : curl, out, sizeof out, 30 * 60 * 1000);
-        if (rc != 0)
+        int rc = run_fetcher(f == WGET ? wget : curl, out, sizeof out, 30 * 60 * 1000, part,
+                             MAX_DOWNLOAD);
+        if (rc == -2)
+            snprintf(dl.reason, sizeof dl.reason, "size");
+        else if (rc != 0)
             snprintf(dl.reason, sizeof dl.reason, "fetch-%d", rc);
         else if (lstat(part, &st) != 0 || !S_ISREG(st.st_mode) || st.st_size <= 0
                  || st.st_size > MAX_DOWNLOAD)

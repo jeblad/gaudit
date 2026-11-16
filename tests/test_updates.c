@@ -374,6 +374,15 @@ int main(void)
     CHECK(gaudit_vendor_match("zoomx", "Zoom Communications, Inc. <x@y>") == NULL);
     CHECK(gaudit_vendor_match("zoom", "") == NULL && gaudit_vendor_match(NULL, "x") == NULL);
     CHECK(gaudit_vendor_find("zoom") != NULL && gaudit_vendor_find("nope") == NULL);
+    /* Discord: known, its newest version found from the redirect, no key. */
+    const gaudit_vendor_package *dc = gaudit_vendor_match("discord", "Discord Maintainer Team <noreply@discord.com>");
+    char dv[40];
+    CHECK(dc != NULL && dc->key_file == NULL && dc->n_keys == 0);
+    CHECK(dc != NULL && gaudit_vendor_version_from(dc,
+              "https://stable.dl2.discordapp.net/distro/app/stable/linux/x64/1.0.169/Discord.deb", dv, sizeof dv)
+          && strcmp(dv, "1.0.169") == 0);
+    CHECK(dc != NULL && !gaudit_vendor_version_from(dc,
+              "https://evil.example.org/distro/app/stable/linux/x64/1.0.169/Discord.deb", dv, sizeof dv));
 
     /* The newest version, from the headers wget or curl gave. */
     const gaudit_vendor_package *zoom = gaudit_vendor_find("zoom");

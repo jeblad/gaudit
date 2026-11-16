@@ -31,7 +31,8 @@ typedef struct {
     const char *latest;       /* https address that redirects to the newest package, or NULL */
     const char *prefix;       /* the redirect must be exactly prefix <version> suffix */
     const char *suffix;
-    const char *key_file;     /* in GAUDIT_VENDOR_KEYS_DIR, e.g. "zoom.gpg" */
+    const char *key_file;     /* in GAUDIT_VENDOR_KEYS_DIR, e.g. "zoom.gpg"; NULL when the
+                                 vendor signs nothing: then gAudit never installs it */
     const gaudit_vendor_key *keys;
     size_t n_keys;
 } gaudit_vendor_package;

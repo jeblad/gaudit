@@ -362,7 +362,18 @@ static void show_latest(VendorUi *ui, const gaudit_update_latest *l)
     const gaudit_vendor_package *p = gaudit_vendor_find(ui->id);
     if (p == NULL)
         return;
-    if (l->status == 0 && l->newer) {
+    if (l->status == 0 && l->newer && p->key_file == NULL) {
+        /* Nothing to check it with: shown, never installed. */
+        g_autofree char *text = g_strdup_printf(
+            /* Translators: the newest version, the one installed, who makes it (three
+             * times), then the address of their download page. */
+            P_("Version %s is out; this computer has %s. %s does not sign its package, so "
+               "gAudit cannot check that %s made it, and does not install it. Download it from "
+               "%s's own page: %s"),
+            l->version, l->installed, p->vendor, p->vendor, p->vendor, p->download);
+        say(ui->latest, text);
+        grey(ui->check);
+    } else if (l->status == 0 && l->newer) {
         g_autofree char *text = g_strdup_printf(
             /* Translators: the newest version, the one installed, then who makes it. */
             P_("Version %s is out; this computer has %s. gAudit can download it from %s, check "
@@ -682,8 +693,12 @@ static AdwNavigationPage *vendor_page(const char *line, GPtrArray *lines)
     g_strchomp(how);
     AdwNavigationPage *page = gaudit_fix_page_new(
         title, problem, how, NULL,
-        P_("Looking for the newest version and installing it here is a fallback for a package "
-           "without a source: you chose this package, and there may be a good reason for it."),
+        p->key_file != NULL
+            ? P_("Looking for the newest version and installing it here is a fallback for a "
+                 "package without a source: you chose this package, and there may be a good "
+                 "reason for it.")
+            : P_("Looking for the newest version here is a fallback for a package without a "
+                 "source: you chose this package, and there may be a good reason for it."),
         NULL, NULL, NULL, NULL);
     GtkWidget *box = g_object_get_data(G_OBJECT(page), "gaudit-fix-box");
     GtkWidget *how_label = g_object_get_data(G_OBJECT(page), "gaudit-fix-how");

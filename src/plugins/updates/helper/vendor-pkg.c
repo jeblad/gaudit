@@ -310,9 +310,10 @@ static int open_beneath_nolinks(const char *path)
 {
     struct open_how how = { .flags = O_RDONLY | O_CLOEXEC | O_NOFOLLOW,
                             .resolve = RESOLVE_NO_SYMLINKS | RESOLVE_NO_MAGICLINKS };
+    /* No fallback: without openat2 (Linux before 5.6), O_NOFOLLOW would
+     * stop only a link in the last part, and root would follow the user's
+     * links on the way. Every release gAudit supports has openat2. */
     long fd = syscall(SYS_openat2, AT_FDCWD, path, &how, sizeof how);
-    if (fd < 0 && errno == ENOSYS)
-        fd = open(path, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
     return (int)fd;
 }
 

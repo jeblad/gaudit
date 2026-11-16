@@ -1,0 +1,3 @@
+# the archive
+deb http://archive.ubuntu.com/ubuntu noble main restricted
+deb-src http://never.example.org/ubuntu noble main

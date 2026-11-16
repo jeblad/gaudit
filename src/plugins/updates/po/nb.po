@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit-updates\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-15 20:45+0100\n"
+"POT-Creation-Date: 2026-11-16 19:35+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/plugins/updates/gaudit-updates.c:110
+#: src/plugins/updates/gaudit-updates.c:128
 msgid ""
 "apt-get update fetches the newest lists of updates from your software "
 "sources. Nothing is installed."
@@ -23,15 +23,15 @@ msgstr ""
 "apt-get update henter de nyeste listene over oppdateringer fra "
 "programvarekildene dine. Ingenting blir installert."
 
-#: src/plugins/updates/gaudit-updates.c:113
+#: src/plugins/updates/gaudit-updates.c:131
 msgid "--update first fetches the newest lists of updates."
 msgstr "--update henter først de nyeste listene over oppdateringer."
 
-#: src/plugins/updates/gaudit-updates.c:115
+#: src/plugins/updates/gaudit-updates.c:133
 msgid "upgrade installs the updates that are waiting."
 msgstr "upgrade installerer oppdateringene som venter."
 
-#: src/plugins/updates/gaudit-updates.c:116
+#: src/plugins/updates/gaudit-updates.c:134
 msgid ""
 "--with-new-pkgs may also install new packages an update needs; it never "
 "removes any."
@@ -39,7 +39,7 @@ msgstr ""
 "--with-new-pkgs kan også installere nye pakker en oppdatering trenger; den "
 "fjerner aldri noen."
 
-#: src/plugins/updates/gaudit-updates.c:120
+#: src/plugins/updates/gaudit-updates.c:138
 msgid ""
 "install --reinstall installs these packages again, which puts their own "
 "files back."
@@ -47,11 +47,12 @@ msgstr ""
 "install --reinstall installerer disse pakkene på nytt, og det legger "
 "pakkenes egne filer tilbake."
 
-#: src/plugins/updates/gaudit-updates.c:124
+#: src/plugins/updates/gaudit-updates.c:142
+#: src/plugins/updates/gaudit-updates.c:151
 msgid "-y answers yes on your behalf, so it does not stop to ask."
 msgstr "-y svarer ja på dine vegne, så den stopper ikke for å spørre."
 
-#: src/plugins/updates/gaudit-updates.c:125
+#: src/plugins/updates/gaudit-updates.c:143
 msgid ""
 "The two --force-conf options: where you have changed a settings file and the "
 "package brings a new one, your version is kept."
@@ -59,16 +60,33 @@ msgstr ""
 "De to --force-conf-valgene: der du har endret en innstillingsfil og pakken "
 "har med en ny, beholdes din versjon."
 
-#: src/plugins/updates/gaudit-updates.c:127
+#: src/plugins/updates/gaudit-updates.c:145
 msgid "Packages that are not signed are never installed: apt stops instead."
 msgstr ""
 "Pakker som ikke er signert, blir aldri installert: apt stopper i stedet."
 
-#: src/plugins/updates/gaudit-updates.c:130
+#: src/plugins/updates/gaudit-updates.c:148
+msgid ""
+"add-apt-repository sets the PPA up again for the release this computer runs, "
+"with its signing key from Launchpad, and then fetches the lists of updates."
+msgstr ""
+"add-apt-repository setter opp PPA-en igjen for utgaven datamaskinen kjører, "
+"med signeringsnøkkelen fra Launchpad, og henter så listene over "
+"oppdateringer."
+
+#: src/plugins/updates/gaudit-updates.c:152
+msgid ""
+"Afterwards, gAudit checks that the PPA could be read for this release: add-"
+"apt-repository does not say so itself."
+msgstr ""
+"Etterpå sjekker gAudit at PPA-en kunne leses for denne utgaven: add-apt-"
+"repository sier ikke fra om det selv."
+
+#: src/plugins/updates/gaudit-updates.c:156
 msgid "enable --now switches the jobs on now, and at every start."
 msgstr "enable --now slår jobbene på nå, og ved hver oppstart."
 
-#: src/plugins/updates/gaudit-updates.c:131
+#: src/plugins/updates/gaudit-updates.c:157
 msgid ""
 "apt-daily.timer looks for updates every day; apt-daily-upgrade.timer "
 "installs them, as set up."
@@ -76,7 +94,7 @@ msgstr ""
 "apt-daily.timer ser etter oppdateringer hver dag; apt-daily-upgrade.timer "
 "installerer dem, slik det er satt opp."
 
-#: src/plugins/updates/gaudit-updates.c:134
+#: src/plugins/updates/gaudit-updates.c:160
 msgid ""
 "sudo runs it with administrator rights. From this page, the switch beside "
 "the title asks for the password."
@@ -84,17 +102,31 @@ msgstr ""
 "sudo kjører den med administratorrettigheter. Fra denne siden er det "
 "bryteren ved siden av tittelen som spør om passordet."
 
-#: src/plugins/updates/gaudit-updates.c:137
+#: src/plugins/updates/gaudit-updates.c:163
 msgid ""
 "It cannot be undone from here: what it changes is up to the tool and the "
 "packages, and not all of it can be known beforehand."
-msgstr "Det kan ikke angres herfra: hva det endrer, avhenger av verktøyet og pakkene, og ikke alt kan vites på forhånd."
+msgstr ""
+"Det kan ikke angres herfra: hva det endrer, avhenger av verktøyet og "
+"pakkene, og ikke alt kan vites på forhånd."
 
-#: src/plugins/updates/gaudit-updates.c:192
+#: src/plugins/updates/gaudit-updates.c:196
+msgid ""
+"The PPA was set up, but could not be read for this release, so it most "
+"likely has no packages for it yet. It now gives the same error every time "
+"updates are looked for, so switch it off again: in Software & Updates, under "
+"Other Software, take the tick off its line for this release."
+msgstr ""
+"PPA-en ble satt opp, men kunne ikke leses for denne utgaven, så den har "
+"trolig ingen pakker for den ennå. Nå gir den samme feil hver gang det ses "
+"etter oppdateringer, så slå den av igjen: i Programvare og oppdateringer, "
+"under Annen programvare, fjern haken ved linjen for denne utgaven."
+
+#: src/plugins/updates/gaudit-updates.c:227
 msgid "Switch On"
 msgstr "Slå på"
 
-#: src/plugins/updates/gaudit-updates.c:193
+#: src/plugins/updates/gaudit-updates.c:228
 msgid ""
 "Writes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates: "
 "this computer then looks for updates every day and installs them as "
@@ -106,11 +138,11 @@ msgstr ""
 "unattended-upgrades er satt opp (for Debian og Ubuntu: "
 "sikkerhetsoppdateringer). Den kan fjernes igjen her."
 
-#: src/plugins/updates/gaudit-updates.c:199
+#: src/plugins/updates/gaudit-updates.c:234
 msgid "Remove gAudit's Setting"
 msgstr "Fjern gAudits innstilling"
 
-#: src/plugins/updates/gaudit-updates.c:200
+#: src/plugins/updates/gaudit-updates.c:235
 msgid ""
 "Removes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates, if "
 "it is still as gAudit wrote it. Settings made elsewhere are not touched."
@@ -119,17 +151,17 @@ msgstr ""
 "hvis den fortsatt er slik gAudit skrev den. Innstillinger gjort andre steder "
 "røres ikke."
 
-#: src/plugins/updates/gaudit-updates.c:208
-#: src/plugins/updates/gaudit-updates.c:215
-#: src/plugins/updates/gaudit-updates.c:231
+#: src/plugins/updates/gaudit-updates.c:243
+#: src/plugins/updates/gaudit-updates.c:250
+#: src/plugins/updates/gaudit-updates.c:266
 msgid "Install Updates Automatically"
 msgstr "Installer oppdateringer automatisk"
 
-#: src/plugins/updates/gaudit-updates.c:209
+#: src/plugins/updates/gaudit-updates.c:244
 msgid "gAudit has set this computer up to install updates by itself."
 msgstr "gAudit har satt opp datamaskinen til å installere oppdateringer selv."
 
-#: src/plugins/updates/gaudit-updates.c:210
+#: src/plugins/updates/gaudit-updates.c:245
 msgid ""
 "It is gAudit's own setting, and it can be taken away again here. Then the "
 "computer's other settings decide."
@@ -137,8 +169,8 @@ msgstr ""
 "Det er gAudits egen innstilling, og den kan tas bort igjen her. Da bestemmer "
 "datamaskinens andre innstillinger."
 
-#: src/plugins/updates/gaudit-updates.c:216
-#: src/plugins/updates/gaudit-updates.c:232
+#: src/plugins/updates/gaudit-updates.c:251
+#: src/plugins/updates/gaudit-updates.c:267
 msgid ""
 "Updates are not installed by themselves on this computer, so it is only as "
 "up to date as the last time someone installed them."
@@ -146,15 +178,18 @@ msgstr ""
 "Oppdateringer installeres ikke av seg selv på denne datamaskinen, så den er "
 "bare så oppdatert som sist noen installerte dem."
 
-#: src/plugins/updates/gaudit-updates.c:218
+#: src/plugins/updates/gaudit-updates.c:253
 msgid ""
 "gAudit can switch it on with a setting of its own: security updates are then "
 "installed by themselves. You are asked to confirm first, and it can be taken "
 "away again here."
-msgstr "gAudit kan slå det på med en egen innstilling: sikkerhetsoppdateringer installeres da av seg selv. Du blir bedt om å bekrefte først, og det kan tas bort igjen her."
+msgstr ""
+"gAudit kan slå det på med en egen innstilling: sikkerhetsoppdateringer "
+"installeres da av seg selv. Du blir bedt om å bekrefte først, og det kan tas "
+"bort igjen her."
 
-#: src/plugins/updates/gaudit-updates.c:221
-#: src/plugins/updates/gaudit-updates.c:238
+#: src/plugins/updates/gaudit-updates.c:256
+#: src/plugins/updates/gaudit-updates.c:273
 msgid ""
 "If it is off on purpose, for example because changes must be planned, keep "
 "it off and install the updates regularly yourself."
@@ -163,7 +198,7 @@ msgstr ""
 "det være av og installer oppdateringene jevnlig selv."
 
 #. Translators: %s is a list of programs, e.g. "update-manager, synaptic".
-#: src/plugins/updates/gaudit-updates.c:226
+#: src/plugins/updates/gaudit-updates.c:261
 #, c-format
 msgid ""
 "Switch it on in your update program (%s): choose to install security updates "
@@ -172,7 +207,7 @@ msgstr ""
 "Slå det på i oppdateringsprogrammet (%s): velg at sikkerhetsoppdateringer "
 "skal installeres automatisk. Andre oppdateringer kan fortsatt vente på deg."
 
-#: src/plugins/updates/gaudit-updates.c:235
+#: src/plugins/updates/gaudit-updates.c:270
 msgid ""
 "In your system's settings for software updates, choose to install security "
 "updates automatically. Other updates can still wait for you."
@@ -181,7 +216,360 @@ msgstr ""
 "innstillinger for programvareoppdateringer. Andre oppdateringer kan fortsatt "
 "vente på deg."
 
-#: src/plugins/updates/gaudit-updates.c:284
+#. Translators: the newest version, the one installed, then who makes it.
+#: src/plugins/updates/gaudit-updates.c:368
+#, c-format
+msgid ""
+"Version %s is out; this computer has %s. gAudit can download it from %s, "
+"check that %s signed it, and install it."
+msgstr ""
+"Versjon %s er ute; denne datamaskinen har %s. gAudit kan laste den ned fra "
+"%s, sjekke at %s har signert den, og installere den."
+
+#: src/plugins/updates/gaudit-updates.c:377
+#, c-format
+msgid "This computer has the newest version, %s."
+msgstr "Denne datamaskinen har den nyeste versjonen, %s."
+
+#: src/plugins/updates/gaudit-updates.c:381
+msgid ""
+"It could not be found out. The page may not answer, or this computer may "
+"have no connection."
+msgstr ""
+"Det kunne ikke finnes ut. Siden svarer kanskje ikke, eller datamaskinen har "
+"ikke nett."
+
+#: src/plugins/updates/gaudit-updates.c:464
+msgid "Looking for the newest version…"
+msgstr "Ser etter den nyeste versjonen…"
+
+#. Translators: a program's name, then its version.
+#: src/plugins/updates/gaudit-updates.c:477
+#, c-format
+msgid "Installed: %s now has version %s."
+msgstr "Installert: %s har nå versjon %s."
+
+#: src/plugins/updates/gaudit-updates.c:479
+msgid ""
+"Installing stopped with an error. Look for updates and try again, or install "
+"it from the maker's page."
+msgstr ""
+"Installasjonen stoppet med en feil. Se etter oppdateringer og prøv igjen, "
+"eller installer den fra produsentens side."
+
+#: src/plugins/updates/gaudit-updates.c:482
+msgid "The download could not be read, so nothing was installed."
+msgstr "Nedlastingen kunne ikke leses, så ingenting ble installert."
+
+#: src/plugins/updates/gaudit-updates.c:484
+msgid "The download is larger than gAudit accepts, so nothing was installed."
+msgstr "Nedlastingen er større enn gAudit godtar, så ingenting ble installert."
+
+#: src/plugins/updates/gaudit-updates.c:486
+msgid ""
+"The package is not signed, so who made it cannot be checked. It was not "
+"installed."
+msgstr ""
+"Pakken er ikke signert, så det kan ikke sjekkes hvem som har laget den. Den "
+"ble ikke installert."
+
+#. Translators: %s is who makes the program, twice.
+#: src/plugins/updates/gaudit-updates.c:491
+#, c-format
+msgid ""
+"The package is signed with a key gAudit does not know for %s, so it was not "
+"installed. If %s has changed its key, a newer gAudit will know it; until "
+"then, install it from the maker's page yourself."
+msgstr ""
+"Pakken er signert med en nøkkel gAudit ikke kjenner for %s, så den ble ikke "
+"installert. Har %s byttet nøkkel, vil en nyere gAudit kjenne den; inntil da "
+"kan du installere den fra produsentens side selv."
+
+#: src/plugins/updates/gaudit-updates.c:495
+msgid "The signature does not match the package. It was not installed."
+msgstr "Signaturen stemmer ikke med pakken. Den ble ikke installert."
+
+#: src/plugins/updates/gaudit-updates.c:497
+msgid ""
+"The signature rests on MD5 alone, which says nothing about who made the "
+"package. It was not installed."
+msgstr ""
+"Signaturen hviler bare på MD5, som ikke sier noe om hvem som har laget "
+"pakken. Den ble ikke installert."
+
+#: src/plugins/updates/gaudit-updates.c:500
+msgid ""
+"The package's contents do not match its signature. It was not installed."
+msgstr ""
+"Innholdet i pakken stemmer ikke med signaturen. Den ble ikke installert."
+
+#: src/plugins/updates/gaudit-updates.c:503
+msgid ""
+"The download is not the package and version expected. It was not installed."
+msgstr ""
+"Nedlastingen er ikke pakken og versjonen som var ventet. Den ble ikke "
+"installert."
+
+#: src/plugins/updates/gaudit-updates.c:506
+msgid ""
+"The download is not newer than the version installed. It was not installed."
+msgstr ""
+"Nedlastingen er ikke nyere enn versjonen som er installert. Den ble ikke "
+"installert."
+
+#: src/plugins/updates/gaudit-updates.c:509
+msgid ""
+"The checked package is gone, for one when the administrator rights ended in "
+"between. Nothing was installed."
+msgstr ""
+"Den sjekkede pakken er borte, for eksempel fordi administratorrettighetene "
+"tok slutt i mellomtiden. Ingenting ble installert."
+
+#: src/plugins/updates/gaudit-updates.c:511
+#: src/plugins/updates/gaudit-updates.c:524
+msgid "It could not be checked or installed."
+msgstr "Den kunne ikke sjekkes eller installeres."
+
+#: src/plugins/updates/gaudit-updates.c:518
+msgid "Cancelled, so nothing was installed."
+msgstr "Avbrutt, så ingenting ble installert."
+
+#: src/plugins/updates/gaudit-updates.c:542
+msgid ""
+"Installing… It needs administrator rights: use the switch beside the title "
+"if asked."
+msgstr ""
+"Installerer… Det trengs administratorrettigheter: bruk bryteren ved siden av "
+"tittelen hvis du blir bedt om det."
+
+#: src/plugins/updates/gaudit-updates.c:547
+#: src/plugins/updates/gaudit-updates.c:615
+msgid "It is already under way."
+msgstr "Den er allerede i gang."
+
+#. Translators: who makes it, then a hash method's name, e.g. SHA1.
+#: src/plugins/updates/gaudit-updates.c:570
+#, c-format
+msgid ""
+"The package is signed by %s with the key gAudit knows for it, and every part "
+"of it matches the signature. But the signature uses %s, an older method that "
+"apt no longer accepts for software sources. Install it anyway, or go back."
+msgstr ""
+"Pakken er signert av %s med nøkkelen gAudit kjenner for den, og hver del av "
+"den stemmer med signaturen. Men signaturen bruker %s, en eldre metode som "
+"apt ikke lenger godtar for programvarekilder. Installer den likevel, eller "
+"gå tilbake."
+
+#: src/plugins/updates/gaudit-updates.c:574
+msgid "Checked."
+msgstr "Sjekket."
+
+#: src/plugins/updates/gaudit-updates.c:610
+msgid ""
+"Downloaded. Checking the signature… It needs administrator rights: use the "
+"switch beside the title if asked."
+msgstr ""
+"Lastet ned. Sjekker signaturen… Det trengs administratorrettigheter: bruk "
+"bryteren ved siden av tittelen hvis du blir bedt om det."
+
+#: src/plugins/updates/gaudit-updates.c:623
+msgid "It could not be downloaded, so nothing was installed."
+msgstr "Den kunne ikke lastes ned, så ingenting ble installert."
+
+#: src/plugins/updates/gaudit-updates.c:635
+msgid "Downloading…"
+msgstr "Laster ned…"
+
+#. Translators: %s is a program's name, e.g. "Zoom".
+#: src/plugins/updates/gaudit-updates.c:662
+#, c-format
+msgid "Update %s Yourself"
+msgstr "Oppdater %s selv"
+
+#. Translators: a program's name, its version, then who makes it.
+#: src/plugins/updates/gaudit-updates.c:665
+#, c-format
+msgid ""
+"%s (version %s) is installed from a package %s offers only as a download, "
+"without a software source. So the system never updates it, not even with "
+"security fixes."
+msgstr ""
+"%s (versjon %s) er installert fra en pakke %s bare tilbyr til nedlasting, "
+"uten en programvarekilde. Derfor oppdaterer systemet den aldri, heller ikke "
+"med sikkerhetsrettelser."
+
+#. Translators: %s is who makes the program.
+#: src/plugins/updates/gaudit-updates.c:670
+#, c-format
+msgid ""
+"Best is a software source: then the system updates it with everything else. "
+"Look for one from %s itself, or from someone you trust; the key of a source "
+"decides what is installed on this computer, so the choice is yours."
+msgstr ""
+"Best er en programvarekilde: da oppdaterer systemet den sammen med alt "
+"annet. Se etter en fra %s selv, eller fra noen du stoler på; nøkkelen til en "
+"kilde avgjør hva som installeres på datamaskinen, så valget er ditt."
+
+#. Translators: who makes it, then the address of their download page.
+#: src/plugins/updates/gaudit-updates.c:675
+#, c-format
+msgid "Download new versions from %s's own page and install them: %s"
+msgstr "Last ned nye versjoner fra siden til %s og installer dem: %s"
+
+#. Translators: a Flatpak app id, then who makes the program.
+#: src/plugins/updates/gaudit-updates.c:678
+#, c-format
+msgid ""
+"Or use it as a Flatpak instead (%s on Flathub), which gets updates. On its "
+"page on Flathub, a Verified mark means %s makes it; without the mark, "
+"someone else does."
+msgstr ""
+"Eller bruk den som Flatpak i stedet (%s hos Flathub), som får oppdateringer. "
+"På siden hos Flathub betyr merket Verified at %s lager den; uten merket er "
+"det noen andre som gjør det."
+
+#: src/plugins/updates/gaudit-updates.c:685
+msgid ""
+"Looking for the newest version and installing it here is a fallback for a "
+"package without a source: you chose this package, and there may be a good "
+"reason for it."
+msgstr ""
+"Å se etter den nyeste versjonen og installere den her er en reserveløsning "
+"for en pakke uten kilde: du har valgt denne pakken, og det kan være gode "
+"grunner til det."
+
+#: src/plugins/updates/gaudit-updates.c:700
+msgid "Check for a New Version"
+msgstr "Se etter ny versjon"
+
+#: src/plugins/updates/gaudit-updates.c:702
+msgid ""
+"Asks the maker's page which version is the newest. Nothing is downloaded or "
+"installed."
+msgstr ""
+"Spør produsentens side hvilken versjon som er den nyeste. Ingenting lastes "
+"ned eller installeres."
+
+#: src/plugins/updates/gaudit-updates.c:706
+msgid "Install"
+msgstr "Installer"
+
+#: src/plugins/updates/gaudit-updates.c:708
+msgid "Downloads the newer version, checks its signature and installs it"
+msgstr "Laster ned den nyere versjonen, sjekker signaturen og installerer den"
+
+#: src/plugins/updates/gaudit-updates.c:714
+msgid "Install Anyway"
+msgstr "Installer likevel"
+
+#. Translators: %s is a product, e.g. "CUDA".
+#: src/plugins/updates/gaudit-updates.c:767
+#, c-format
+msgid "%s From a Local Copy"
+msgstr "%s fra en lokal kopi"
+
+#. Translators: a product, its version, who makes it, the release the copy
+#. * was made for (e.g. "Ubuntu 26.04"), then a sentence about the packages.
+#: src/plugins/updates/gaudit-updates.c:771
+#, c-format
+msgid ""
+"%s %s was installed from a local copy of %s's software source, made for %s. "
+"%s"
+msgstr ""
+"%s %s ble installert fra en lokal kopi av programvarekilden til %s, laget "
+"for %s. %s"
+
+#: src/plugins/updates/gaudit-updates.c:773
+msgid ""
+"The copy never changes, so the package from it never gets updates, not even "
+"security fixes."
+msgid_plural ""
+"The copy never changes, so the packages from it never get updates, not even "
+"security fixes."
+msgstr[0] ""
+"Kopien endres aldri, så pakken fra den får aldri oppdateringer, heller ikke "
+"sikkerhetsrettelser."
+msgstr[1] ""
+"Kopien endres aldri, så pakkene fra den får aldri oppdateringer, heller ikke "
+"sikkerhetsrettelser."
+
+#. Translators: the release the copy was made for, then the one running.
+#: src/plugins/updates/gaudit-updates.c:779
+#, c-format
+msgid ""
+"The copy was made for %s, not for %s, which this computer runs. gAudit does "
+"not recommend using a source made for another release: it was made and "
+"tested for that release, against the libraries it has."
+msgstr ""
+"Kopien ble laget for %s, ikke for %s, som denne datamaskinen kjører. gAudit "
+"anbefaler ikke å bruke en kilde laget for en annen utgave: den ble laget og "
+"testet for den utgaven, mot de bibliotekene den har."
+
+#. Translators: a version (13.3), then a package name (cuda-toolkit-13-3).
+#: src/plugins/updates/gaudit-updates.c:792
+#, c-format
+msgid ""
+" To stay on version %s, install the package %s: it keeps that version, and "
+"still gets its fixes."
+msgstr ""
+" For å bli på versjon %s, installer pakken %s: den holder seg på den "
+"versjonen, og får likevel rettelsene for den."
+
+#. Translators: who makes it, the release running, who makes it, the release
+#. * running, the download page, the product, then the sentence about one version.
+#: src/plugins/updates/gaudit-updates.c:797
+#, c-format
+msgid ""
+"%s has a software source for this release (%s). Set it up from %s's download "
+"page, choosing the network installer for %s: %s\n"
+"\n"
+"The system then updates %s with everything else.%s"
+msgstr ""
+"%s har en programvarekilde for denne utgaven (%s). Sett den opp fra "
+"nedlastingssiden til %s, og velg nettverksinstallasjonen for %s: %s\n"
+"\n"
+"Da oppdaterer systemet %s sammen med alt annet.%s"
+
+#. Translators: who makes it, the release running, who makes it, its download page.
+#: src/plugins/updates/gaudit-updates.c:804
+#, c-format
+msgid ""
+"%s has no software source for this release (%s) yet. Look on %s's download "
+"page now and then: %s"
+msgstr ""
+"%s har ingen programvarekilde for denne utgaven (%s) ennå. Se på "
+"nedlastingssiden til %s av og til: %s"
+
+#: src/plugins/updates/gaudit-updates.c:816
+msgid ""
+"This is a recommendation: staying on a version can be deliberate, such as "
+"for a project that needs it. gAudit downloads and installs nothing for it."
+msgstr ""
+"Dette er en anbefaling: å bli på en versjon kan være et bevisst valg, for "
+"eksempel for et prosjekt som trenger den. gAudit laster ikke ned eller "
+"installerer noe for den."
+
+#. Translators: %s is a release, e.g. "Ubuntu 26.04".
+#: src/plugins/updates/gaudit-updates.c:826
+#, c-format
+msgid "Show the Source for %s"
+msgstr "Vis kilden for %s"
+
+#. Translators: who makes it, the release before, who makes it, the release before.
+#: src/plugins/updates/gaudit-updates.c:831
+#, c-format
+msgid ""
+"%s has a source for %s, the release before. Using a source made for an "
+"earlier release is not something gAudit recommends: it was made and tested "
+"for that release, against the libraries it has. If you choose it anyway, set "
+"it up from %s's download page, choosing %s."
+msgstr ""
+"%s har en kilde for %s, utgaven før. gAudit anbefaler ikke å bruke en kilde "
+"laget for en tidligere utgave: den ble laget og testet for den utgaven, mot "
+"de bibliotekene den har. Velger du den likevel, sett den opp fra "
+"nedlastingssiden til %s, og velg %s."
+
+#: src/plugins/updates/gaudit-updates.c:907
 msgid ""
 "Files installed by packages were changed or are gone. It may be harmless, "
 "such as a program changing its own file, but nothing should change installed "
@@ -191,7 +579,7 @@ msgstr ""
 "for eksempel at et program endrer sin egen fil, men ingenting skal endre "
 "installerte filer."
 
-#: src/plugins/updates/gaudit-updates.c:288
+#: src/plugins/updates/gaudit-updates.c:911
 msgid ""
 "Not every package is in the command: only those listed in the report, with "
 "plain names. Check again afterwards to see what is left."
@@ -199,16 +587,16 @@ msgstr ""
 "Ikke alle pakkene er med i kommandoen, bare de som er listet i rapporten og "
 "har vanlige navn. Sjekk igjen etterpå for å se hva som er igjen."
 
-#: src/plugins/updates/gaudit-updates.c:290
+#: src/plugins/updates/gaudit-updates.c:913
 msgid "Afterwards, it is checked again: the files should then match."
 msgstr "Etterpå sjekkes det på nytt: filene skal da stemme."
 
-#: src/plugins/updates/gaudit-updates.c:295
-#: src/plugins/updates/gaudit-updates.c:299
+#: src/plugins/updates/gaudit-updates.c:918
+#: src/plugins/updates/gaudit-updates.c:922
 msgid "Put the Package Files Back"
 msgstr "Legg pakkefilene tilbake"
 
-#: src/plugins/updates/gaudit-updates.c:296
+#: src/plugins/updates/gaudit-updates.c:919
 msgid ""
 "If you did not change them yourself, reinstall the packages: it puts their "
 "own files back, and keeps your settings in /etc."
@@ -216,7 +604,7 @@ msgstr ""
 "Har du ikke endret dem selv, installer pakkene på nytt: det legger pakkenes "
 "egne filer tilbake og beholder innstillingene dine i /etc."
 
-#: src/plugins/updates/gaudit-updates.c:300
+#: src/plugins/updates/gaudit-updates.c:923
 msgid ""
 "If you did not change them yourself, reinstall the packages with your "
 "package manager."
@@ -224,13 +612,13 @@ msgstr ""
 "Har du ikke endret dem selv, installer pakkene på nytt med pakkesystemet "
 "ditt."
 
-#: src/plugins/updates/gaudit-updates.c:318
-#: src/plugins/updates/gaudit-updates.c:328
+#: src/plugins/updates/gaudit-updates.c:949
+#: src/plugins/updates/gaudit-updates.c:959
 msgid "Look for Updates"
 msgstr "Se etter oppdateringer"
 
-#: src/plugins/updates/gaudit-updates.c:319
-#: src/plugins/updates/gaudit-updates.c:329
+#: src/plugins/updates/gaudit-updates.c:950
+#: src/plugins/updates/gaudit-updates.c:960
 msgid ""
 "This computer never looks for updates, so it never finds security updates "
 "either."
@@ -238,7 +626,7 @@ msgstr ""
 "Denne datamaskinen ser aldri etter oppdateringer, så den finner heller aldri "
 "sikkerhetsoppdateringer."
 
-#: src/plugins/updates/gaudit-updates.c:320
+#: src/plugins/updates/gaudit-updates.c:951
 msgid ""
 "In your system's settings for software updates, choose to look for updates "
 "every day. Until then, you can look once yourself."
@@ -246,13 +634,13 @@ msgstr ""
 "Velg at det skal ses etter oppdateringer hver dag, i systemets innstillinger "
 "for programvareoppdateringer. Inntil da kan du se etter selv én gang."
 
-#: src/plugins/updates/gaudit-updates.c:323
-#: src/plugins/updates/gaudit-updates.c:333
+#: src/plugins/updates/gaudit-updates.c:954
+#: src/plugins/updates/gaudit-updates.c:964
 msgid "Looking once is not enough: updates come out all the time."
 msgstr ""
 "Det holder ikke å se etter én gang: det kommer oppdateringer hele tiden."
 
-#: src/plugins/updates/gaudit-updates.c:330
+#: src/plugins/updates/gaudit-updates.c:961
 msgid ""
 "In your system's settings for software updates, choose to look for updates "
 "every day. Until then, you can look once yourself with this command in a "
@@ -262,13 +650,13 @@ msgstr ""
 "for programvareoppdateringer. Inntil da kan du se etter selv én gang med "
 "denne kommandoen i en terminal."
 
-#: src/plugins/updates/gaudit-updates.c:343
-#: src/plugins/updates/gaudit-updates.c:354
+#: src/plugins/updates/gaudit-updates.c:974
+#: src/plugins/updates/gaudit-updates.c:985
 msgid "Switch On the Daily Jobs"
 msgstr "Slå på de daglige jobbene"
 
-#: src/plugins/updates/gaudit-updates.c:344
-#: src/plugins/updates/gaudit-updates.c:355
+#: src/plugins/updates/gaudit-updates.c:975
+#: src/plugins/updates/gaudit-updates.c:986
 msgid ""
 "The jobs that look for and install updates every day are switched off, so "
 "the settings for updates have no effect."
@@ -276,29 +664,127 @@ msgstr ""
 "Jobbene som ser etter og installerer oppdateringer hver dag, er slått av, så "
 "innstillingene for oppdateringer virker ikke."
 
-#: src/plugins/updates/gaudit-updates.c:346
+#: src/plugins/updates/gaudit-updates.c:977
 msgid "Switch them on again:"
 msgstr "Slå dem på igjen:"
 
-#: src/plugins/updates/gaudit-updates.c:348
+#: src/plugins/updates/gaudit-updates.c:979
 msgid "Afterwards, it is checked again: the jobs should then be listed as on."
 msgstr "Etterpå sjekkes det på nytt: jobbene skal da stå som på."
 
-#: src/plugins/updates/gaudit-updates.c:357
+#: src/plugins/updates/gaudit-updates.c:988
 msgid "Run this command in a terminal to switch them on again."
 msgstr "Kjør denne kommandoen i en terminal for å slå dem på igjen."
 
-#: src/plugins/updates/gaudit-updates.c:359
+#: src/plugins/updates/gaudit-updates.c:990
 msgid "Afterwards, check again: the jobs should then be listed as on."
 msgstr "Sjekk igjen etterpå: jobbene skal da stå som på."
 
-#: src/plugins/updates/gaudit-updates.c:365
-#: src/plugins/updates/gaudit-updates.c:374
+#. Translators: %s is one or more sources, e.g. "ppa:cappelikan/ppa".
+#: src/plugins/updates/gaudit-updates.c:996
+#, c-format
+msgid ""
+"These software sources were switched off when the release was upgraded: %s. "
+"Nothing from them gets updates while they are off."
+msgstr ""
+"Disse programvarekildene ble slått av da utgaven ble oppgradert: %s. "
+"Ingenting fra dem får oppdateringer så lenge de er av."
+
+#: src/plugins/updates/gaudit-updates.c:998
+msgid ""
+"The upgrade switches off sources it does not know, since they may not have "
+"packages for the new release yet; switching one on then gives an error the "
+"next time updates are looked for."
+msgstr ""
+"Oppgraderingen slår av kilder den ikke kjenner, fordi de kanskje ikke har "
+"pakker for den nye utgaven ennå; slås en av dem på da, gir den en feil neste "
+"gang det ses etter oppdateringer."
+
+#: src/plugins/updates/gaudit-updates.c:1023
+msgid ""
+"Check the PPA's page on Launchpad first for packages for this release. If it "
+"has them, set it up again here. Other sources are switched on in your "
+"system's settings for software sources."
+msgstr ""
+"Se først på PPA-ens side på Launchpad om den har pakker for denne utgaven. "
+"Har den det, sett den opp igjen her. Andre kilder slås på i systemets "
+"innstillinger for programvarekilder."
+
+#: src/plugins/updates/gaudit-updates.c:1027
+#: src/plugins/updates/gaudit-updates.c:1040
+msgid "Software Sources Switched Off"
+msgstr "Programvarekilder som er slått av"
+
+#: src/plugins/updates/gaudit-updates.c:1028
+msgid ""
+"Only the PPA's own page can tell whether it is ready: on Launchpad, it must "
+"list packages for exactly this release. Packages for older releases are not "
+"enough, and neither is this release in the list without packages, so look "
+"there before you run the command."
+msgstr ""
+"Bare PPA-ens egen side kan si om den er klar: på Launchpad må den vise "
+"pakker for akkurat denne utgaven. Pakker for eldre utgaver holder ikke, og "
+"det gjør heller ikke denne utgaven i listen uten pakker, så se der før du "
+"kjører kommandoen."
+
+#: src/plugins/updates/gaudit-updates.c:1036
+msgid ""
+"Check the source's page first (for a PPA, its page on Launchpad) for "
+"packages for this release. If it has them, switch it on in your system's "
+"settings for software sources."
+msgstr ""
+"Se først på kildens egen side (for en PPA, siden på Launchpad) om den har "
+"pakker for denne utgaven. Har den det, slå den på i systemets innstillinger "
+"for programvarekilder."
+
+#: src/plugins/updates/gaudit-updates.c:1041
+msgid ""
+"gAudit does not switch them on: only the source's own page can tell whether "
+"it is ready for this release."
+msgstr ""
+"gAudit slår dem ikke på: bare kildens egen side kan si om den er klar for "
+"denne utgaven."
+
+#. Translators: %s is one or more host names, e.g. "prerelease.keybase.io".
+#: src/plugins/updates/gaudit-updates.c:1049
+#, c-format
+msgid ""
+"The software source %s is set up, but its lists of packages have never been "
+"fetched, so nothing from it gets updates."
+msgstr ""
+"Programvarekilden %s er satt opp, men listene over pakker fra den er aldri "
+"hentet, så ingenting fra den får oppdateringer."
+
+#: src/plugins/updates/gaudit-updates.c:1051
+msgid ""
+"Look for updates: that fetches the lists from every source. If it still "
+"cannot be read, the command shows why, often a signing key that is missing "
+"or has expired, or a source that no longer exists."
+msgstr ""
+"Se etter oppdateringer: det henter listene fra alle kildene. Kan den "
+"fortsatt ikke leses, viser kommandoen hvorfor, ofte en signeringsnøkkel som "
+"mangler eller er utgått, eller en kilde som ikke finnes lenger."
+
+#: src/plugins/updates/gaudit-updates.c:1054
+msgid ""
+"It often happens after an upgrade of the release, or when a source is added "
+"without looking for updates since."
+msgstr ""
+"Det skjer ofte etter en oppgradering av utgaven, eller når en kilde legges "
+"til uten at det er sett etter oppdateringer siden."
+
+#: src/plugins/updates/gaudit-updates.c:1057
+#: src/plugins/updates/gaudit-updates.c:1059
+msgid "Read the Software Source"
+msgstr "Les programvarekilden"
+
+#: src/plugins/updates/gaudit-updates.c:1066
+#: src/plugins/updates/gaudit-updates.c:1075
 msgid "Look for Updates Now"
 msgstr "Se etter oppdateringer nå"
 
-#: src/plugins/updates/gaudit-updates.c:366
-#: src/plugins/updates/gaudit-updates.c:375
+#: src/plugins/updates/gaudit-updates.c:1067
+#: src/plugins/updates/gaudit-updates.c:1076
 msgid ""
 "This computer has not looked for updates for a long time, so it does not "
 "know about updates published since."
@@ -306,7 +792,7 @@ msgstr ""
 "Denne datamaskinen har ikke sett etter oppdateringer på lenge, så den "
 "kjenner ikke til oppdateringer som er kommet siden."
 
-#: src/plugins/updates/gaudit-updates.c:368
+#: src/plugins/updates/gaudit-updates.c:1069
 msgid ""
 "Look for them now. If it keeps happening, check that the computer looks for "
 "updates by itself."
@@ -314,7 +800,7 @@ msgstr ""
 "Se etter dem nå. Skjer det igjen, sjekk at datamaskinen ser etter "
 "oppdateringer selv."
 
-#: src/plugins/updates/gaudit-updates.c:378
+#: src/plugins/updates/gaudit-updates.c:1079
 msgid ""
 "Run this command in a terminal. If it keeps happening, check that the "
 "computer looks for updates by itself."
@@ -322,19 +808,19 @@ msgstr ""
 "Kjør denne kommandoen i en terminal. Skjer det igjen, sjekk at datamaskinen "
 "ser etter oppdateringer selv."
 
-#: src/plugins/updates/gaudit-updates.c:380
+#: src/plugins/updates/gaudit-updates.c:1081
 msgid ""
 "Install the updates with the command below; it looks for new ones first."
 msgstr ""
 "Installer oppdateringene med kommandoen nedenfor; den ser etter nye først."
 
-#: src/plugins/updates/gaudit-updates.c:397
-#: src/plugins/updates/gaudit-updates.c:411
+#: src/plugins/updates/gaudit-updates.c:1098
+#: src/plugins/updates/gaudit-updates.c:1112
 msgid "Install the Updates"
 msgstr "Installer oppdateringene"
 
-#: src/plugins/updates/gaudit-updates.c:399
-#: src/plugins/updates/gaudit-updates.c:413
+#: src/plugins/updates/gaudit-updates.c:1100
+#: src/plugins/updates/gaudit-updates.c:1114
 msgid ""
 "Security updates are waiting. Until they are installed, the problems they "
 "fix stay open on this computer."
@@ -342,21 +828,21 @@ msgstr ""
 "Sikkerhetsoppdateringer venter. Til de er installert, står problemene de "
 "retter, åpne på denne datamaskinen."
 
-#: src/plugins/updates/gaudit-updates.c:401
-#: src/plugins/updates/gaudit-updates.c:415
+#: src/plugins/updates/gaudit-updates.c:1102
+#: src/plugins/updates/gaudit-updates.c:1116
 msgid "Updates are waiting, and some of them may be security updates."
 msgstr "Oppdateringer venter, og noen av dem kan være sikkerhetsoppdateringer."
 
-#: src/plugins/updates/gaudit-updates.c:402
+#: src/plugins/updates/gaudit-updates.c:1103
 msgid "Install them with your system's software updater, or here:"
 msgstr "Installer dem med systemets program for oppdateringer, eller her:"
 
-#: src/plugins/updates/gaudit-updates.c:404
-#: src/plugins/updates/gaudit-updates.c:419
+#: src/plugins/updates/gaudit-updates.c:1105
+#: src/plugins/updates/gaudit-updates.c:1120
 msgid "Installing updates automatically keeps this from building up again."
 msgstr "Installeres oppdateringene automatisk, hoper de seg ikke opp igjen."
 
-#: src/plugins/updates/gaudit-updates.c:416
+#: src/plugins/updates/gaudit-updates.c:1117
 msgid ""
 "Install them with your system's software updater, or run this command in a "
 "terminal."
@@ -365,7 +851,7 @@ msgstr ""
 "kommandoen i en terminal."
 
 #. Translators: %s is a host name, e.g. no.archive.ubuntu.com.
-#: src/plugins/updates/gaudit-updates.c:425
+#: src/plugins/updates/gaudit-updates.c:1126
 #, c-format
 msgid ""
 "Security updates come from %s, a mirror. A mirror may lag behind, and "
@@ -374,11 +860,11 @@ msgstr ""
 "Sikkerhetsoppdateringer kommer fra %s, en speiling. En speiling kan henge "
 "etter, og sikkerhetsoppdateringer bør ikke vente."
 
-#: src/plugins/updates/gaudit-updates.c:428
+#: src/plugins/updates/gaudit-updates.c:1129
 msgid "Get Security Updates from the Source"
 msgstr "Hent sikkerhetsoppdateringer fra kilden"
 
-#: src/plugins/updates/gaudit-updates.c:429
+#: src/plugins/updates/gaudit-updates.c:1130
 msgid ""
 "In your system's settings for software sources, let security updates come "
 "from the distribution's own server. Mirrors are fine for the other updates."
@@ -388,7 +874,7 @@ msgstr ""
 "andre oppdateringene."
 
 #. Translators: %s is a list of package systems, e.g. "rpm, Nix".
-#: src/plugins/updates/gaudit-updates.c:437
+#: src/plugins/updates/gaudit-updates.c:1138
 #, c-format
 msgid ""
 "Packages managed by %s are on this computer. gAudit does not check them, so "
@@ -397,11 +883,11 @@ msgstr ""
 "Denne datamaskinen har pakker som styres av %s. gAudit sjekker dem ikke, så "
 "den kan ikke si om de får oppdateringer."
 
-#: src/plugins/updates/gaudit-updates.c:440
+#: src/plugins/updates/gaudit-updates.c:1141
 msgid "Other Package Systems"
 msgstr "Andre pakkesystemer"
 
-#: src/plugins/updates/gaudit-updates.c:441
+#: src/plugins/updates/gaudit-updates.c:1142
 msgid ""
 "Keep them up to date with their own tools. If they are left over and nothing "
 "uses them any more, they still need updates as long as they are installed."
@@ -614,102 +1100,202 @@ msgstr "Sikkerhetsoppdateringer kommer fra distribusjonen selv"
 msgid "Not from a mirror that may lag behind"
 msgstr "Ikke fra en speiling som kan henge etter"
 
-#: src/plugins/updates/rules/report.scm:252
+#: src/plugins/updates/rules/report.scm:249
+msgid "Whether every software source can be read"
+msgstr "Om alle programvarekildene kan leses"
+
+#: src/plugins/updates/rules/report.scm:253
+msgid "{n} software source has not been read"
+msgid_plural "{n} software sources have not been read"
+msgstr[0] "{n} programvarekilde er ikke lest"
+msgstr[1] "{n} programvarekilder er ikke lest"
+
+#: src/plugins/updates/rules/report.scm:256
+msgid "{hosts}: nothing from it gets updates until it is"
+msgstr "{hosts}: ingenting derfra får oppdateringer før den er lest"
+
+#: src/plugins/updates/rules/report.scm:267
+msgid "{n} software source was switched off when the release was upgraded"
+msgid_plural ""
+"{n} software sources were switched off when the release was upgraded"
+msgstr[0] "{n} programvarekilde ble slått av da utgaven ble oppgradert"
+msgstr[1] "{n} programvarekilder ble slått av da utgaven ble oppgradert"
+
+#: src/plugins/updates/rules/report.scm:280
 msgid "Installed software without a source"
 msgstr "Installert programvare uten kilde"
 
-#: src/plugins/updates/rules/report.scm:255
-msgid "All installed packages come from a software source"
-msgstr "Alle installerte pakker kommer fra en programvarekilde"
+#: src/plugins/updates/rules/report.scm:283
+msgid "Every other installed package comes from a software source"
+msgstr "Alle andre installerte pakker kommer fra en programvarekilde"
 
-#: src/plugins/updates/rules/report.scm:256
+#: src/plugins/updates/rules/report.scm:284
+#: src/plugins/updates/rules/report.scm:287
 msgid "So they get updates"
 msgstr "Så de får oppdateringer"
 
-#: src/plugins/updates/rules/report.scm:258
-#: src/plugins/updates/rules/report.scm:388
+#: src/plugins/updates/rules/report.scm:286
+msgid "All installed packages come from a software source"
+msgstr "Alle installerte pakker kommer fra en programvarekilde"
+
+#: src/plugins/updates/rules/report.scm:289
+#: src/plugins/updates/rules/report.scm:522
 msgid "{n} package gets no updates"
 msgid_plural "{n} packages get no updates"
 msgstr[0] "{n} pakke får ingen oppdateringer"
 msgstr[1] "{n} pakker får ingen oppdateringer"
 
-#: src/plugins/updates/rules/report.scm:260
-#: src/plugins/updates/rules/report.scm:390
+#: src/plugins/updates/rules/report.scm:291
+#: src/plugins/updates/rules/report.scm:524
 msgid "No software source offers them"
 msgstr "Ingen programvarekilde tilbyr dem"
 
-#: src/plugins/updates/rules/report.scm:264
+#: src/plugins/updates/rules/report.scm:295
 msgid "No update reaches them until the source passes that version"
 msgstr "Ingen oppdatering når dem før kilden passerer den versjonen"
 
-#: src/plugins/updates/rules/report.scm:267
+#: src/plugins/updates/rules/report.scm:298
 msgid "The distribution no longer offers them"
 msgstr "Distribusjonen tilbyr dem ikke lenger"
 
-#: src/plugins/updates/rules/report.scm:270
+#: src/plugins/updates/rules/report.scm:301
 msgid "Such as a downloaded package or a source no longer set up"
 msgstr ""
 "For eksempel en nedlastet pakke eller en kilde som ikke lenger er satt opp"
 
-#: src/plugins/updates/rules/report.scm:274
+#: src/plugins/updates/rules/report.scm:312
+msgid "{n} package is an update from the release before, kept at the upgrade"
+msgid_plural ""
+"{n} packages are updates from the release before, kept at the upgrade"
+msgstr[0] "{n} pakke er en oppdatering fra utgaven før, beholdt ved oppgraderingen"
+msgstr[1] "{n} pakker er oppdateringer fra utgaven før, beholdt ved oppgraderingen"
+
+#: src/plugins/updates/rules/report.scm:315
+msgid "{n} package is an update from {release}, kept at the upgrade"
+msgid_plural "{n} packages are updates from {release}, kept at the upgrade"
+msgstr[0] "{n} pakke er en oppdatering fra {release}, beholdt ved oppgraderingen"
+msgstr[1] "{n} pakker er oppdateringer fra {release}, beholdt ved oppgraderingen"
+
+#: src/plugins/updates/rules/report.scm:318
+msgid ""
+"This release's own version is older, so it stays until this release passes it"
+msgstr "Denne utgavens egen versjon er eldre, så den blir stående til denne utgaven passerer den"
+
+#: src/plugins/updates/rules/report.scm:344
+msgid "{package} is kept up to date by {manager}"
+msgstr "{package} holdes oppdatert av {manager}"
+
+#: src/plugins/updates/rules/report.scm:346
+msgid ""
+"Version {version} · {manager} installs the matching version when it is "
+"updated"
+msgstr ""
+"Versjon {version} · {manager} installerer versjonen som passer, når den selv "
+"oppdateres"
+
+#: src/plugins/updates/rules/report.scm:350
+msgid "{package} was installed by {manager}, which is no longer here"
+msgstr "{package} ble installert av {manager}, som ikke lenger finnes her"
+
+#: src/plugins/updates/rules/report.scm:352
+msgid "Version {version} · nothing updates it now"
+msgstr "Versjon {version} · ingenting oppdaterer den nå"
+
+#: src/plugins/updates/rules/report.scm:361
+msgid "{title} {version} comes from a local copy of {vendor}'s software source"
+msgstr ""
+"{title} {version} kommer fra en lokal kopi av programvarekilden til {vendor}"
+
+#: src/plugins/updates/rules/report.scm:364
+msgid "{n} package · made for {made} · the copy never gets updates"
+msgid_plural "{n} packages · made for {made} · the copy never gets updates"
+msgstr[0] "{n} pakke · laget for {made} · kopien får aldri oppdateringer"
+msgstr[1] "{n} pakker · laget for {made} · kopien får aldri oppdateringer"
+
+#: src/plugins/updates/rules/report.scm:379
+msgid "A newer version of {title} is out"
+msgstr "En nyere versjon av {title} er ute"
+
+#: src/plugins/updates/rules/report.scm:381
+msgid "Version {latest} is out; this computer has {version}"
+msgstr "Versjon {latest} er ute; denne datamaskinen har {version}"
+
+#: src/plugins/updates/rules/report.scm:386
+#: src/plugins/updates/rules/report.scm:393
+msgid "{title} gets no updates from the system"
+msgstr "{title} får ingen oppdateringer fra systemet"
+
+#: src/plugins/updates/rules/report.scm:388
+msgid "Version {version}, the newest {vendor} offers"
+msgstr "Versjon {version}, den nyeste {vendor} tilbyr"
+
+#: src/plugins/updates/rules/report.scm:395
+msgid ""
+"Version {version} · {vendor} offers it only as a download, without a "
+"software source"
+msgstr ""
+"Versjon {version} · {vendor} tilbyr den bare til nedlasting, uten en "
+"programvarekilde"
+
+#: src/plugins/updates/rules/report.scm:403
 msgid "{n} package is newer than its software source"
 msgid_plural "{n} packages are newer than their software source"
 msgstr[0] "{n} pakke er nyere enn programvarekilden"
 msgstr[1] "{n} pakker er nyere enn programvarekilden"
 
-#: src/plugins/updates/rules/report.scm:276
+#: src/plugins/updates/rules/report.scm:405
 msgid "{n} package is probably left over from an older release"
 msgid_plural "{n} packages are probably left over from an older release"
 msgstr[0] "{n} pakke er trolig en rest fra en eldre utgave"
 msgstr[1] "{n} pakker er trolig rester fra en eldre utgave"
 
-#: src/plugins/updates/rules/report.scm:278
+#: src/plugins/updates/rules/report.scm:407
 msgid "{n} package probably comes from other places"
 msgid_plural "{n} packages probably come from other places"
 msgstr[0] "{n} pakke kommer trolig fra andre steder"
 msgstr[1] "{n} pakker kommer trolig fra andre steder"
 
-#: src/plugins/updates/rules/report.scm:302
+#: src/plugins/updates/rules/report.scm:431
 msgid "Changed · {package}"
 msgstr "Endret · {package}"
 
-#: src/plugins/updates/rules/report.scm:303
+#: src/plugins/updates/rules/report.scm:432
 msgid "Missing · {package}"
 msgstr "Mangler · {package}"
 
-#: src/plugins/updates/rules/report.scm:304
+#: src/plugins/updates/rules/report.scm:433
 msgid "Could not be read · {package}"
 msgstr "Kunne ikke leses · {package}"
 
-#: src/plugins/updates/rules/report.scm:314
+#: src/plugins/updates/rules/report.scm:443
 msgid "{n} package file was changed or is missing"
 msgid_plural "{n} package files were changed or are missing"
 msgstr[0] "{n} pakkefil er endret eller mangler"
 msgstr[1] "{n} pakkefiler er endret eller mangler"
 
-#: src/plugins/updates/rules/report.scm:317
+#: src/plugins/updates/rules/report.scm:446
 msgid "Nothing should change installed files, though it may be harmless"
 msgstr "Ingenting skal endre installerte filer, selv om det kan være harmløst"
 
-#: src/plugins/updates/rules/report.scm:321
+#: src/plugins/updates/rules/report.scm:450
 msgid "{n} package file could not be read"
 msgid_plural "{n} package files could not be read"
 msgstr[0] "{n} pakkefil kunne ikke leses"
 msgstr[1] "{n} pakkefiler kunne ikke leses"
 
-#: src/plugins/updates/rules/report.scm:324
+#: src/plugins/updates/rules/report.scm:453
 msgid "Nothing is known about those files"
 msgstr "Ingenting er kjent om de filene"
 
-#: src/plugins/updates/rules/report.scm:326
+#: src/plugins/updates/rules/report.scm:455
 msgid "No changed package files found"
 msgstr "Ingen endrede pakkefiler funnet"
 
-#: src/plugins/updates/rules/report.scm:327
+#: src/plugins/updates/rules/report.scm:456
 msgid "{files} files from {packages} packages compared"
 msgstr "{files} filer fra {packages} pakker sammenlignet"
 
-#: src/plugins/updates/rules/report.scm:340
+#: src/plugins/updates/rules/report.scm:469
 msgid ""
 "Package files: {files} files from {packages} packages ({megabytes} MB) "
 "compared in {seconds} s. No changes found means none were found, not that "
@@ -719,63 +1305,63 @@ msgstr ""
 "sammenlignet på {seconds} s. At ingen endringer ble funnet, betyr ikke at "
 "datamaskinen er bevist ren."
 
-#: src/plugins/updates/rules/report.scm:346
+#: src/plugins/updates/rules/report.scm:475
 msgid "Showing {shown} of the {found} package files found."
 msgstr "Viser {shown} av de {found} pakkefilene som ble funnet."
 
-#: src/plugins/updates/rules/report.scm:350
+#: src/plugins/updates/rules/report.scm:479
 msgid "{n} line in dpkg's lists of checksums could not be read."
 msgid_plural "{n} lines in dpkg's lists of checksums could not be read."
 msgstr[0] "{n} linje i dpkg sine lister over sjekksummer kunne ikke leses."
 msgstr[1] "{n} linjer i dpkg sine lister over sjekksummer kunne ikke leses."
 
-#: src/plugins/updates/rules/report.scm:360
+#: src/plugins/updates/rules/report.scm:489
 msgid "The package system this system should have was not found"
 msgstr "Pakkesystemet dette systemet skulle ha, ble ikke funnet"
 
-#: src/plugins/updates/rules/report.scm:361
+#: src/plugins/updates/rules/report.scm:490
 msgid "Expected {system}, so updates cannot be checked here"
 msgstr "Ventet {system}, så oppdateringer kan ikke sjekkes her"
 
-#: src/plugins/updates/rules/report.scm:365
+#: src/plugins/updates/rules/report.scm:494
 msgid "Packages from {n} other package system are not checked"
 msgid_plural "Packages from {n} other package systems are not checked"
 msgstr[0] "Pakker fra {n} annet pakkesystem sjekkes ikke"
 msgstr[1] "Pakker fra {n} andre pakkesystemer sjekkes ikke"
 
-#: src/plugins/updates/rules/report.scm:395
+#: src/plugins/updates/rules/report.scm:529
 msgid "Nothing needs attention"
 msgstr "Ingenting trenger oppfølging"
 
-#: src/plugins/updates/rules/report.scm:439
+#: src/plugins/updates/rules/report.scm:578
 msgid "Updates are looked for and installed automatically"
 msgstr "Det ses etter oppdateringer, og de installeres automatisk"
 
-#: src/plugins/updates/rules/report.scm:440
+#: src/plugins/updates/rules/report.scm:579
 msgid "Updates are looked for regularly"
 msgstr "Det ses jevnlig etter oppdateringer"
 
-#: src/plugins/updates/rules/report.scm:442
+#: src/plugins/updates/rules/report.scm:581
 msgid "{n} problem with updates"
 msgid_plural "{n} problems with updates"
 msgstr[0] "{n} problem med oppdateringer"
 msgstr[1] "{n} problemer med oppdateringer"
 
-#: src/plugins/updates/rules/report.scm:444
+#: src/plugins/updates/rules/report.scm:583
 msgid "Not everything about updates could be found out"
 msgstr "Ikke alt om oppdateringer kunne finnes ut"
 
-#: src/plugins/updates/rules/report.scm:445
+#: src/plugins/updates/rules/report.scm:584
 msgid "Updates cannot be checked on this system yet"
 msgstr "Oppdateringer kan ikke sjekkes for dette systemet ennå"
 
-#: src/plugins/updates/rules/report.scm:449
+#: src/plugins/updates/rules/report.scm:588
 msgid "Open each one marked with a warning to see what to do about it."
 msgstr ""
 "Åpne hver av dem som er merket med en advarsel, for å se hva du kan gjøre "
 "med det."
 
-#: src/plugins/updates/rules/report.scm:451
+#: src/plugins/updates/rules/report.scm:590
 msgid ""
 "This means no signs of trouble were found, read from how this computer is "
 "set up."
@@ -783,40 +1369,40 @@ msgstr ""
 "Det betyr at ingen tegn til problemer ble funnet, lest ut fra hvordan "
 "datamaskinen er satt opp."
 
-#: src/plugins/updates/rules/report.scm:452
+#: src/plugins/updates/rules/report.scm:591
 msgid "Some of it could not be read on this computer."
 msgstr "Noe av det kunne ikke leses fra denne datamaskinen."
 
-#: src/plugins/updates/rules/report.scm:455
+#: src/plugins/updates/rules/report.scm:594
 msgid "Updates could not be checked"
 msgstr "Oppdateringer kunne ikke sjekkes"
 
-#: src/plugins/updates/rules/report.scm:456
+#: src/plugins/updates/rules/report.scm:595
 msgid "Nothing is known about how updates reach this computer."
 msgstr ""
 "Ingenting er kjent om hvordan oppdateringer når fram til denne datamaskinen."
 
-#: src/plugins/updates/rules/report.scm:461
+#: src/plugins/updates/rules/report.scm:600
 msgid "Status now"
 msgstr "Status nå"
 
-#: src/plugins/updates/rules/report.scm:462
+#: src/plugins/updates/rules/report.scm:601
 msgid "What is waiting to be installed on this computer."
 msgstr "Det som venter på å bli installert på denne datamaskinen."
 
-#: src/plugins/updates/rules/report.scm:464
+#: src/plugins/updates/rules/report.scm:603
 msgid "Keeps itself up to date"
 msgstr "Holder seg oppdatert selv"
 
-#: src/plugins/updates/rules/report.scm:465
+#: src/plugins/updates/rules/report.scm:604
 msgid "Whether this computer looks for updates and installs them by itself."
 msgstr "Om datamaskinen ser etter oppdateringer og installerer dem selv."
 
-#: src/plugins/updates/rules/report.scm:467
+#: src/plugins/updates/rules/report.scm:606
 msgid "Where updates come from"
 msgstr "Hvor oppdateringene kommer fra"
 
-#: src/plugins/updates/rules/report.scm:468
+#: src/plugins/updates/rules/report.scm:607
 msgid ""
 "Security updates should come straight from the distribution, and every "
 "installed package from a software source."
@@ -824,17 +1410,45 @@ msgstr ""
 "Sikkerhetsoppdateringer bør komme rett fra distribusjonen, og hver "
 "installerte pakke fra en programvarekilde."
 
-#: src/plugins/updates/rules/report.scm:470
+#: src/plugins/updates/rules/report.scm:609
+msgid "Programs you update yourself"
+msgstr "Programmer du oppdaterer selv"
+
+#: src/plugins/updates/rules/report.scm:610
+msgid ""
+"Their makers offer them only as a download, or as a copy of a software "
+"source that never changes, so the system never updates them: new versions "
+"come from the maker."
+msgstr ""
+"De som lager dem, tilbyr dem bare til nedlasting, eller som en kopi av en "
+"programvarekilde som aldri endres, så systemet oppdaterer dem aldri: nye "
+"versjoner kommer fra den som lager dem."
+
+#: src/plugins/updates/rules/report.scm:612
 msgid "Package files"
 msgstr "Pakkefiler"
 
-#: src/plugins/updates/rules/report.scm:471
+#: src/plugins/updates/rules/report.scm:613
 msgid ""
 "Every file a package installed, compared with the checksum it came with. "
 "Your own settings in /etc are not counted."
 msgstr ""
 "Hver fil en pakke installerte, sammenlignet med sjekksummen den kom med. "
 "Dine egne innstillinger i /etc telles ikke med."
+
+#~ msgid ""
+#~ "This is a recommendation: you chose this package, and there may be a good "
+#~ "reason for it. Only keep in mind to update it yourself."
+#~ msgstr ""
+#~ "Dette er en anbefaling: du har valgt denne pakken, og det kan være gode "
+#~ "grunner til det. Husk bare å oppdatere den selv."
+
+#~ msgid ""
+#~ "Only the source's own page can tell whether it is ready for this release, "
+#~ "so look there before you run the command."
+#~ msgstr ""
+#~ "Bare kildens egen side kan si om den er klar for denne utgaven, så se der "
+#~ "før du kjører kommandoen."
 
 #~ msgid "Recently enough"
 #~ msgstr "Nylig nok"

@@ -10,21 +10,38 @@
 
 #define GAUDIT_APT_MAX_PACKAGES 40
 
+/* What may follow an operation's fixed argv. */
+typedef enum {
+    GAUDIT_APT_ARGS_NONE = 0,
+    GAUDIT_APT_ARGS_PACKAGES,  /* one or more plain package names (reinstall) */
+    GAUDIT_APT_ARGS_PPA,       /* exactly one "ppa:owner/name" (add-ppa) */
+} gaudit_apt_args;
+
 typedef struct {
     const char *name;          /* e.g. "apt-upgrade-update" */
     const char *const *argv;   /* absolute path first, NULL-terminated */
-    int takes_packages;        /* package names follow argv (reinstall) */
+    gaudit_apt_args args;
 } gaudit_apt_op;
 
 /* The operation with this name, or NULL. */
 const gaudit_apt_op *gaudit_apt_op_find(const char *name);
 
 /* The command as the page shows it and the user copies it: "sudo", then
- * argv with the program's own name instead of its path, then the packages.
- * 0 on success, -1 if it does not fit. */
-int gaudit_apt_op_shown(const gaudit_apt_op *op, const char *const *packages, size_t n_packages,
+ * argv with the program's own name instead of its path, then the
+ * arguments, each checked for the operation's kind (and their number).
+ * 0 on success, -1 if one is refused or it does not fit. */
+int gaudit_apt_op_shown(const gaudit_apt_op *op, const char *const *args, size_t n_args,
                         char *buf, size_t len);
+
+/* Whether args (n_args of them) may follow op: the right number, and each
+ * plain for its kind. Says nothing about whether they exist here. */
+int gaudit_apt_op_args_ok(const gaudit_apt_op *op, const char *const *args, size_t n_args);
 
 /* A package name that may go into the command: [a-z0-9][a-z0-9+.-]+,
  * optionally ":arch". 1 yes, 0 no. */
 int gaudit_apt_plain_package(const char *name);
+
+/* A Launchpad PPA that may go into the command: "ppa:" then owner and
+ * name, each [a-z0-9][a-z0-9+.-]*, at most 64 characters, "/" between.
+ * 1 yes, 0 no. */
+int gaudit_apt_plain_ppa(const char *ppa);

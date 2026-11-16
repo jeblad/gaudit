@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://ppa.launchpadcontent.net/heyarje/makemkv-beta/ubuntu/
+Suites: resolute
+Components: main
+Enabled: no

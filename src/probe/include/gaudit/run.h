@@ -13,6 +13,11 @@
  *                       action (on, remove) and the result (conf-write.h's
  *                       names: written, unchanged, removed, not-there,
  *                       foreign, edited, precondition, unsafe, error)
+ *   (vendor (id "...") (action A) (result R) (version "...") (hash "..."))
+ *                       a known vendor package checked (A verify) or
+ *                       installed (A install) on request; R one of
+ *                       gaudit_vendor_result_known's names, hash the
+ *                       signature's hash algorithm ("SHA1", "SHA256")
  *   (end (status S))    always last; S is a gaudit_run_status */
 #pragma once
 
@@ -85,6 +90,21 @@ typedef struct {
     int status;   /* the tool's exit status, 0 success; 255 could not be run */
 } gaudit_exec_report;
 
+typedef struct {
+    char id[32];
+    char action[16];   /* "verify" or "install" */
+    char result[24];
+    char version[40];
+    char hash[16];
+} gaudit_vendor_report;
+
+/* 1 if result is one of the names checking or installing a vendor
+ * package can give: verified, weak (verified, but the signature's hash is
+ * weaker than expected), installed, and the refusals no-file, too-large,
+ * not-signed, unknown-key, bad-signature, weak-md5, mismatch,
+ * wrong-package, not-newer, not-verified, failed, error. */
+int gaudit_vendor_result_known(const char *result);
+
 /* 1 if result is one of the names a configuration write can give. */
 int gaudit_conf_result_known(const char *result);
 
@@ -95,6 +115,7 @@ typedef enum {
     GAUDIT_RUN_EVENT_INTEGRITY,
     GAUDIT_RUN_EVENT_CONF,
     GAUDIT_RUN_EVENT_EXEC,
+    GAUDIT_RUN_EVENT_VENDOR,
     GAUDIT_RUN_EVENT_END,
 } gaudit_run_event_type;
 
@@ -106,6 +127,7 @@ typedef struct {
     gaudit_integrity_report integrity;  /* _INTEGRITY */
     gaudit_conf_report conf;            /* _CONF */
     gaudit_exec_report exec;            /* _EXEC */
+    gaudit_vendor_report vendor;        /* _VENDOR */
     gaudit_run_status status;           /* _END */
 } gaudit_run_event;
 

@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* The apt operations of the Updates fix pages: the command a page shows
- * is the helper's argv, word for word, and only plain names of installed
- * packages ever reach a reinstall. */
+ * is the helper's argv, word for word, only plain names of installed
+ * packages ever reach a reinstall, and only a PPA the release upgrade
+ * switched off is ever set up again. */
 #include "apt.h"
 #include "apt-ops.h"
 
@@ -81,12 +82,32 @@ int main(void)
         CHECK(gaudit_apt_op_shown(gaudit_apt_op_find("reinstall"), &bad[i], 1, buf, sizeof buf) != 0);
     }
     CHECK(gaudit_apt_op_shown(gaudit_apt_op_find("apt-update"), pkgs, 1, buf, sizeof buf) != 0);
+    CHECK(gaudit_apt_op_shown(gaudit_apt_op_find("reinstall"), NULL, 0, buf, sizeof buf) != 0);
+
+    /* A PPA: exactly one, plain. */
+    const char *ppa[] = { "ppa:cappelikan/ppa", "ppa:deadsnakes/ppa" };
+    CHECK(gaudit_apt_op_shown(gaudit_apt_op_find("add-ppa"), ppa, 1, buf, sizeof buf) == 0
+          && strcmp(buf, "sudo add-apt-repository -y ppa:cappelikan/ppa") == 0);
+    CHECK(gaudit_apt_op_shown(gaudit_apt_op_find("add-ppa"), ppa, 2, buf, sizeof buf) != 0);
+    CHECK(gaudit_apt_op_shown(gaudit_apt_op_find("add-ppa"), NULL, 0, buf, sizeof buf) != 0);
+    CHECK(gaudit_apt_op_shown(gaudit_apt_op_find("add-ppa"), pkgs, 1, buf, sizeof buf) != 0);
+    CHECK(gaudit_apt_plain_ppa("ppa:a/b") && gaudit_apt_plain_ppa("ppa:kisak/kisak-mesa")
+          && gaudit_apt_plain_ppa("ppa:ubuntu-toolchain-r/test"));
+    const char *bad_ppa[] = {
+        "cappelikan/ppa", "ppa:", "ppa:a", "ppa:a/", "ppa:/b", "ppa:a/b/c", "ppa:A/b",
+        "ppa:-a/b", "ppa:a/b;id", "ppa:a/b c", "ppa:a/$(id)", "deb http://x/ y main",
+        "ppa:a/../../x", "https://ppa.launchpadcontent.net/a/b/ubuntu",
+    };
+    for (size_t i = 0; i < sizeof bad_ppa / sizeof bad_ppa[0]; i++) {
+        CHECK(!gaudit_apt_plain_ppa(bad_ppa[i]));
+        CHECK(gaudit_apt_op_shown(gaudit_apt_op_find("add-ppa"), &bad_ppa[i], 1, buf, sizeof buf) != 0);
+    }
     CHECK(gaudit_apt_op_find("rm") == NULL && gaudit_apt_op_find(NULL) == NULL);
 
     /* Installed means dpkg has its file list. */
     if (mkdtemp(dir) == NULL)
         return 1;
-    char path[256];
+    char path[512];
     snprintf(path, sizeof path, "%s/openssh-server.list", dir);
     FILE *f = fopen(path, "w");
     if (f != NULL)
@@ -104,6 +125,71 @@ int main(void)
     CHECK(gaudit_apt_run("rm", NULL, 0) == -1);
     CHECK(gaudit_apt_run("apt-update", p, 1) == -1);
     CHECK(gaudit_apt_run("reinstall", NULL, 0) == -1);
+    CHECK(gaudit_apt_run("add-ppa", NULL, 0) == -1);
+    char *two[] = { (char *)"ppa:a/b", (char *)"ppa:c/d" };
+    CHECK(gaudit_apt_run("add-ppa", two, 2) == -1);
+
+    /* The helper sets up again only a PPA a file names that has the
+     * upgrade's copy beside it. */
+    CHECK(gaudit_apt_ppa_ok("ppa:cappelikan/ppa", SOURCES_DIR));
+    CHECK(!gaudit_apt_ppa_ok("ppa:cappelikan/other", SOURCES_DIR));
+    CHECK(!gaudit_apt_ppa_ok("ppa:legacy/x", SOURCES_DIR));  /* not a PPA's URI */
+    char srcdir[300];
+    snprintf(srcdir, sizeof srcdir, "%s/sources", dir);
+    mkdir(srcdir, 0700);
+    static const struct { const char *name, *text; } files[] = {
+        /* Switched off by hand: no copy beside it. */
+        { "byhand.list", "# deb http://ppa.launchpad.net/someone/tools/ubuntu noble main\n" },
+        /* The old host, switched off at the upgrade. */
+        { "old.list", "# deb http://ppa.launchpad.net/old/stuff/ubuntu noble main\n" },
+        { "old.list.distUpgrade", "deb http://ppa.launchpad.net/old/stuff/ubuntu noble main\n" },
+        /* A copy alone, its source gone. */
+        { "gone.list.distUpgrade", "deb http://ppa.launchpad.net/gone/away/ubuntu noble main\n" },
+        /* A name that only starts the same. */
+        { "near.list", "# deb http://ppa.launchpad.net/near/stuffing/ubuntu noble main\n" },
+        { "near.list.distUpgrade", "\n" },
+    };
+    for (size_t i = 0; i < sizeof files / sizeof files[0]; i++) {
+        snprintf(path, sizeof path, "%s/%s", srcdir, files[i].name);
+        f = fopen(path, "w");
+        if (f != NULL) {
+            fputs(files[i].text, f);
+            fclose(f);
+        }
+    }
+    CHECK(gaudit_apt_ppa_ok("ppa:old/stuff", srcdir));
+    CHECK(!gaudit_apt_ppa_ok("ppa:someone/tools", srcdir));
+    CHECK(!gaudit_apt_ppa_ok("ppa:gone/away", srcdir));
+    CHECK(!gaudit_apt_ppa_ok("ppa:near/stuff", srcdir));
+    CHECK(!gaudit_apt_ppa_ok("ppa:old/stuff", "/nonexistent"));
+
+    /* Read for this release: its Release file for the codename is in the
+     * lists; one for an older release, or another PPA's, is not. */
+    char lists[300], code[64];
+    snprintf(lists, sizeof lists, "%s/lists", dir);
+    mkdir(lists, 0700);
+    static const char *const list_files[] = {
+        "ppa.launchpadcontent.net_wireshark-dev_stable_ubuntu_dists_stonking_InRelease",
+        "ppa.launchpad.net_old_stuff_ubuntu_dists_stonking_Release",
+        "ppa.launchpadcontent.net_heyarje_makemkv-beta_ubuntu_dists_resolute_InRelease",
+        "os-release",
+    };
+    for (size_t i = 0; i < sizeof list_files / sizeof list_files[0]; i++) {
+        snprintf(path, sizeof path, "%s/%s", lists, list_files[i]);
+        f = fopen(path, "w");
+        if (f != NULL) {
+            if (i == 3)
+                fputs("NAME=\"Ubuntu\"\nVERSION_CODENAME=stonking\nID=ubuntu\n", f);
+            fclose(f);
+        }
+    }
+    CHECK(gaudit_os_codename(path, code, sizeof code) && strcmp(code, "stonking") == 0);
+    CHECK(!gaudit_os_codename("/nonexistent", code, sizeof code));
+    CHECK(gaudit_apt_ppa_read("ppa:wireshark-dev/stable", lists, "stonking"));
+    CHECK(gaudit_apt_ppa_read("ppa:old/stuff", lists, "stonking"));
+    CHECK(!gaudit_apt_ppa_read("ppa:heyarje/makemkv-beta", lists, "stonking"));
+    CHECK(gaudit_apt_ppa_read("ppa:heyarje/makemkv-beta", lists, "resolute"));
+    CHECK(!gaudit_apt_ppa_read("ppa:wireshark-dev/stable", lists, ""));
     nftw(dir, rm_one, 8, FTW_DEPTH | FTW_PHYS);
 
     if (failures == 0)

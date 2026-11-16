@@ -18,6 +18,7 @@ typedef enum {
     GAUDIT_RESULT_COLLECTION,  /* collected data for the plugin's rule script */
     GAUDIT_RESULT_CONF,        /* what writing a configuration did */
     GAUDIT_RESULT_EXEC,        /* how a system tool run on request ended */
+    GAUDIT_RESULT_VENDOR,      /* a vendor package checked or installed */
 } GauditResultKind;
 
 /* What a run found: one kind of result, with its findings. */
@@ -27,6 +28,7 @@ typedef struct {
     gaudit_integrity_report integrity;
     gaudit_conf_report conf;
     gaudit_exec_report exec;
+    gaudit_vendor_report vendor;
     gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
     unsigned n_files;
     GPtrArray *lines;  /* COLLECTION: its lines (char *), each checked by the plugin */

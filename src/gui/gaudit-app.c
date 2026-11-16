@@ -9,6 +9,7 @@
 #include "gaudit-app.h"
 #include "gaudit-orchestrator.h"
 #include "gaudit-report-run.h"
+#include "gaudit-updates.h"
 #include "gaudit-run-page.h"
 #include "gaudit-session.h"
 #include "gaudit-task.h"
@@ -123,6 +124,13 @@ static const char app_css[] =
     "  border-radius: 9999px;\n"
     "  background-color: var(--accent-bg-color);\n"
     "  color: var(--accent-fg-color);\n"
+    "}\n"
+    /* A default button that has nothing to do looks like any button that
+     * has nothing to do: the accent says "this is the way on", and a grey
+     * one is not (John, 2026-11-16). */
+    "button.suggested-action:disabled {\n"
+    "  background-color: alpha(currentColor, 0.1);\n"
+    "  color: inherit;\n"
     "}\n";
 
 /* --- Home's tasks at the chosen level ---------------------------------------
@@ -545,6 +553,7 @@ static void gaudit_app_startup(GApplication *app)
     g_unix_signal_add(SIGINT, on_quit_signal, app);
     gaudit_cache_watch(on_cache_changed, app);
     g_unix_signal_add(SIGTERM, on_quit_signal, app);
+    gaudit_updates_clean_downloads();  /* nothing left from before */
 
     /* A selectable label (the command fields) must not select all of its
      * text when it gets focus: the user expects to select it, finds it

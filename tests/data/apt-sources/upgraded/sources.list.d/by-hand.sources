@@ -1,0 +1,4 @@
+Types: deb
+URIs: http://mine.example.org/repo
+Suites: stable
+Enabled: no

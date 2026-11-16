@@ -40,6 +40,7 @@
 #include "secrets-mode.h"
 #include "updates-mode.h"
 #include "apt-ops.h"
+#include "vendor.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -112,14 +113,33 @@ static const struct {
     { "run apt-upgrade-update", "apt-upgrade-update\n", 50 * 60 * 1000L },
     { "run enable-apt-timers",  "enable-apt-timers\n",  50 * 60 * 1000L },
     { "run reinstall",          NULL,                  50 * 60 * 1000L },
+    /* "run add-ppa <ppa>" sets up again a PPA the release upgrade switched off. */
+    { "run add-ppa",            NULL,                  50 * 60 * 1000L },
+    /* A known vendor package (common/vendor.h): "run vendor-verify <id>
+     * <version> <path>" checks the user's download in the helper's own
+     * folder; "run vendor-install <id> [anyway]" installs that copy. */
+    { "run vendor-verify",      NULL,                  15 * 60 * 1000L },
+    { "run vendor-install",     NULL,                  50 * 60 * 1000L },
 };
 enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_ELEVATE, RUN_CONF_ON, RUN_CONF_REMOVE,
        RUN_APT_UPDATE, RUN_APT_UPGRADE, RUN_APT_UPGRADE_UPDATE, RUN_APT_TIMERS, RUN_REINSTALL,
-       RUN_KINDS };
+       RUN_ADD_PPA, RUN_VENDOR_VERIFY, RUN_VENDOR_INSTALL, RUN_KINDS };
 
 static int is_exec_kind(int kind)
 {
-    return kind >= RUN_APT_UPDATE && kind <= RUN_REINSTALL;
+    return kind >= RUN_APT_UPDATE && kind <= RUN_ADD_PPA;
+}
+
+/* The runs whose request carries arguments after its words. */
+static int takes_args(int kind)
+{
+    return kind == RUN_REINSTALL || kind == RUN_ADD_PPA || kind == RUN_VENDOR_VERIFY
+           || kind == RUN_VENDOR_INSTALL;
+}
+
+static int is_vendor_kind(int kind)
+{
+    return kind == RUN_VENDOR_VERIFY || kind == RUN_VENDOR_INSTALL;
 }
 #define MAX_HELPER_OUT   (256 * 1024)     /* over a whole session */
 #define MAX_LINE_LEN     4096  /* "run reinstall" carries its packages */
@@ -206,6 +226,7 @@ typedef struct {
     unsigned n_files;
     gaudit_conf_report conf;
     gaudit_exec_report exec;
+    gaudit_vendor_report vendor;
     char helper_line[4096];     /* what goes to the helper for this run */
 } session_state;
 
@@ -399,6 +420,26 @@ static int on_helper_line(char *line, void *ctx)
         }
         return emit_end(GAUDIT_RUN_FAILED);
     }
+    if (is_vendor_kind(st->kind)) {
+        gaudit_run_event ev;
+        if (!st->have_result && gaudit_run_parse_line(line, &ev) == 0
+            && ev.type == GAUDIT_RUN_EVENT_VENDOR
+            && strcmp(ev.vendor.action, st->kind == RUN_VENDOR_VERIFY ? "verify" : "install") == 0) {
+            st->have_result = 1;
+            st->vendor = ev.vendor;
+            return 0;
+        }
+        if (gaudit_sexpr_parse(line, "helper", summary, 4) != 0)
+            return -1;
+        st->running = 0;
+        if (failed == 0 && st->have_result) {
+            gaudit_run_event res = { .type = GAUDIT_RUN_EVENT_VENDOR, .vendor = st->vendor };
+            if (emit(&res) != 0)
+                return -1;
+            return emit_end(GAUDIT_RUN_OK);
+        }
+        return emit_end(GAUDIT_RUN_FAILED);
+    }
     if (st->kind == RUN_CONF_ON || st->kind == RUN_CONF_REMOVE) {
         gaudit_run_event ev;
         if (!st->have_result && gaudit_run_parse_line(line, &ev) == 0
@@ -513,31 +554,45 @@ static int on_gui_line(char *line, void *ctx)
     int kind = -1;
     char helper_line[sizeof st->helper_line] = "";
     for (int i = 0; i < RUN_KINDS; i++)
-        if (i != RUN_REINSTALL && strcmp(line, runs[i].request) == 0) {
+        if (!takes_args(i) && strcmp(line, runs[i].request) == 0) {
             kind = i;
             if (runs[i].helper_cmd != NULL)
                 snprintf(helper_line, sizeof helper_line, "%s", runs[i].helper_cmd);
         }
-    /* "run reinstall <package> ...": plain names only, at most the
-     * helper's limit; the helper checks again that each is installed. */
-    static const char reinstall[] = "run reinstall ";
-    if (kind < 0 && strncmp(line, reinstall, sizeof reinstall - 1) == 0) {
+    /* "run reinstall <package> ..." and "run add-ppa <ppa>": arguments
+     * plain for their operation (common/apt-ops.h), at most the helper's
+     * limit; the helper checks again that they exist on this system. */
+    for (int i = 0; kind < 0 && i < RUN_KINDS; i++) {
+        size_t rl = strlen(runs[i].request);
+        if (!takes_args(i) || strncmp(line, runs[i].request, rl) != 0 || line[rl] != ' ')
+            continue;
+        const char *op_name = runs[i].request + 4;  /* after "run " */
+        const gaudit_apt_op *op = is_vendor_kind(i) ? NULL : gaudit_apt_op_find(op_name);
         char copy[sizeof st->helper_line];
-        snprintf(copy, sizeof copy, "%s", line + sizeof reinstall - 1);
-        size_t used = (size_t)snprintf(helper_line, sizeof helper_line, "reinstall");
-        unsigned n = 0;
-        int ok = 1;
+        snprintf(copy, sizeof copy, "%s", line + rl + 1);
+        const char *args[GAUDIT_APT_MAX_PACKAGES];
+        size_t n = 0;
+        int ok = op != NULL || is_vendor_kind(i);
         char *save = NULL;
-        for (char *p = strtok_r(copy, " ", &save); ok && p != NULL; p = strtok_r(NULL, " ", &save)) {
-            ok = gaudit_apt_plain_package(p) && ++n <= GAUDIT_APT_MAX_PACKAGES
-                 && used + strlen(p) + 2 < sizeof helper_line;
-            if (ok)
-                used += (size_t)snprintf(helper_line + used, sizeof helper_line - used, " %s", p);
-        }
-        if (!ok || n == 0)
+        for (char *p = strtok_r(copy, " ", &save); ok && p != NULL; p = strtok_r(NULL, " ", &save))
+            ok = n < GAUDIT_APT_MAX_PACKAGES && (args[n++] = p) != NULL;
+        if (ok && i == RUN_VENDOR_VERIFY)
+            ok = n == 3 && gaudit_vendor_verify_args_ok(args[0], args[1], args[2]);
+        else if (ok && i == RUN_VENDOR_INSTALL)
+            ok = (n == 1 || (n == 2 && strcmp(args[1], "anyway") == 0))
+                 && gaudit_vendor_find(args[0]) != NULL;
+        else if (ok)
+            ok = gaudit_apt_op_args_ok(op, args, n);
+        if (!ok)
             return -1;
+        size_t used = (size_t)snprintf(helper_line, sizeof helper_line, "%s", op_name);
+        for (size_t a = 0; a < n; a++) {
+            if (used + strlen(args[a]) + 2 >= sizeof helper_line)
+                return -1;
+            used += (size_t)snprintf(helper_line + used, sizeof helper_line - used, " %s", args[a]);
+        }
         snprintf(helper_line + used, sizeof helper_line - used, "\n");
-        kind = RUN_REINSTALL;
+        kind = i;
     }
     if (kind < 0 || st->running)
         return -1;  /* unknown, or one run at a time */
@@ -636,10 +691,15 @@ static void on_sourceless(const char *name, const char *arch, const char *versio
                           gaudit_sourceless_group group, const char *offered, void *ctx)
 {
     list_state *st = ctx;
+    /* A known vendor package is in the Updates report's own group, not here. */
+    if (gaudit_updates_vendor_of(gaudit_pkg_backend_default(), name, arch, group) != NULL
+        || gaudit_updates_from_local(name, version)
+        || gaudit_updates_companion_of(gaudit_pkg_backend_default(), name, arch) != NULL)
+        return;
     st->count++;
     if (st->failed || st->shown >= GAUDIT_SOURCELESS_MAX_SHOWN)
         return;
-    gaudit_sourceless_package p = { .group = group };
+    gaudit_sourceless_package p = { .group = group, .needed_by = -1, .manual = -1, .program = -1 };
     /* Names longer than the fields are counted but not sent. */
     if (snprintf(p.name, sizeof p.name, "%s", name) >= (int)sizeof p.name
         || snprintf(p.arch, sizeof p.arch, "%s", arch != NULL ? arch : "") >= (int)sizeof p.arch
@@ -647,7 +707,20 @@ static void on_sourceless(const char *name, const char *arch, const char *versio
         || snprintf(p.offered, sizeof p.offered, "%s", offered != NULL ? offered : "")
                >= (int)sizeof p.offered)
         return;
-    char line[1024];
+    /* What helps judge it, where the backend can tell. */
+    gaudit_package_details d;
+    const gaudit_pkg_backend *pkg = gaudit_pkg_backend_default();
+    if (pkg->package_details != NULL && pkg->package_details(name, arch, &d) == GAUDIT_BACKEND_OK) {
+        snprintf(p.replaced, sizeof p.replaced, "%s", d.replaced);
+        snprintf(p.needed, sizeof p.needed, "%s", d.needed_names);
+        p.needed_by = d.needed_by;
+        p.manual = d.manual;
+        p.installed = d.installed > 0 ? (long long)d.installed : 0;
+        p.program = d.program;
+        snprintf(p.built_for, sizeof p.built_for, "%s", d.built_for);
+        snprintf(p.likely_source, sizeof p.likely_source, "%s", d.likely_source);
+    }
+    char line[2048];
     if (gaudit_sourceless_format_package(&p, line, sizeof line) != 0
         || fputs(line, stdout) == EOF) {
         st->failed = 1;
@@ -661,6 +734,7 @@ static int list_packages(void)
     const gaudit_pkg_backend *pkg = gaudit_pkg_backend_default();
     list_state st = { 0 };
     gaudit_sourceless_summary sum = { .status = GAUDIT_SOURCELESS_UNSUPPORTED };
+    gaudit_updates_local_scan(pkg, "/var");
     if (pkg->sourceless_packages != NULL) {
         gaudit_backend_status r = pkg->sourceless_packages(on_sourceless, &st);
         sum.status = r == GAUDIT_BACKEND_OK && !st.failed ? GAUDIT_SOURCELESS_OK
@@ -762,6 +836,10 @@ int main(int argc, char *argv[])
         return list_packages();
     if (argc == 3 && strcmp(argv[1], "updates") == 0)
         return gaudit_updates_mode(argv[2]);
+    if (argc == 4 && strcmp(argv[1], "updates") == 0 && strcmp(argv[2], "latest") == 0)
+        return gaudit_updates_latest(argv[3]);
+    if (argc == 5 && strcmp(argv[1], "updates") == 0 && strcmp(argv[2], "download") == 0)
+        return gaudit_updates_download(argv[3], argv[4]);
 #if GAUDIT_DEVELOPER_BUILD
     /* Developer builds only: see the pages for missing software. */
     static const char pretend[] = "--pretend-missing=";

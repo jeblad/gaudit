@@ -18,6 +18,42 @@ int gaudit_deb_installed_names(const char *status_file, const char *const *names
  * 1 found, 0 not installed, -1 when the status cannot be read. */
 int gaudit_deb_installed_version(const char *status_file, const char *name, char *out, size_t len);
 
+/* Every package in a dpkg status file or an apt Packages index, one call
+ * each (installed_only: only those dpkg has installed). 0 on success. */
+typedef void (*gaudit_deb_each_fn)(const char *name, const char *arch, const char *version,
+                                      void *ctx);
+int gaudit_deb_each_package(const char *path, int installed_only, gaudit_deb_each_fn fn,
+                            void *ctx);
+
+/* Where the details of a package are read from. */
+typedef struct {
+    const char *os_id;            /* os-release ID and VERSION_ID, for built_for */
+    const char *os_version_id;
+    const char *status_file;      /* /var/lib/dpkg/status */
+    const char *info_dir;         /* /var/lib/dpkg/info */
+    const char *extended_states;  /* /var/lib/apt/extended_states */
+    const char *const *flatpak_dirs;  /* app folders, NULL-terminated */
+    const char *snap_dir;         /* /snap */
+    const char *sources_dir;      /* /etc/apt/sources.list.d, for likely_source */
+    const char *distro_info;      /* /usr/share/distro-info/ubuntu.csv (or debian.csv) */
+} gaudit_deb_paths;
+
+/* The details of installed package name (arch may be "" or NULL): who
+ * depends on it (Depends and Pre-Depends of the installed packages, any
+ * alternative), whether apt marks it as installed automatically, when its
+ * file list last changed, and whether the same program is installed as a
+ * Flatpak (by an AppStream or desktop file id it installed) or a snap (by
+ * the package's or a desktop file's name). 0 on success. */
+int gaudit_deb_package_details(const gaudit_deb_paths *paths, const char *name, const char *arch,
+                               gaudit_package_details *out);
+
+/* The release a package's version says it was built for, when that is
+ * older than the one running: "~ubuntu25.10.1" or "ubuntu0.24.04.1" on
+ * Ubuntu, "+deb12u1" on Debian, compared with os_id and version_id from
+ * os-release. 1 with out set ("Ubuntu 25.10", "Debian 12"), else 0. */
+int gaudit_deb_built_for(const char *version, const char *os_id, const char *version_id,
+                         char *out, size_t len);
+
 /* dpkg's version ordering (epoch:upstream-revision, '~' sorts first).
  * Returns <0, 0 or >0. */
 int gaudit_deb_version_compare(const char *a, const char *b);
@@ -66,3 +102,7 @@ gaudit_backend_status gaudit_deb_scan_ex(const char *status_file, const char *li
                                          const char *prefs_file, const char *prefs_dir,
                                          gaudit_deb_counts *out,
                                          gaudit_deb_package_fn on_obsolete, void *ctx);
+
+/* Whether a version is shaped as an update after a release: Ubuntu's
+ * "ubuntu0.<digit>" or Debian's "+deb<N>u<digit>". 1 yes. */
+int gaudit_deb_update_version(const char *version);

@@ -240,7 +240,11 @@ int main(void)
 
     /* Packages without a source: round trip, and only the protocol parses. */
     gaudit_sourceless_package sp = { .name = "bzip2", .arch = "amd64", .version = "1.0.8-6ubuntu0.1",
-                                     .offered = "1.0.8-6build2", .group = GAUDIT_SOURCELESS_ABOVE_SOURCE };
+                                     .offered = "1.0.8-6build2", .group = GAUDIT_SOURCELESS_ABOVE_SOURCE,
+                                     .replaced = "flatpak org.example.App", .needed_by = 3,
+                                     .needed = "a, b, c", .manual = 0, .installed = 1700000000,
+                                     .program = 1, .built_for = "Ubuntu 25.10",
+                                     .likely_source = "ppa:cappelikan/ppa" };
     gaudit_sourceless_package sp_back;
     gaudit_sourceless_summary ss = { .status = GAUDIT_SOURCELESS_OK, .count = 73, .shown = 73 }, ss_back;
     char sl[1024];
@@ -256,8 +260,12 @@ int main(void)
     CHECK(gaudit_sourceless_parse_line(sl, &sp_back, &ss_back) == 1 && strcmp(sp_back.name, "odd\"name") == 0);
     CHECK(gaudit_sourceless_parse_line("(packages (status 0) (count 2) (shown 3))", &sp_back, &ss_back) == -1);
     CHECK(gaudit_sourceless_parse_line("(packages (status 3) (count 2) (shown 2))", &sp_back, &ss_back) == -1);
-    CHECK(gaudit_sourceless_parse_line("(package (name \"x\") (arch \"\") (version \"1\") (group 3) (offered \"\"))",
+    CHECK(gaudit_sourceless_parse_line("(package (name \"x\") (arch \"\") (version \"1\") (group 4) (offered \"\")"
+                                       " (replaced \"\") (needed-by -1) (needed \"\") (manual -1) (installed 0)"
+                                       " (program -1) (built-for \"\") (likely-source \"\"))",
                                        &sp_back, &ss_back) == -1);   /* no such group */
+    CHECK(gaudit_sourceless_parse_line("(package (name \"x\") (arch \"\") (version \"1\") (group 0) (offered \"\"))",
+                                       &sp_back, &ss_back) == -1);   /* the details missing */
     CHECK(gaudit_sourceless_parse_line("(package (name \"\") (arch \"\") (version \"1\") (group 0) (offered \"\"))",
                                        &sp_back, &ss_back) == -1);   /* no name */
     sp.group = (gaudit_sourceless_group)7;

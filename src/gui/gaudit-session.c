@@ -248,6 +248,13 @@ static gboolean on_line(const char *line, gpointer user_data)
         R->result.kind = GAUDIT_RESULT_EXEC;
         R->result.exec = ev.exec;
         return TRUE;
+    case GAUDIT_RUN_EVENT_VENDOR:
+        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0)
+            return FALSE;
+        R->have_result = TRUE;
+        R->result.kind = GAUDIT_RESULT_VENDOR;
+        R->result.vendor = ev.vendor;
+        return TRUE;
     case GAUDIT_RUN_EVENT_END:
         if (R == NULL)
             return FALSE;
@@ -694,6 +701,7 @@ gaudit_verdict gaudit_run_result_verdict(const GauditRunResult *result)
     case GAUDIT_RESULT_COLLECTION: return GAUDIT_VERDICT_UNKNOWN;
     case GAUDIT_RESULT_CONF:       return GAUDIT_VERDICT_UNKNOWN;
     case GAUDIT_RESULT_EXEC:       return GAUDIT_VERDICT_UNKNOWN;
+    case GAUDIT_RESULT_VENDOR:     return GAUDIT_VERDICT_UNKNOWN;
     }
     return GAUDIT_VERDICT_UNKNOWN;
 }

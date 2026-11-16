@@ -20,6 +20,8 @@
 #define GAUDIT_ENGINE_PATH   "@GAUDIT_ENGINE_PATH@"
 /* Plugins' rule files: <dir>/<plugin-id>/report.scm. */
 #define GAUDIT_RULES_DIR     "@GAUDIT_RULES_DIR@"
+/* Vendors' signing keys: <dir>/<file> from the vendor table. */
+#define GAUDIT_VENDOR_KEYS_DIR "@GAUDIT_VENDOR_KEYS_DIR@"
 /* "" means the system schema directory. */
 #define GAUDIT_SCHEMA_DIR    "@GAUDIT_SCHEMA_DIR@"
 #define GAUDIT_FLATPAK_PROBE_PATH "@GAUDIT_FLATPAK_PROBE_PATH@"

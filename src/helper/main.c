@@ -32,6 +32,8 @@
 #include "config.h"
 
 #include "apt.h"
+#include "vendor-pkg.h"
+#include "vendor.h"
 #include "automatic.h"
 #include "integrity.h"
 #include "lease.h"
@@ -315,7 +317,8 @@ static void automatic_remove(void *ctx)
 
 /* --- apt, on request ---------------------------------------------------- */
 
-/* The packages of a "reinstall" command, checked in apt.c again before use. */
+/* The arguments of a "reinstall" or "add-ppa" command, checked in apt.c
+ * again before use. */
 static char *exec_packages[GAUDIT_APT_MAX_PACKAGES];
 static size_t n_exec_packages;
 
@@ -324,6 +327,60 @@ static void apt_exec(void *ctx)
     const char *op = ctx;
     int status = gaudit_apt_run(op, exec_packages, n_exec_packages);
     printf("(exec (op \"%s\") (status %d))\n", op, status < 0 ? 255 : status > 255 ? 255 : status);
+}
+
+/* --- A known vendor package, on request ---------------------------------- */
+
+static const gaudit_vendor_env vendor_env = {
+    .cache_dir = "/var/cache/gaudit/vendor",
+    .keys_dir = GAUDIT_VENDOR_KEYS_DIR,
+    .owner = 0,
+#if GAUDIT_DEVELOPER_BUILD
+    .check_key_owner = 0,  /* the build tree's key file */
+#else
+    .check_key_owner = 1,
+#endif
+    .gpgv = "/usr/bin/gpgv",
+    .dpkg_deb = "/usr/bin/dpkg-deb",
+    .dpkg_query = "/usr/bin/dpkg-query",
+    .dpkg = "/usr/bin/dpkg",
+};
+
+/* The arguments of "vendor-verify <id> <version> <path>" or
+ * "vendor-install <id> [anyway]", checked when the command is read. */
+static char *vendor_args[3];
+static size_t n_vendor_args;
+
+static void vendor_report(const char *action, const char *id, const gaudit_vendor_outcome *o)
+{
+    printf("(vendor (id \"%s\") (action \"%s\") (result \"%s\") (version \"%s\") (hash \"%s\"))\n",
+           id, action, o->result, o->version, o->hash);
+}
+
+static void vendor_verify(void *ctx)
+{
+    (void)ctx;
+    gaudit_vendor_outcome o;
+    gaudit_vendor_verify(&vendor_env, vendor_args[0], vendor_args[1], vendor_args[2], &o);
+    vendor_report("verify", vendor_args[0], &o);
+}
+
+static void vendor_install(void *ctx)
+{
+    (void)ctx;
+    gaudit_vendor_outcome o;
+    gaudit_vendor_install(&vendor_env, vendor_args[0],
+                          n_vendor_args == 2 && strcmp(vendor_args[1], "anyway") == 0, &o);
+    vendor_report("install", vendor_args[0], &o);
+}
+
+static int vendor_args_ok(const char *name)
+{
+    if (strcmp(name, "vendor-verify") == 0)
+        return n_vendor_args == 3
+               && gaudit_vendor_verify_args_ok(vendor_args[0], vendor_args[1], vendor_args[2]);
+    return gaudit_vendor_find(vendor_args[0]) != NULL
+           && (n_vendor_args == 1 || (n_vendor_args == 2 && strcmp(vendor_args[1], "anyway") == 0));
 }
 
 /* --- main ----------------------------------------------------------------- */
@@ -392,6 +449,19 @@ static const check_def apt_timers_checks[] = {
 static const check_def apt_reinstall_checks[] = {
     { "reinstall",         { .unconfined = 1 }, apt_exec, APT_TIMEOUT_MS, 0 },
 };
+static const check_def apt_add_ppa_checks[] = {
+    { "add-ppa",           { .unconfined = 1 }, apt_exec, APT_TIMEOUT_MS, 0 },
+};
+/* Copying the user's download needs to read their files; checking it runs
+ * gpgv and dpkg-deb as root without other capabilities, in the sandbox.
+ * Installing is apt, as root like any apt step. */
+static const check_def vendor_verify_checks[] = {
+    { "vendor-verify",  { .to_nobody = 0, .caps = read_caps, .n_caps = 1 }, vendor_verify,
+      10 * 60 * 1000L, 0 },
+};
+static const check_def vendor_install_checks[] = {
+    { "vendor-install", { .unconfined = 1 }, vendor_install, APT_TIMEOUT_MS, 0 },
+};
 
 /* Reading every package file takes time: half a minute on a fast disk,
  * several minutes on a slow one. */
@@ -415,6 +485,9 @@ static const struct {
     { "apt-upgrade-update", apt_upgrade_update_checks, 1 },
     { "enable-apt-timers", apt_timers_checks, 1 },
     { "reinstall", apt_reinstall_checks, 1 },
+    { "add-ppa", apt_add_ppa_checks, 1 },
+    { "vendor-verify", vendor_verify_checks, 1 },
+    { "vendor-install", vendor_install_checks, 1 },
 };
 
 static int find_command(const char *name)
@@ -451,7 +524,7 @@ static int run_command(int i, long caller)
 
 /* --- Session ------------------------------------------------------------- */
 
-/* A command and, for "reinstall" only, its package names. */
+/* A command and, for "reinstall" and "add-ppa" only, its arguments. */
 #define MAX_COMMAND 4096
 
 /* One command line from stdin within timeout_ms, without the newline.
@@ -520,19 +593,39 @@ static int session(long caller)
             reason = "quit";
             break;
         }
-        /* "reinstall <package> ..." is the only command with arguments:
-         * plain names of installed packages, checked here and again before
-         * apt is run. Anything else is a single word. */
+        /* "reinstall <package> ..." and "add-ppa <ppa>" are the only
+         * commands with arguments: plain names of installed packages, or
+         * a PPA the release upgrade switched off, checked here and again
+         * before the tool is run. Anything else is a single word. */
         n_exec_packages = 0;
+        n_vendor_args = 0;
         char *save = NULL;
         char *name = strtok_r(line, " ", &save);
         int i = name != NULL ? find_command(name) : -1;
+        /* A known vendor package: its own arguments, checked here and
+         * again where they are used. */
+        if (i >= 0 && (strcmp(name, "vendor-verify") == 0 || strcmp(name, "vendor-install") == 0)) {
+            int bad_args = 0;
+            for (char *arg = strtok_r(NULL, " ", &save); !bad_args && arg != NULL;
+                 arg = strtok_r(NULL, " ", &save))
+                bad_args = n_vendor_args >= 3 || !(vendor_args[n_vendor_args++] = arg);
+            if (bad_args || n_vendor_args == 0 || !vendor_args_ok(name)) {
+                reason = "bad-command";
+                status = 1;
+                break;
+            }
+            run_command(i, caller);
+            gaudit_lease_renew(&lease, gaudit_lease_now());
+            continue;
+        }
+        const gaudit_apt_op *op = i >= 0 ? gaudit_apt_op_find(name) : NULL;
         int bad = i < 0;
         for (char *arg = strtok_r(NULL, " ", &save); !bad && arg != NULL; arg = strtok_r(NULL, " ", &save))
-            bad = strcmp(name, "reinstall") != 0 || n_exec_packages >= GAUDIT_APT_MAX_PACKAGES
-                  || !gaudit_apt_package_ok(arg, "/var/lib/dpkg/info")
+            bad = op == NULL || op->args == GAUDIT_APT_ARGS_NONE
+                  || n_exec_packages >= GAUDIT_APT_MAX_PACKAGES || !gaudit_apt_arg_ok(op, arg)
                   || !(exec_packages[n_exec_packages++] = arg);
-        if (!bad && strcmp(name, "reinstall") == 0 && n_exec_packages == 0)
+        if (!bad && op != NULL
+            && !gaudit_apt_op_args_ok(op, (const char *const *)exec_packages, n_exec_packages))
             bad = 1;
         if (bad) {
             reason = "bad-command";
@@ -543,6 +636,8 @@ static int session(long caller)
         run_command(i, caller);
         gaudit_lease_renew(&lease, gaudit_lease_now());
     }
+    /* Nothing checked for installing outlives the session. */
+    gaudit_vendor_clean(&vendor_env);
     printf("(helper-end (reason \"%s\"))\n", reason);
     return fflush(stdout) == 0 ? status : 1;
 }
@@ -552,6 +647,10 @@ static int session(long caller)
 int main(int argc, char *argv[])
 {
     int cmd = argc == 2 ? find_command(argv[1]) : -1;
+    /* Commands with arguments come only through a session. */
+    if (cmd >= 0 && (strncmp(argv[1], "vendor-", 7) == 0 || strcmp(argv[1], "reinstall") == 0
+                     || strcmp(argv[1], "add-ppa") == 0))
+        cmd = -1;
     int is_session = argc == 2 && strcmp(argv[1], "session") == 0;
     if (cmd < 0 && !is_session) {
         fputs("usage: gaudit-helper selftest | firewall | integrity | automatic-updates-on"

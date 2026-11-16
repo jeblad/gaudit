@@ -33,6 +33,19 @@ int gaudit_conf_result_known(const char *result)
     return 0;
 }
 
+int gaudit_vendor_result_known(const char *result)
+{
+    static const char *const names[] = {
+        "verified", "weak", "installed", "no-file", "too-large", "not-signed", "unknown-key",
+        "bad-signature", "weak-md5", "mismatch", "wrong-package", "not-newer", "not-verified",
+        "failed", "error",
+    };
+    for (size_t i = 0; result != NULL && i < sizeof names / sizeof names[0]; i++)
+        if (strcmp(result, names[i]) == 0)
+            return 1;
+    return 0;
+}
+
 /* A template id or action: [a-z0-9._-], not empty. */
 static int plain_word(const char *s)
 {
@@ -49,6 +62,24 @@ static int conf_valid(const gaudit_conf_report *c)
     return plain_word(c->template_id)
         && (strcmp(c->action, "on") == 0 || strcmp(c->action, "remove") == 0)
         && gaudit_conf_result_known(c->result);
+}
+
+/* A version or a hash name: [A-Za-z0-9.+~:-], may be empty. */
+static int plain_version(const char *s)
+{
+    for (const char *c = s; *c != '\0'; c++)
+        if (!((*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z') || (*c >= '0' && *c <= '9')
+              || *c == '.' || *c == '+' || *c == '~' || *c == ':' || *c == '-'))
+            return 0;
+    return 1;
+}
+
+static int vendor_valid(const gaudit_vendor_report *v)
+{
+    return plain_word(v->id)
+        && (strcmp(v->action, "verify") == 0 || strcmp(v->action, "install") == 0)
+        && gaudit_vendor_result_known(v->result) && plain_version(v->version)
+        && plain_version(v->hash);
 }
 
 gaudit_verdict gaudit_integrity_verdict(const gaudit_integrity_report *r)
@@ -118,6 +149,14 @@ int gaudit_run_format(const gaudit_run_event *ev, char *buf, size_t len)
         if (!plain_word(ev->exec.op) || ev->exec.status < 0 || ev->exec.status > 255)
             return -1;
         n = snprintf(buf, len, "(exec (op \"%s\") (status %d))\n", ev->exec.op, ev->exec.status);
+        break;
+    case GAUDIT_RUN_EVENT_VENDOR:
+        if (!vendor_valid(&ev->vendor))
+            return -1;
+        n = snprintf(buf, len,
+                     "(vendor (id \"%s\") (action \"%s\") (result \"%s\") (version \"%s\") (hash \"%s\"))\n",
+                     ev->vendor.id, ev->vendor.action, ev->vendor.result, ev->vendor.version,
+                     ev->vendor.hash);
         break;
     case GAUDIT_RUN_EVENT_END:
         n = snprintf(buf, len, "(end (status %d))\n", (int)ev->status);
@@ -226,6 +265,20 @@ int gaudit_run_parse_line(const char *line, gaudit_run_event *out)
         { .key = "action",   .text = ev.conf.action,      .text_len = sizeof ev.conf.action },
         { .key = "result",   .text = ev.conf.result,      .text_len = sizeof ev.conf.result },
     };
+    const gaudit_sexpr_field vendor[] = {
+        { .key = "id",      .text = ev.vendor.id,      .text_len = sizeof ev.vendor.id },
+        { .key = "action",  .text = ev.vendor.action,  .text_len = sizeof ev.vendor.action },
+        { .key = "result",  .text = ev.vendor.result,  .text_len = sizeof ev.vendor.result },
+        { .key = "version", .text = ev.vendor.version, .text_len = sizeof ev.vendor.version },
+        { .key = "hash",    .text = ev.vendor.hash,    .text_len = sizeof ev.vendor.hash },
+    };
+    if (gaudit_sexpr_parse(copy, "vendor", vendor, 5) == 0) {
+        if (!vendor_valid(&ev.vendor))
+            return -1;
+        ev.type = GAUDIT_RUN_EVENT_VENDOR;
+        *out = ev;
+        return 0;
+    }
     if (gaudit_sexpr_parse(copy, "conf", conf, 3) == 0) {
         if (!conf_valid(&ev.conf))
             return -1;

@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <utime.h>
 #include <sys/stat.h>
 #include <zlib.h>
 #include <zstd.h>
@@ -192,6 +194,195 @@ static void compressed_cases(void)
     CHECK(!gaudit_reader_supports("archive.ubuntu.com_ubuntu_dists_noble_main_binary-amd64_Packages.bz2"));
 }
 
+/* The details of a package, on a tree made here: who needs it, how and
+ * when it was installed, and whether a Flatpak or a snap replaced it. */
+static void put_text(const char *path, const char *text)
+{
+    FILE *f = fopen(path, "w");
+    if (f != NULL) {
+        fputs(text, f);
+        fclose(f);
+    }
+}
+
+/* The release a version says it was built for, when older than this one. */
+static void built_for_cases(void)
+{
+    char out[32];
+    CHECK(gaudit_deb_built_for("1.4.13-0~202604150752~ubuntu25.10.1", "ubuntu", "26.10", out, sizeof out)
+          && strcmp(out, "Ubuntu 25.10") == 0);
+    CHECK(gaudit_deb_built_for("1.2-3ubuntu0.24.04.1", "ubuntu", "26.10", out, sizeof out)
+          && strcmp(out, "Ubuntu 24.04") == 0);
+    CHECK(!gaudit_deb_built_for("1.4.13~ubuntu26.10.1", "ubuntu", "26.10", out, sizeof out));
+    CHECK(!gaudit_deb_built_for("2.0-1ubuntu3", "ubuntu", "26.10", out, sizeof out));      /* no release */
+    CHECK(!gaudit_deb_built_for("1.0~ubuntu27.04", "ubuntu", "26.10", out, sizeof out));   /* newer */
+    CHECK(gaudit_deb_built_for("2.36-9+deb12u7", "debian", "13", out, sizeof out)
+          && strcmp(out, "Debian 12") == 0);
+    CHECK(!gaudit_deb_built_for("2.41-6+deb13u1", "debian", "13", out, sizeof out));
+    CHECK(!gaudit_deb_built_for("1.0+debian1", "debian", "13", out, sizeof out));
+    CHECK(!gaudit_deb_built_for("1.0~ubuntu25.10", "fedora", "45", out, sizeof out));
+}
+
+/* An update for the release before, kept at the upgrade: above the source,
+ * by the distribution, versioned as an update, installed before base-files
+ * (the upgrade); one installed after it stays newer than the source. */
+static int kept_libx11, kept_foo, kept_other;
+
+static void record_group(const char *name, const char *arch, const char *version,
+                         gaudit_deb_group group, const char *offered, void *ctx)
+{
+    (void)arch; (void)version; (void)offered; (void)ctx;
+    if (strcmp(name, "libx11-6") == 0)
+        kept_libx11 = (int)group;
+    else if (strcmp(name, "foo") == 0)
+        kept_foo = (int)group;
+    else if (strcmp(name, "bar") == 0)
+        kept_other = (int)group;
+}
+
+static void kept_cases(void)
+{
+    char root[1100], status[1200], lists[1200], info[1200], path[1400];
+    snprintf(root, sizeof root, "%s/kept", tmp_dir);
+    mkdir(root, 0755);
+    snprintf(status, sizeof status, "%s/status", root);
+    snprintf(lists, sizeof lists, "%s/lists", root);
+    snprintf(info, sizeof info, "%s/info", root);
+    mkdir(lists, 0755);
+    mkdir(info, 0755);
+    put_text(status,
+             "Package: base-files\nStatus: install ok installed\nArchitecture: amd64\n"
+             "Version: 14ubuntu1\nMaintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>\n\n"
+             "Package: libx11-6\nStatus: install ok installed\nArchitecture: amd64\n"
+             "Version: 2:1.8.13-1ubuntu0.1\nMaintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>\n\n"
+             "Package: foo\nStatus: install ok installed\nArchitecture: amd64\n"
+             "Version: 1.0-1ubuntu0.1\nMaintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>\n\n"
+             "Package: bar\nStatus: install ok installed\nArchitecture: amd64\n"
+             "Version: 3.0-1ubuntu1\nMaintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>\n\n");
+    snprintf(path, sizeof path, "%s/archive.ubuntu.com_ubuntu_dists_stonking_main_binary-amd64_Packages", lists);
+    put_text(path,
+             "Package: base-files\nArchitecture: amd64\nVersion: 14ubuntu1\n\n"
+             "Package: libx11-6\nArchitecture: amd64\nVersion: 2:1.8.13-1\n\n"
+             "Package: foo\nArchitecture: amd64\nVersion: 1.0-1\n\n"
+             "Package: bar\nArchitecture: amd64\nVersion: 3.0-1\n\n");
+    snprintf(path, sizeof path, "%s/archive.ubuntu.com_ubuntu_dists_stonking_InRelease", lists);
+    put_text(path, "Origin: Ubuntu\nLabel: Ubuntu\nSuite: stonking\nCodename: stonking\n");
+    /* base-files replaced now; libx11-6 and bar long before, foo since. */
+    time_t now = time(NULL);
+    struct utimbuf old = { now - 86400 * 30, now - 86400 * 30 }, later = { now + 60, now + 60 };
+    snprintf(path, sizeof path, "%s/base-files.list", info);
+    put_text(path, "/etc/os-release\n");
+    snprintf(path, sizeof path, "%s/libx11-6:amd64.list", info);
+    put_text(path, "/usr/lib/x86_64-linux-gnu/libX11.so.6\n");
+    utime(path, &old);
+    snprintf(path, sizeof path, "%s/bar.list", info);
+    put_text(path, "/usr/bin/bar\n");
+    utime(path, &old);
+    snprintf(path, sizeof path, "%s/foo.list", info);
+    put_text(path, "/usr/bin/foo\n");
+    utime(path, &later);
+    gaudit_deb_counts counts;
+    kept_libx11 = kept_foo = kept_other = -1;
+    snprintf(path, sizeof path, "%s/no-such-preferences.d", root);
+    CHECK(gaudit_deb_scan_ex(status, lists, NULL, path, &counts, record_group, NULL) == GAUDIT_BACKEND_OK);
+    CHECK(kept_libx11 == GAUDIT_SOURCELESS_KEPT);
+    CHECK(kept_foo == GAUDIT_SOURCELESS_ABOVE_SOURCE);    /* installed after the upgrade */
+    CHECK(kept_other == GAUDIT_SOURCELESS_ABOVE_SOURCE);  /* not versioned as an update */
+
+    CHECK(gaudit_deb_update_version("2:1.8.13-1ubuntu0.1") && gaudit_deb_update_version("1.2-3ubuntu0.24.04.1")
+          && gaudit_deb_update_version("2.36-9+deb12u7"));
+    CHECK(!gaudit_deb_update_version("3.0-1ubuntu1") && !gaudit_deb_update_version("1.0+debian1")
+          && !gaudit_deb_update_version("1.0-1ubuntu0") && !gaudit_deb_update_version("1.0+deb12"));
+}
+
+static void details_cases(void)
+{
+    char root[1100], path[1400], status[1200], info[1200], ext[1200], flat[1200], snap[1200];
+    snprintf(root, sizeof root, "%s/details", tmp_dir);
+    mkdir(root, 0755);
+    snprintf(status, sizeof status, "%s/status", root);
+    put_text(status,
+        "Package: rhythmbox\nStatus: install ok installed\nArchitecture: amd64\nVersion: 3.4\n\n"
+        "Package: libfoo\nStatus: install ok installed\nArchitecture: amd64\nVersion: 1.0\n\n"
+        "Package: tool\nStatus: install ok installed\nArchitecture: amd64\nVersion: 1\n"
+        "Depends: libfoo (>= 1.0), libc6\n\n"
+        "Package: other\nStatus: install ok installed\nArchitecture: amd64\nVersion: 1\n"
+        "Pre-Depends: libbar | libfoo:any\n\n"
+        "Package: gone\nStatus: deinstall ok config-files\nArchitecture: amd64\nVersion: 1\n"
+        "Depends: libfoo\n\n"
+        "Package: firefox\nStatus: install ok installed\nArchitecture: amd64\nVersion: 1\n\n"
+        "Package: mainline\nStatus: install ok installed\nArchitecture: amd64\n"
+        "Version: 1.4.13-0~202604150752~ubuntu25.10.1\n");
+    snprintf(info, sizeof info, "%s/info", root);
+    mkdir(info, 0755);
+    snprintf(path, sizeof path, "%s/rhythmbox.list", info);
+    put_text(path, "/usr/bin/rhythmbox\n/usr/share/metainfo/org.gnome.Rhythmbox3.appdata.xml\n"
+                     "/usr/share/applications/org.gnome.Rhythmbox3.desktop\n");
+    snprintf(path, sizeof path, "%s/libfoo:amd64.list", info);
+    put_text(path, "/usr/lib/libfoo.so.1\n");
+    snprintf(path, sizeof path, "%s/firefox.list", info);
+    put_text(path, "/usr/share/applications/firefox.desktop\n");
+    snprintf(ext, sizeof ext, "%s/extended_states", root);
+    put_text(ext, "Package: libfoo\nArchitecture: amd64\nAuto-Installed: 1\n\n");
+    snprintf(flat, sizeof flat, "%s/flatpak", root);
+    mkdir(flat, 0755);
+    snprintf(path, sizeof path, "%s/org.gnome.Rhythmbox3", flat);
+    mkdir(path, 0755);
+    snprintf(snap, sizeof snap, "%s/snap", root);
+    mkdir(snap, 0755);
+    snprintf(path, sizeof path, "%s/firefox", snap);
+    mkdir(path, 0755);
+    /* The PPA the upgrade switched off, and distro-info's table. */
+    char sources[1200], csv[1200];
+    snprintf(sources, sizeof sources, "%s/sources.list.d", root);
+    mkdir(sources, 0755);
+    snprintf(path, sizeof path, "%s/cappelikan-ubuntu-ppa-questing.sources", sources);
+    put_text(path, "Types: deb\nURIs: https://ppa.launchpadcontent.net/cappelikan/ppa/ubuntu/\n"
+                   "Suites: questing\nComponents: main\nEnabled: no\n");
+    snprintf(path, sizeof path, "%s/cappelikan-ubuntu-ppa-questing.sources.distUpgrade", sources);
+    put_text(path, "Types: deb\nURIs: https://ppa.launchpadcontent.net/cappelikan/ppa/ubuntu/\n"
+                   "Suites: questing\n");
+    snprintf(csv, sizeof csv, "%s/ubuntu.csv", root);
+    put_text(csv, "version,codename,series,created,release,eol\n"
+                  "25.10,Questing Quokka,questing,2025-04-17,2025-10-09,2026-07-09\n"
+                  "26.04 LTS,Resolute Raccoon,resolute,2025-10-16,2026-04-23,2031-05-29\n");
+    const char *flatpak_dirs[] = { flat, NULL };
+    gaudit_deb_paths paths = { .os_id = "ubuntu", .os_version_id = "26.10", .status_file = status,
+                               .info_dir = info, .extended_states = ext,
+                               .flatpak_dirs = flatpak_dirs, .snap_dir = snap,
+                               .sources_dir = sources, .distro_info = csv };
+
+    gaudit_package_details d;
+    CHECK(gaudit_deb_package_details(&paths, "libfoo", "amd64", &d) == 0);
+    /* tool and other need it (an alternative counts); a removed one does not. */
+    CHECK(d.needed_by == 2 && strcmp(d.needed_names, "tool, other") == 0);
+    CHECK(d.manual == 0 && d.installed > 0 && d.replaced[0] == '\0' && d.program == 0);
+
+    CHECK(gaudit_deb_package_details(&paths, "rhythmbox", "amd64", &d) == 0);
+    CHECK(strcmp(d.replaced, "flatpak org.gnome.Rhythmbox3") == 0);
+    CHECK(d.needed_by == 0 && d.manual == 1 && d.program == 1);
+
+    CHECK(d.built_for[0] == '\0' && d.likely_source[0] == '\0');  /* 3.4 names no release */
+
+    /* Built for 25.10, and the PPA for questing (25.10) was switched off at
+     * the upgrade: probably from there. */
+    CHECK(gaudit_deb_package_details(&paths, "mainline", "amd64", &d) == 0);
+    CHECK(strcmp(d.built_for, "Ubuntu 25.10") == 0);
+    CHECK(strcmp(d.likely_source, "ppa:cappelikan/ppa") == 0);
+    /* Running 26.04 instead, a package built for 25.10 still matches; one
+     * built for no release named matches nothing. */
+    CHECK(gaudit_deb_package_details(&paths, "libfoo", "amd64", &d) == 0 && d.likely_source[0] == '\0');
+
+    /* A snap by the desktop file's name. */
+    CHECK(gaudit_deb_package_details(&paths, "firefox", "amd64", &d) == 0);
+    CHECK(strcmp(d.replaced, "snap firefox") == 0);
+
+    /* Nothing to read: unknown, not none. */
+    gaudit_deb_paths none = { 0 };
+    CHECK(gaudit_deb_package_details(&none, "libfoo", "amd64", &d) == 0);
+    CHECK(d.needed_by == -1 && d.manual == -1 && d.installed == 0);
+}
+
 int main(void)
 {
     /* Feature detection. */
@@ -293,6 +484,10 @@ int main(void)
 
     /* Compressed indexes give the same answer as plain ones. */
     compressed_cases();
+
+    details_cases();
+    kept_cases();
+    built_for_cases();
 
     /* Unreadable status file and bad arguments. */
     CHECK(gaudit_deb_scan(DATA "/no-such-status", DATA "/lists", NULL, NULL, &counts)

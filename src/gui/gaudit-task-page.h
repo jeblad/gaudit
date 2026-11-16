@@ -27,6 +27,10 @@ GtkWidget *gaudit_command_field_new(const char *command);
  * operation, built from cached data, never from the shown text), run only
  * while the field still shows command. NULL: no such button. */
 GtkWidget *gaudit_command_field_new_run(const char *command, const char *const *run_args);
+/* The same, with what to say if the command stops with an error (may be
+ * NULL: then a general text). */
+GtkWidget *gaudit_command_field_new_step(const char *command, const char *const *run_args,
+                                         const char *failed);
 
 /* Called once a fix run from a command field has succeeded (e.g. to check
  * the finding again). */
@@ -63,11 +67,14 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
  * run_args, which may be NULL for copy only), and what each part of it
  * does in plain words (NULL-terminated, may be NULL), so the user knows
  * what is done on their behalf. A run_args starting with "session" goes
- * through the session as root (e.g. { "session", "run", "apt-update" }). */
+ * through the session as root (e.g. { "session", "run", "apt-update" }).
+ * failed (may be NULL) is what the page says if it stops with an error,
+ * when the step knows what that most likely means. */
 typedef struct {
     const char *command;
     const char *const *run_args;
     const char *const *explain;
+    const char *failed;
 } GauditFixStep;
 
 /* A fix page with one or more steps, each with its own field and buttons:

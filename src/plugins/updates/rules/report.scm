@@ -242,15 +242,46 @@
          (row 'ok (msg (G_ "Security updates come from the distribution itself"))
               (msg (G_ "Not from a mirror that may lag behind")) #f))))
 
+;; A source set up but never read: nothing from it gets updates, and its
+;; packages look as if they came from nowhere. Often after an upgrade of
+;; the release, or a source added without a look for updates since.
+(define (unread-row f)
+  (cond ((unknown? f) (unknown-row (G_ "Whether every software source can be read")))
+        ((not (known? f)) #f)
+        ((> (value f) 0)
+         (row 'warning
+              (msgn (N_ "{n} software source has not been read"
+                        "{n} software sources have not been read")
+                    (value f) (list 'n (value f)))
+              (msg (G_ "{hosts}: nothing from it gets updates until it is") (list 'hosts (text-of f)))
+              (cons 'unread-sources f)))
+        (else #f)))
+
+;; Switched off by the upgrade of the release, on purpose: a source may not
+;; have packages for the new release yet, and switching it on then only
+;; gives an error. A recommendation, never a warning; what it held gets no
+;; updates meanwhile, which the packages without a source show.
+(define (upgrade-off-row f)
+  (and (known? f) (> (value f) 0)
+       (row 'advice
+            (msgn (N_ "{n} software source was switched off when the release was upgraded"
+                      "{n} software sources were switched off when the release was upgraded")
+                  (value f) (list 'n (value f)))
+            (list 'text (text-of f))
+            (cons 'upgrade-off f))))
+
 ;; --- Software no source keeps up to date ------------------------------------
 
-(define (sourceless-rows total above leftover other)
+(define (sourceless-rows total above leftover other vendor kept)
   (define (group f one many subtitle)
     (and (known? f) (> (value f) 0)
          (row 'warning (msgn (list one many) (value f) (list 'n (value f)))
               (msg subtitle) (cons 'sourceless f))))
   (cond ((unknown? total) (list (unknown-row (G_ "Installed software without a source"))))
         ((not (known? total)) '())
+        ((and (= (value total) 0) (known? vendor) (> (value vendor) 0))
+         (list (row 'ok (msg (G_ "Every other installed package comes from a software source"))
+                    (msg (G_ "So they get updates")) #f)))
         ((= (value total) 0)
          (list (row 'ok (msg (G_ "All installed packages come from a software source"))
                     (msg (G_ "So they get updates")) #f)))
@@ -267,7 +298,105 @@
                       (G_ "The distribution no longer offers them"))
                (group other "{n} package probably comes from other places"
                       "{n} packages probably come from other places"
-                      (G_ "Such as a downloaded package or a source no longer set up"))))))
+                      (G_ "Such as a downloaded package or a source no longer set up"))
+               (kept-row kept)))))
+
+;; Updates the distribution made for the release before, kept at the
+;; upgrade: newer than this release's own version, so it stays until this
+;; release passes it. Not a problem, so a recommendation: it may well carry
+;; a fix this release lacks.
+(define (kept-row f)
+  (and (known? f) (> (value f) 0)
+       (row 'advice
+            (if (string=? (text-of f) "")
+                (msgn (N_ "{n} package is an update from the release before, kept at the upgrade"
+                          "{n} packages are updates from the release before, kept at the upgrade")
+                      (value f) (list 'n (value f)))
+                (msgn (N_ "{n} package is an update from {release}, kept at the upgrade"
+                          "{n} packages are updates from {release}, kept at the upgrade")
+                      (value f) (list 'n (value f)) (list 'release (text-of f))))
+            (msg (G_ "This release's own version is older, so it stays until this release passes it"))
+            (cons 'sourceless f))))
+
+;; --- Programs you update yourself ---------------------------------------------
+
+;; Known vendor packages: the maker offers only a download, no software
+;; source, so the system never updates them. The user chose the package,
+;; so a recommendation each, never on Home: without the network nothing
+;; says it is out of date, only that nothing updates it.
+(define (vendor-rows entries)
+  ;; The last vendor-latest line for this id, or #f: found out on request.
+  (define (latest-for id)
+    (let loop ((es entries) (found #f))
+      (cond ((null? es) found)
+            ((and (eq? (car (cdar es)) 'vendor-latest) (equal? (ifield (car es) 'id) id))
+             (loop (cdr es) (car es)))
+            (else (loop (cdr es) found)))))
+  (let loop ((es entries) (acc '()))
+    (cond ((null? es) (reverse acc))
+          ;; A package another program keeps up to date: fine while that
+          ;; program is here; without it, nothing updates the package.
+          ((eq? (car (cdar es)) 'vendor-companion)
+           (let ((e (car es)))
+             (loop (cdr es)
+                   (cons (if (= (ifield e 'present) 1)
+                             (row 'ok
+                                  (msg (G_ "{package} is kept up to date by {manager}")
+                                       (list 'package (ifield e 'package)) (list 'manager (ifield e 'manager)))
+                                  (msg (G_ "Version {version} · {manager} installs the matching version when it is updated")
+                                       (list 'version (ifield e 'version)) (list 'manager (ifield e 'manager)))
+                                  #f)
+                             (row 'advice
+                                  (msg (G_ "{package} was installed by {manager}, which is no longer here")
+                                       (list 'package (ifield e 'package)) (list 'manager (ifield e 'manager)))
+                                  (msg (G_ "Version {version} · nothing updates it now")
+                                       (list 'version (ifield e 'version)))
+                                  #f))
+                         acc))))
+          ;; A local copy of a vendor's source: one row for the product.
+          ((eq? (car (cdar es)) 'vendor-local)
+           (let ((e (car es)))
+             (loop (cdr es)
+                   (cons (row 'advice
+                              (msg (G_ "{title} {version} comes from a local copy of {vendor}'s software source")
+                                   (list 'title (ifield e 'title)) (list 'version (ifield e 'version))
+                                   (list 'vendor (ifield e 'vendor)))
+                              (msgn (N_ "{n} package · made for {made} · the copy never gets updates"
+                                        "{n} packages · made for {made} · the copy never gets updates")
+                                    (ifield e 'packages) (list 'n (ifield e 'packages))
+                                    (list 'made (ifield e 'made-for-name)))
+                              (cons 'vendor-local e))
+                         acc))))
+          ((eq? (car (cdar es)) 'vendor-package)
+           (let* ((e (car es))
+                  (l (latest-for (ifield e 'id)))
+                  (known (and l (= (ifield l 'status) 0)))
+                  (newer (and known (= (ifield l 'newer) 1))))
+             (loop (cdr es)
+                   (cons (cond
+                          (newer
+                           (row 'warning
+                                (msg (G_ "A newer version of {title} is out")
+                                     (list 'title (ifield e 'title)))
+                                (msg (G_ "Version {latest} is out; this computer has {version}")
+                                     (list 'latest (ifield l 'version)) (list 'version (ifield e 'version)))
+                                (cons 'vendor e)))
+                          (known
+                           (row 'advice
+                                (msg (G_ "{title} gets no updates from the system")
+                                     (list 'title (ifield e 'title)))
+                                (msg (G_ "Version {version}, the newest {vendor} offers")
+                                     (list 'version (ifield e 'version)) (list 'vendor (ifield e 'vendor)))
+                                (cons 'vendor e)))
+                          (else
+                           (row 'advice
+                                (msg (G_ "{title} gets no updates from the system")
+                                     (list 'title (ifield e 'title)))
+                                (msg (G_ "Version {version} · {vendor} offers it only as a download, without a software source")
+                                     (list 'version (ifield e 'version)) (list 'vendor (ifield e 'vendor)))
+                                (cons 'vendor e))))
+                         acc))))
+          (else (loop (cdr es) acc)))))
 
 ;; The pairs above, so xgettext sees them.
 (define sourceless-msgids
@@ -380,13 +509,18 @@
 ;; Home's condensate: one row per problem, each already a summary; the
 ;; packages without a source as one, where the first of them is. Nothing
 ;; for what is right, unless nothing fails: then one row that says so.
-(define (home-rows all sourceless-problems total ok-title)
+(define (home-rows all sourceless-problems total kept ok-title)
   (define (as-home r) (home (row-verdict r) (row-title r) (row-subtitle r)))
+  ;; The updates kept from the release before are not a problem, so not counted.
+  (define problems
+    (if (known? total)
+        (- (value total) (if (known? kept) (value kept) 0))
+        0))
   (define summary
     (if (known? total)
         (home 'warning
               (msgn (N_ "{n} package gets no updates" "{n} packages get no updates")
-                    (value total) (list 'n (value total)))
+                    problems (list 'n problems))
               (msg (G_ "No software source offers them")))
         #f))
   (let loop ((rows all) (seen #f) (acc '()))
@@ -408,8 +542,10 @@
          (change (get "last-change")) (own (get "own-setting"))
          (pending (get "pending")) (security (get "pending-security"))
          (official (get "security-official")) (mirror (get "security-mirror"))
+         (unread (get "unread-sources")) (upgrade-off (get "upgrade-off"))
          (total (get "sourceless")) (above (get "sourceless-above"))
          (leftover (get "sourceless-leftover")) (other (get "sourceless-other"))
+         (vendor (get "sourceless-vendor"))
          (expected (get "expected-missing")) (others (get "other-systems"))
          ;; The most important first: the title names the first warning.
          ;; Two questions, not apt's two steps: is it up to date now, and
@@ -419,8 +555,11 @@
                     (index-row index)))
          (setup (list (check-days-row days) (check-timer-row check-timer days)
                       (install-row install install-timer last own)))
-         (source (list (source-row official mirror)))
-         (sourceless (sourceless-rows total above leftover other))
+         (source (list (source-row official mirror) (unread-row unread)
+                       (upgrade-off-row upgrade-off)))
+         (kept (get "sourceless-kept"))
+         (sourceless (sourceless-rows total above leftover other vendor kept))
+         (vendors (vendor-rows entries))
          (systems (systems-rows expected others))
          (files (integrity-rows entries))
          ;; Only the summary of the package files counts; the files are its detail.
@@ -428,7 +567,7 @@
          (all (keep (lambda (r) r)
                     ;; A missing package system first: nothing else can be checked then.
                     (append (list (car systems)) now setup source sourceless
-                            files-head (cdr systems))))
+                            files-head (cdr systems) vendors)))
          (warnings (keep (lambda (r) (eq? (row-verdict r) 'warning)) all))
          (unknowns (keep (lambda (r) (eq? (row-verdict r) 'unknown)) all))
          (sourceless-problems
@@ -457,7 +596,7 @@
         (append
          (list (list 'report (list 'verdict verdict) (list 'title title)
                      (list 'description description)))
-         (home-rows all sourceless-problems total ok-title)
+         (home-rows all sourceless-problems total kept ok-title)
          (section (G_ "Status now")
                   (G_ "What is waiting to be installed on this computer.")
                   now)
@@ -467,6 +606,9 @@
          (section (G_ "Where updates come from")
                   (G_ "Security updates should come straight from the distribution, and every installed package from a software source.")
                   (append source sourceless systems))
+         (section (G_ "Programs you update yourself")
+                  (G_ "Their makers offer them only as a download, or as a copy of a software source that never changes, so the system never updates them: new versions come from the maker.")
+                  vendors)
          (section (G_ "Package files")
                   (G_ "Every file a package installed, compared with the checksum it came with. Your own settings in /etc are not counted.")
                   files)

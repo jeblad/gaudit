@@ -45,6 +45,11 @@ set(GAUDIT_PKGLIBEXECDIR ${CMAKE_INSTALL_FULL_LIBEXECDIR}/gaudit)
 # tree for developer builds; root-owned under share/ when installed.
 set(GAUDIT_BUILD_RULES_DIR ${PROJECT_BINARY_DIR}/plugins)
 set(GAUDIT_INSTALL_RULES_DIR ${CMAKE_INSTALL_DATADIR}/gaudit/plugins)
+# Vendors' signing keys (binary OpenPGP, made from the armored files at
+# build time): in the build tree for developer builds, root-owned under
+# share/ when installed.
+set(GAUDIT_BUILD_VENDOR_KEYS_DIR ${PROJECT_BINARY_DIR}/keys/vendors)
+set(GAUDIT_INSTALL_VENDOR_KEYS_DIR ${CMAKE_INSTALL_DATADIR}/gaudit/keys/vendors)
 # Collectors run from the build tree in developer builds. So does the
 # helper: pkexec then asks for the password without the policy's message
 # (the policy is not installed), and the binary it runs is writable by the
@@ -53,6 +58,7 @@ if(GAUDIT_DEVELOPER_BUILD)
   set(GAUDIT_HELPER_PATH ${PROJECT_BINARY_DIR}/src/helper/gaudit-helper)
   set(GAUDIT_ENGINE_PATH ${PROJECT_BINARY_DIR}/src/engine/gaudit-engine)
   set(GAUDIT_RULES_DIR ${GAUDIT_BUILD_RULES_DIR})
+  set(GAUDIT_VENDOR_KEYS_DIR ${GAUDIT_BUILD_VENDOR_KEYS_DIR})
   set(GAUDIT_ORCHESTRATOR_PATH ${PROJECT_BINARY_DIR}/src/orchestrator/gaudit-orchestrator)
   set(GAUDIT_SCHEMA_DIR ${PROJECT_BINARY_DIR}/data/schemas)
   set(GAUDIT_FLATPAK_PROBE_PATH ${PROJECT_BINARY_DIR}/src/collectors/flatpak/gaudit-flatpak-probe)
@@ -63,6 +69,7 @@ else()
   set(GAUDIT_HELPER_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-helper)
   set(GAUDIT_ENGINE_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-engine)
   set(GAUDIT_RULES_DIR ${CMAKE_INSTALL_FULL_DATADIR}/gaudit/plugins)
+  set(GAUDIT_VENDOR_KEYS_DIR ${CMAKE_INSTALL_FULL_DATADIR}/gaudit/keys/vendors)
   set(GAUDIT_ORCHESTRATOR_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-orchestrator)
   set(GAUDIT_SCHEMA_DIR "")  # the system schema directory
   set(GAUDIT_FLATPAK_PROBE_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-flatpak-probe)

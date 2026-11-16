@@ -88,7 +88,7 @@ function(gaudit_plugin_domain domain podir)
   list(FILTER _langs EXCLUDE REGEX "^$")
   add_custom_target(pot-${domain}
     COMMAND ${XGETTEXT_EXECUTABLE} --from-code=UTF-8 --add-comments=Translators
-            --language=C --keyword=P_ --package-name=${domain}
+            --language=C --keyword=P_ --keyword=PN_:1,2 --package-name=${domain}
             --package-version=${PROJECT_VERSION} --directory=${PROJECT_SOURCE_DIR}
             --files-from=${podir}/POTFILES.in --output=${_pot}
     COMMAND ${XGETTEXT_EXECUTABLE} --from-code=UTF-8 --join-existing

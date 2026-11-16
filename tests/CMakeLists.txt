@@ -188,14 +188,25 @@ target_link_libraries(test_conf_write PRIVATE gaudit_sandbox)
 add_test(NAME conf-write COMMAND test_conf_write)
 
 # The Updates collection: line format and facts from a made-up backend.
-add_executable(test_updates test_updates.c ${PROJECT_SOURCE_DIR}/src/plugins/updates/orchestrator/updates.c)
+add_executable(test_updates test_updates.c ${PROJECT_SOURCE_DIR}/src/plugins/updates/orchestrator/updates.c
+               ${PROJECT_SOURCE_DIR}/src/plugins/updates/common/vendor.c)
 target_compile_definitions(test_updates PRIVATE _GNU_SOURCE)
-target_include_directories(test_updates PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/updates/orchestrator)
+target_include_directories(test_updates PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/updates/orchestrator
+                                           ${PROJECT_SOURCE_DIR}/src/backend)
 target_link_libraries(test_updates PRIVATE gaudit_probe)
 add_test(NAME updates COMMAND test_updates)
 
 # The apt operations: what a fix page shows is what the helper runs.
 add_executable(test_apt_ops test_apt_ops.c)
-target_compile_definitions(test_apt_ops PRIVATE _GNU_SOURCE)
+target_compile_definitions(test_apt_ops PRIVATE _GNU_SOURCE
+    SOURCES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/apt-sources/upgraded/sources.list.d")
 target_link_libraries(test_apt_ops PRIVATE gaudit_sandbox)
 add_test(NAME apt-ops COMMAND test_apt_ops)
+
+# Known vendor packages, the helper's side: the signed list, gpgv's status,
+# the arguments, SHA-1, the shipped key, refusals before any signature.
+add_executable(test_vendor test_vendor.c)
+target_compile_definitions(test_vendor PRIVATE _GNU_SOURCE KEYS_DIR="${GAUDIT_BUILD_VENDOR_KEYS_DIR}")
+target_link_libraries(test_vendor PRIVATE gaudit_sandbox)
+add_dependencies(test_vendor vendor-keys)
+add_test(NAME vendor COMMAND test_vendor)

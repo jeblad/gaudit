@@ -305,7 +305,9 @@ gaudit_backend_status gaudit_collector_sourceless(const char *text, gaudit_sourc
             { .key = "name",    .text = name,    .text_len = sizeof name },
             { .key = "arch",    .text = arch,    .text_len = sizeof arch },
             { .key = "version", .text = version, .text_len = sizeof version },
-            { .key = "group",   .value = &group, .max = GAUDIT_SOURCELESS_GROUPS - 1 },
+            /* Collectors give the first three groups only; KEPT is the
+             * Debian backend's own. */
+            { .key = "group",   .value = &group, .max = GAUDIT_SOURCELESS_OTHER_SOURCE },
             { .key = "offered", .text = offered, .text_len = sizeof offered },
         };
         if (gaudit_sexpr_parse(line, "package", pkg, sizeof pkg / sizeof pkg[0]) != 0

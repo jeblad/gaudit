@@ -1,0 +1,8 @@
+Types: deb deb-src
+URIs: https://ppa.launchpadcontent.net/x/y/ubuntu
+Suites: noble
+Components: main
+Signed-By:
+ -----BEGIN PGP PUBLIC KEY BLOCK-----
+ .
+ -----END PGP PUBLIC KEY BLOCK-----

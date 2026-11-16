@@ -135,6 +135,17 @@ AdwNavigationPage *gaudit_fix_page_new_steps(const char *title, const char *prob
     /* The page holds what the steps call back with. */
     if (data_free != NULL)
         g_object_set_data_full(G_OBJECT(page), "gaudit-fixed-data", data, data_free);
+    /* Every step the same: one row that does it, not several that do the same. */
+    gboolean all_same = n_steps > 1;
+    for (gsize i = 1; all_same && i < n_steps; i++)
+        all_same = g_strcmp0(steps[i].command, steps[0].command) == 0
+                   && (steps[i].run_args == NULL) == (steps[0].run_args == NULL)
+                   && (steps[i].run_args == NULL
+                       || g_strv_equal((const char *const *)steps[i].run_args,
+                                       (const char *const *)steps[0].run_args));
+    if (all_same)
+        n_steps = 1;
+    g_autoptr(GPtrArray) runs = g_ptr_array_new();  /* each step's run button, or NULL */
     for (gsize i = 0; i < n_steps; i++) {
         GtkWidget *step = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
         if (n_steps > 1) {
@@ -145,12 +156,16 @@ AdwNavigationPage *gaudit_fix_page_new_steps(const char *title, const char *prob
             gtk_widget_add_css_class(h, "heading");
             gtk_box_append(GTK_BOX(step), h);
         }
-        GtkWidget *field = gaudit_command_field_new_run(steps[i].command, steps[i].run_args);
+        GtkWidget *field = gaudit_command_field_new_step(steps[i].command, steps[i].run_args,
+                                                         steps[i].failed);
         for (GtkWidget *c = gtk_widget_get_first_child(field); c != NULL; c = gtk_widget_get_next_sibling(c))
             for (GtkWidget *d = gtk_widget_get_first_child(c); d != NULL; d = gtk_widget_get_next_sibling(d))
-                if (g_object_get_data(G_OBJECT(d), "gaudit-run") != NULL && on_fixed != NULL) {
-                    g_object_set_data(G_OBJECT(d), "gaudit-fixed", (gpointer)on_fixed);
-                    g_object_set_data(G_OBJECT(d), "gaudit-fixed-data", data);
+                if (g_object_get_data(G_OBJECT(d), "gaudit-run") != NULL) {
+                    g_ptr_array_add(runs, d);
+                    if (on_fixed != NULL) {
+                        g_object_set_data(G_OBJECT(d), "gaudit-fixed", (gpointer)on_fixed);
+                        g_object_set_data(G_OBJECT(d), "gaudit-fixed-data", data);
+                    }
                 }
         gtk_box_append(GTK_BOX(step), field);
         /* What each part does, so pressing or copying is an informed choice. */
@@ -163,7 +178,51 @@ AdwNavigationPage *gaudit_fix_page_new_steps(const char *title, const char *prob
         gtk_box_insert_child_after(GTK_BOX(box), step, after);
         after = step;
     }
+    /* Run buttons that do the very same thing (the same arguments, not
+     * just the same words) know each other: once one has run, the others
+     * go grey too, so the same operation is never run twice from one page
+     * and left in a state that conflicts. */
+    for (guint i = 0; i < runs->len; i++) {
+        GtkWidget *b = g_ptr_array_index(runs, i);
+        if (g_object_get_data(G_OBJECT(b), "gaudit-run-peers") != NULL)
+            continue;
+        const char *const *args = g_object_get_data(G_OBJECT(b), "gaudit-run");
+        GPtrArray *peers = g_ptr_array_new();
+        for (guint j = i; j < runs->len; j++) {
+            GtkWidget *o = g_ptr_array_index(runs, j);
+            if (g_strv_equal(args, g_object_get_data(G_OBJECT(o), "gaudit-run")))
+                g_ptr_array_add(peers, o);
+        }
+        if (peers->len < 2) {
+            g_ptr_array_unref(peers);
+            continue;
+        }
+        for (guint j = 0; j < peers->len; j++)
+            g_object_set_data_full(G_OBJECT(g_ptr_array_index(peers, j)), "gaudit-run-peers",
+                                   g_ptr_array_ref(peers), (GDestroyNotify)g_ptr_array_unref);
+        g_ptr_array_unref(peers);
+    }
     return page;
+}
+
+/* Back again, with those that do the very same: for a run that never started. */
+static void ungrey_run(GtkWidget *button)
+{
+    gtk_widget_set_sensitive(button, TRUE);
+    GPtrArray *peers = g_object_get_data(G_OBJECT(button), "gaudit-run-peers");
+    for (guint i = 0; peers != NULL && i < peers->len; i++)
+        gtk_widget_set_sensitive(g_ptr_array_index(peers, i), TRUE);
+}
+
+/* Greys a run button whose run is over, and those that do the very same. */
+static void grey_run(GtkWidget *button)
+{
+    if (button == NULL)
+        return;
+    gtk_widget_set_sensitive(button, FALSE);
+    GPtrArray *peers = g_object_get_data(G_OBJECT(button), "gaudit-run-peers");
+    for (guint i = 0; peers != NULL && i < peers->len; i++)
+        gtk_widget_set_sensitive(g_ptr_array_index(peers, i), FALSE);
 }
 
 /* --- Changing configuration ------------------------------------------------ */
@@ -883,6 +942,7 @@ typedef struct {
     guint mode;
     GauditFixedFn on_fixed;
     gpointer data;       /* the page's, held by the button */
+    const char *failed;  /* the step's own text for an error, held by the button */
 } FixRun;
 
 static void fix_run_free(FixRun *r)
@@ -919,8 +979,8 @@ static void on_fix_done(gboolean broken, gpointer user_data)
                            text != NULL ? text : _("It could not be changed. Nothing was done."));
         gtk_widget_set_visible(r->result, TRUE);
     }
-    if (r->button != NULL)
-        gtk_widget_set_sensitive(r->button, !(r->fixed && !broken));
+    /* The step is over, whatever came of it: grey until the page is opened again. */
+    grey_run(r->button);
     if (!broken && r->fixed && r->on_fixed != NULL && r->button != NULL)
         r->on_fixed(r->data);
     fix_run_free(r);
@@ -940,6 +1000,12 @@ static void on_session_fix_done(gaudit_run_status status, const GauditRunResult 
             text = g_strdup(_("Cancelled, so nothing was run."));
         else if (status == GAUDIT_RUN_DENIED)
             text = g_strdup(_("The password was not accepted, so nothing was run."));
+        else if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_EXEC
+                 && r->failed != NULL)
+            /* Translators: %d is a program's exit code, then the step's
+             * own explanation of what it most likely means. */
+            text = g_strdup_printf(_("It stopped with an error (exit code %d). %s"),
+                                   result->exec.status, r->failed);
         else if (status == GAUDIT_RUN_OK && result != NULL && result->kind == GAUDIT_RESULT_EXEC)
             /* Translators: %d is a program's exit code. Unsigned packages,
              * for one, stop apt: it never installs them from here. */
@@ -951,8 +1017,8 @@ static void on_session_fix_done(gaudit_run_status status, const GauditRunResult 
         gtk_label_set_text(GTK_LABEL(r->result), text);
         gtk_widget_set_visible(r->result, TRUE);
     }
-    if (r->button != NULL)
-        gtk_widget_set_sensitive(r->button, TRUE);
+    /* The step is over, whatever came of it: grey until the page is opened again. */
+    grey_run(r->button);
     if (done && r->on_fixed != NULL && r->button != NULL)
         r->on_fixed(r->data);
     fix_run_free(r);
@@ -975,9 +1041,10 @@ static void on_run_clicked(GtkButton *button, gpointer user_data)
     r->result = g_object_get_data(G_OBJECT(button), "gaudit-result");
     r->on_fixed = (GauditFixedFn)g_object_get_data(G_OBJECT(button), "gaudit-fixed");
     r->data = g_object_get_data(G_OBJECT(button), "gaudit-fixed-data");
+    r->failed = g_object_get_data(G_OBJECT(button), "gaudit-failed");
     if (r->result != NULL)
         g_object_add_weak_pointer(G_OBJECT(r->result), (gpointer *)&r->result);
-    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+    grey_run(GTK_WIDGET(button));  /* and those that do the same, while it runs */
     if (args[0] != NULL && strcmp(args[0], "session") == 0) {
         /* A system tool as root: through the session, waiting for the
          * switch like any other run. Only the operation's name goes. */
@@ -990,7 +1057,7 @@ static void on_run_clicked(GtkButton *button, gpointer user_data)
         if (!gaudit_session_run(command, NULL, on_session_fix_done, r)) {
             if (r->result != NULL)
                 gtk_label_set_text(GTK_LABEL(r->result), _("It is already under way."));
-            gtk_widget_set_sensitive(GTK_WIDGET(button), TRUE);
+            ungrey_run(GTK_WIDGET(button));  /* it never started */
             fix_run_free(r);
         }
         return;
@@ -1004,6 +1071,12 @@ GtkWidget *gaudit_command_field_new(const char *command_text)
 }
 
 GtkWidget *gaudit_command_field_new_run(const char *command_text, const char *const *run_args)
+{
+    return gaudit_command_field_new_step(command_text, run_args, NULL);
+}
+
+GtkWidget *gaudit_command_field_new_step(const char *command_text, const char *const *run_args,
+                                         const char *failed)
 {
     char *command = g_strdup(command_text);
     /* The command field: read-only, selectable, always left-to-right.
@@ -1049,6 +1122,8 @@ GtkWidget *gaudit_command_field_new_run(const char *command_text, const char *co
     g_object_set_data_full(G_OBJECT(run), "gaudit-command", g_strdup(command_text), g_free);
     g_object_set_data_full(G_OBJECT(run), "gaudit-run", g_strdupv((char **)run_args),
                            (GDestroyNotify)g_strfreev);
+    if (failed != NULL)
+        g_object_set_data_full(G_OBJECT(run), "gaudit-failed", g_strdup(failed), g_free);
     g_signal_connect(run, "clicked", G_CALLBACK(on_run_clicked), cmd_label);
     gtk_box_append(GTK_BOX(field), run);
 

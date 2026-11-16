@@ -7,7 +7,7 @@
 #include "gaudit-orchestrator.h"
 
 #define MAX_OUTPUT (64 * 1024)
-#define MAX_LINE   1024
+#define MAX_LINE   2048  /* the longest: a package without a source, with its details */
 #define READ_CHUNK 8192
 
 struct _GauditOrchestrator {

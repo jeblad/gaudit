@@ -65,6 +65,10 @@
          view-refresh-symbolic (LGPL-3.0, as above), renamed. Not mirrored
          for right-to-left: clockwise is a clock's way, not reading's. -->
     <file preprocess="xml-stripblanks" alias="gaudit-reload-symbolic.svg">icons/scalable/actions/gaudit-reload-symbolic.svg</file>
+    <!-- A recommendation in a report (advice): adwaita-icon-theme's
+         dialog-information-symbolic (LGPL-3.0, as above), renamed so no
+         theme can replace it. -->
+    <file preprocess="xml-stripblanks" alias="gaudit-information-symbolic.svg">icons/scalable/actions/gaudit-information-symbolic.svg</file>
     <!-- The Private Files plugin's sidebar icon: adwaita-icon-theme's
          dialog-password-symbolic (LGPL-3.0, as above), renamed. -->
     <file preprocess="xml-stripblanks" alias="gaudit-private-files-symbolic.svg">icons/scalable/actions/gaudit-private-files-symbolic.svg</file>

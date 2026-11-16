@@ -17,4 +17,8 @@ gboolean gaudit_updates_line(const char *line, gboolean *last);
  * collection, which also names the backend). */
 AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines, guint item);
 
+/* Removes what a known vendor package's download left in
+ * ~/.cache/gaudit/vendor (a crash, a closed app): called at start-up. */
+void gaudit_updates_clean_downloads(void);
+
 G_END_DECLS

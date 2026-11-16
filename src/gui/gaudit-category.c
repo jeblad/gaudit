@@ -104,7 +104,7 @@ AdwNavigationPage *gaudit_category_page_new(const GauditCategory *category,
                  * one. The icon carries the signal, not colour. */
                 GtkWidget *tag = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
                 gtk_widget_set_valign(tag, GTK_ALIGN_CENTER);
-                gtk_box_append(GTK_BOX(tag), gtk_image_new_from_icon_name("dialog-information-symbolic"));
+                gtk_box_append(GTK_BOX(tag), gtk_image_new_from_icon_name("gaudit-information-symbolic"));
                 GtkWidget *text = gtk_label_new(_("Recommended"));
                 gtk_widget_add_css_class(text, "caption-heading");
                 gtk_box_append(GTK_BOX(tag), text);

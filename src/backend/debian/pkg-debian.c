@@ -5,11 +5,14 @@
 #include "apt-conf.h"
 #include "apt-sources.h"
 #include "dpkg.h"
+#include "os-release.h"
 #include "flatpak-runner.h"
 #include "snap-runner.h"
 
 #include <dirent.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <stddef.h>
@@ -229,9 +232,52 @@ static gaudit_backend_status update_settings(gaudit_update_settings *out)
                                            sizeof apt_version);
     out->upgrade_updates = got < 0 ? -1 : got == 0 ? 0
                          : gaudit_deb_version_compare(apt_version, "2.7.0") >= 0;
+    unsigned unread = 0;
+    out->unread_sources = gaudit_apt_unread_sources("/etc/apt/sources.list", "/etc/apt/sources.list.d",
+                                                    "/var/lib/apt/lists", &unread, out->unread_names,
+                                                    sizeof out->unread_names) == GAUDIT_BACKEND_OK
+                        ? (int)unread : -1;
+    unsigned off = 0;
+    out->upgrade_off = gaudit_apt_upgrade_disabled_sources("/etc/apt/sources.list.d", &off,
+                                                           out->upgrade_off_names,
+                                                           sizeof out->upgrade_off_names)
+                       == GAUDIT_BACKEND_OK ? (int)off : -1;
     out->admin_tools = gaudit_deb_installed_names("/var/lib/dpkg/status", tools, out->admin_names,
                                                   sizeof out->admin_names, &n) == 0 ? (int)n : -1;
     return GAUDIT_BACKEND_OK;
+}
+
+/* Read as the user: dpkg's and apt's state, and the Flatpak and Snap
+ * folders, system-wide and the user's own. */
+static gaudit_backend_status package_details(const char *name, const char *arch,
+                                             gaudit_package_details *out)
+{
+    char user_flatpak[PATH_MAX] = "";
+    const char *home = getenv("HOME");
+    if (home != NULL && home[0] == '/')
+        snprintf(user_flatpak, sizeof user_flatpak, "%s/.local/share/flatpak/app", home);
+    const char *flatpak_dirs[] = { "/var/lib/flatpak/app", user_flatpak[0] != '\0' ? user_flatpak : NULL,
+                                   NULL };
+    /* The release running, for "built for an older release". */
+    static gaudit_os_release os;
+    static int have_os = -1;
+    if (have_os < 0)
+        have_os = gaudit_os_release_read("/etc/os-release", &os) == 0
+                  || gaudit_os_release_read("/usr/lib/os-release", &os) == 0;
+    const gaudit_deb_paths paths = {
+        .os_id = have_os ? os.id : NULL,
+        .os_version_id = have_os ? os.version_id : NULL,
+        .status_file = "/var/lib/dpkg/status",
+        .info_dir = "/var/lib/dpkg/info",
+        .extended_states = "/var/lib/apt/extended_states",
+        .flatpak_dirs = flatpak_dirs,
+        .snap_dir = "/snap",
+        .sources_dir = "/etc/apt/sources.list.d",
+        .distro_info = have_os && strcmp(os.id, "debian") == 0 ? "/usr/share/distro-info/debian.csv"
+                                                               : "/usr/share/distro-info/ubuntu.csv",
+    };
+    return gaudit_deb_package_details(&paths, name, arch, out) == 0 ? GAUDIT_BACKEND_OK
+                                                                    : GAUDIT_BACKEND_ERROR;
 }
 
 #define FLATPAK_TIMEOUT_MS 5000
@@ -259,6 +305,14 @@ static gaudit_backend_status snap_state(gaudit_snap_state *out)
     return gaudit_snap_run_probe("/usr/bin/snap", GAUDIT_SNAP_PROBE_PATH, FLATPAK_TIMEOUT_MS, out);
 }
 
+static gaudit_backend_status each_package(const char *index,
+                                          void (*fn)(const char *, const char *, const char *, void *),
+                                          void *ctx)
+{
+    return gaudit_deb_each_package(index != NULL ? index : "/var/lib/dpkg/status", index == NULL,
+                                   fn, ctx) == 0 ? GAUDIT_BACKEND_OK : GAUDIT_BACKEND_ERROR;
+}
+
 static const gaudit_pkg_backend debian_pkg = {
     .name = "debian",
     .package_system = "dpkg/apt",
@@ -274,6 +328,9 @@ static const gaudit_pkg_backend debian_pkg = {
     .automatic_updates = automatic_updates,
     .package_state = package_state,
     .package_counts = package_counts,
+    .package_details = package_details,
+    .version_compare = gaudit_deb_version_compare,
+    .each_package = each_package,
     .update_settings = update_settings,
     .sourceless_packages = sourceless_packages,
     .flatpak_state = flatpak_state,

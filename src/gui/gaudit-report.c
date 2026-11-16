@@ -528,7 +528,8 @@ void gaudit_report_show(AdwStatusPage *status, const GauditReport *report, const
             adw_preferences_row_set_title(ADW_PREFERENCES_ROW(row), t);
             adw_action_row_set_subtitle(row, st);
             if (advice) {
-                GtkWidget *image = gtk_image_new_from_icon_name("dialog-information-symbolic");
+                /* gAudit's own name: the meaning matters, so no theme replaces it. */
+                GtkWidget *image = gtk_image_new_from_icon_name("gaudit-information-symbolic");
                 gtk_widget_add_css_class(image, "accent");
                 gtk_widget_set_tooltip_text(image, _("Recommendation"));
                 gtk_accessible_update_property(GTK_ACCESSIBLE(image), GTK_ACCESSIBLE_PROPERTY_LABEL,

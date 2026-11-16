@@ -1,0 +1,4 @@
+Types: deb
+URIs: http://old.example.org/repo
+Suites: stable
+Enabled: no

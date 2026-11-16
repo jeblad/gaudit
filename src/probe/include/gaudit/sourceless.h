@@ -3,7 +3,17 @@
  * ("gaudit-orchestrator packages"): one line per package, then a summary
  * line, parsed strictly on the receiving side.
  *
- *   (package (name "...") (arch "...") (version "...") (group G) (offered "..."))
+ *   (package (name "...") (arch "...") (version "...") (group G) (offered "...")
+ *            (replaced "...") (needed-by N) (needed "...") (manual M) (installed T)
+ *            (program P) (built-for "...") (likely-source "..."))
+ *
+ * The last six help judge a package, nothing more: replaced "flatpak <id>"
+ * or "snap <name>" (probably replaced) or ""; needed-by -1 unknown, needed
+ * the first names; manual 1 on purpose, 0 as a dependency, -1 unknown;
+ * installed a time (seconds since 1970), 0 unknown; program 1 when it
+ * installs a program people start themselves, 0 not, -1 unknown; built-for
+ * the older release its version names ("Ubuntu 25.10"), or ""; likely-source
+ * the sources switched off at an upgrade that were for that release.
  *   (packages (status S) (count N) (shown M))   always last */
 #pragma once
 
@@ -24,6 +34,14 @@ typedef struct {
     char version[96];
     char offered[96];   /* "" unless the group is ABOVE_SOURCE */
     gaudit_sourceless_group group;
+    char replaced[96];
+    int needed_by;
+    char needed[128];
+    int manual;
+    long long installed;
+    int program;
+    char built_for[32];
+    char likely_source[128];
 } gaudit_sourceless_package;
 
 typedef enum {

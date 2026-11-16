@@ -1,0 +1,9 @@
+Types: deb
+URIs: https://ppa.launchpadcontent.net/cappelikan/ppa/ubuntu/
+Suites: questing
+Components: main
+Signed-By: -----BEGIN PGP PUBLIC KEY BLOCK-----
+ .
+ Enabled: yes
+ -----END PGP PUBLIC KEY BLOCK-----
+Enabled: no

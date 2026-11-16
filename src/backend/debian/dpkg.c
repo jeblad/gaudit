@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 #include "dpkg.h"
 
+#include "apt-sources.h"
 #include "compressed.h"
 
 #include <ctype.h>
@@ -118,6 +119,8 @@ typedef struct {
     char maintainer[256];
     int original_maintainer;  /* Original-Maintainer: present (a distribution's change) */
     int phased;  /* Phased-Update-Percentage, -1 if absent */
+    char depends[2048];  /* Depends and Pre-Depends, ", " between (truncated if longer) */
+    int auto_installed;  /* extended_states: Auto-Installed: 1 */
 } stanza;
 
 typedef int (*stanza_fn)(const stanza *s, void *ctx);  /* 0: go on, -1: abort */
@@ -181,8 +184,19 @@ static int read_stanzas(const char *path, stanza_fn fn, void *ctx)
             || copy_field(line, "Version:", s.version, sizeof s.version)
             || copy_field(line, "Status:", s.status, sizeof s.status))
             continue;
-        if (copy_field(line, "Phased-Update-Percentage:", phased, sizeof phased))
+        if (copy_field(line, "Phased-Update-Percentage:", phased, sizeof phased)) {
             s.phased = atoi(phased);
+            continue;
+        }
+        char deps[2048];
+        if (copy_field(line, "Depends:", deps, sizeof deps)
+            || copy_field(line, "Pre-Depends:", deps, sizeof deps)) {
+            size_t used = strlen(s.depends);
+            snprintf(s.depends + used, sizeof s.depends - used, "%s%s", used > 0 ? ", " : "", deps);
+            continue;
+        }
+        if (copy_field(line, "Auto-Installed:", ignored, sizeof ignored))
+            s.auto_installed = strcmp(ignored, "1") == 0;
     }
     if (rc == 0 && have && fn(&s, ctx) != 0)
         rc = -1;
@@ -657,6 +671,255 @@ static int find_installed(const stanza *s, void *vctx)
     return 0;
 }
 
+/* --- Details of one package ------------------------------------------------- */
+
+/* Whether a Depends list names package (any alternative, any version or
+ * arch qualifier). */
+static int depends_on(const char *depends, const char *package)
+{
+    size_t n = strlen(package);
+    for (const char *p = depends; *p != '\0';) {
+        while (*p == ' ' || *p == ',' || *p == '|')
+            p++;
+        size_t len = strcspn(p, " ,|(:");
+        if (len == n && strncmp(p, package, n) == 0)
+            return 1;
+        p += len;
+        p += strcspn(p, ",|");
+    }
+    return 0;
+}
+
+typedef struct {
+    const char *name, *arch;
+    int count;
+    char *names;
+    size_t len;
+    char *maintainer;  /* the package's own Maintainer, as dpkg has it */
+    size_t maintainer_len;
+    char *version;     /* and its version */
+    size_t version_len;
+} needed_ctx;
+
+static int count_needed(const stanza *s, void *vctx)
+{
+    needed_ctx *ctx = vctx;
+    if (is_installed(s->status) && strcmp(s->package, ctx->name) == 0
+        && (ctx->arch == NULL || ctx->arch[0] == '\0' || s->arch[0] == '\0'
+            || strcmp(s->arch, ctx->arch) == 0)) {
+        snprintf(ctx->maintainer, ctx->maintainer_len, "%s", s->maintainer);
+        snprintf(ctx->version, ctx->version_len, "%s", s->version);
+    }
+    if (!is_installed(s->status) || strcmp(s->package, ctx->name) == 0
+        || !depends_on(s->depends, ctx->name))
+        return 0;
+    size_t used = strlen(ctx->names);
+    if (ctx->count < 3)
+        snprintf(ctx->names + used, ctx->len - used, "%s%s", ctx->count > 0 ? ", " : "", s->package);
+    ctx->count++;
+    return 0;
+}
+
+typedef struct {
+    const char *name, *arch;
+    int found, auto_installed;
+} auto_ctx;
+
+static int find_auto(const stanza *s, void *vctx)
+{
+    auto_ctx *ctx = vctx;
+    if (strcmp(s->package, ctx->name) == 0
+        && (ctx->arch == NULL || ctx->arch[0] == '\0' || s->arch[0] == '\0'
+            || strcmp(s->arch, ctx->arch) == 0)) {
+        ctx->found = 1;
+        ctx->auto_installed = s->auto_installed;
+    }
+    return 0;
+}
+
+static int is_dir(const char *path)
+{
+    struct stat st;
+    return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+/* The id a file the package installed gives a program by: an AppStream
+ * metainfo or a desktop file. 1 with id set, 0 otherwise. */
+static int program_id(const char *path, char *id, size_t len)
+{
+    static const struct { const char *dir, *suffix; } kinds[] = {
+        { "/usr/share/metainfo/", ".metainfo.xml" }, { "/usr/share/metainfo/", ".appdata.xml" },
+        { "/usr/share/appdata/", ".appdata.xml" },   { "/usr/share/applications/", ".desktop" },
+    };
+    for (size_t i = 0; i < sizeof kinds / sizeof kinds[0]; i++) {
+        size_t dl = strlen(kinds[i].dir), sl = strlen(kinds[i].suffix), pl = strlen(path);
+        if (pl <= dl + sl || strncmp(path, kinds[i].dir, dl) != 0
+            || strcmp(path + pl - sl, kinds[i].suffix) != 0 || strchr(path + dl, '/') != NULL)
+            continue;
+        snprintf(id, len, "%.*s", (int)(pl - dl - sl), path + dl);
+        /* An old AppStream id may carry ".desktop" itself. */
+        size_t il = strlen(id);
+        if (il > 8 && strcmp(id + il - 8, ".desktop") == 0)
+            id[il - 8] = '\0';
+        return id[0] != '\0';
+    }
+    return 0;
+}
+
+/* The same program installed as a Flatpak or a snap: by the ids of the
+ * programs the package installed, then by its own name. */
+static void find_replacement(const gaudit_deb_paths *paths, const char *list, const char *name,
+                             char *out, size_t len, int *program)
+{
+    out[0] = '\0';
+    FILE *f = list != NULL ? fopen(list, "re") : NULL;
+    *program = f != NULL ? 0 : -1;
+    char line[1024], id[256], path[PATH_MAX];
+    while (f != NULL && fgets(line, sizeof line, f) != NULL) {
+        line[strcspn(line, "\n")] = '\0';
+        if (strncmp(line, "/usr/share/applications/", 24) == 0 && strchr(line + 24, '/') == NULL
+            && strlen(line) > 32 && strcmp(line + strlen(line) - 8, ".desktop") == 0)
+            *program = 1;
+        if (out[0] != '\0' || !program_id(line, id, sizeof id))
+            continue;
+        for (const char *const *d = paths->flatpak_dirs; d != NULL && *d != NULL && out[0] == '\0'; d++) {
+            snprintf(path, sizeof path, "%s/%s", *d, id);
+            if (is_dir(path))
+                snprintf(out, len, "flatpak %s", id);
+        }
+        /* A snap is named simply, as a desktop file often is. */
+        if (out[0] == '\0' && paths->snap_dir != NULL && strchr(id, '.') == NULL) {
+            snprintf(path, sizeof path, "%s/%s", paths->snap_dir, id);
+            if (is_dir(path))
+                snprintf(out, len, "snap %s", id);
+        }
+    }
+    if (f != NULL)
+        fclose(f);
+    if (out[0] == '\0' && paths->snap_dir != NULL) {
+        snprintf(path, sizeof path, "%s/%s", paths->snap_dir, name);
+        if (is_dir(path))
+            snprintf(out, len, "snap %s", name);
+    }
+}
+
+/* "YY.MM" as a number to compare (2510 for 25.10); -1 when not that. */
+static int ubuntu_release(const char *p)
+{
+    if (!isdigit((unsigned char)p[0]) || !isdigit((unsigned char)p[1]) || p[2] != '.'
+        || !isdigit((unsigned char)p[3]) || !isdigit((unsigned char)p[4])
+        || isdigit((unsigned char)p[5]))
+        return -1;
+    return (p[0] - '0') * 1000 + (p[1] - '0') * 100 + (p[3] - '0') * 10 + (p[4] - '0');
+}
+
+int gaudit_deb_built_for(const char *version, const char *os_id, const char *version_id,
+                         char *out, size_t len)
+{
+    if (version == NULL || os_id == NULL || version_id == NULL || out == NULL || len == 0)
+        return 0;
+    out[0] = '\0';
+    if (strcmp(os_id, "ubuntu") == 0) {
+        int now = ubuntu_release(version_id);
+        for (const char *p = strstr(version, "ubuntu"); now > 0 && p != NULL; p = strstr(p + 1, "ubuntu")) {
+            const char *v = p + 6;
+            if (strncmp(v, "0.", 2) == 0)
+                v += 2;  /* an update for a release: 1.2-3ubuntu0.24.04.1 */
+            int built = ubuntu_release(v);
+            if (built > 0 && built < now) {
+                snprintf(out, len, "Ubuntu %.5s", v);
+                return 1;
+            }
+        }
+        return 0;
+    }
+    if (strcmp(os_id, "debian") == 0) {
+        char *end;
+        long now = strtol(version_id, &end, 10);
+        for (const char *p = strstr(version, "deb"); now > 0 && p != NULL; p = strstr(p + 1, "deb")) {
+            if (p == version || (p[-1] != '+' && p[-1] != '~') || !isdigit((unsigned char)p[3]))
+                continue;
+            long built = strtol(p + 3, &end, 10);
+            if (*end == 'u' && built > 0 && built < now) {
+                snprintf(out, len, "Debian %ld", built);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int gaudit_deb_package_details(const gaudit_deb_paths *paths, const char *name, const char *arch,
+                               gaudit_package_details *out)
+{
+    if (paths == NULL || name == NULL || out == NULL)
+        return -1;
+    memset(out, 0, sizeof *out);
+    out->needed_by = -1;
+    out->manual = -1;
+    out->program = -1;
+
+    needed_ctx need = { name, arch, 0, out->needed_names, sizeof out->needed_names,
+                        out->maintainer, sizeof out->maintainer, out->version, sizeof out->version };
+    if (paths->status_file != NULL && read_stanzas(paths->status_file, count_needed, &need) == 0) {
+        out->needed_by = need.count;
+    } else {
+        out->needed_names[0] = '\0';
+        out->maintainer[0] = '\0';
+        out->version[0] = '\0';
+    }
+
+    /* apt marks what it installed as a dependency; anything else, also a
+     * package installed with dpkg alone, counts as installed on purpose. */
+    auto_ctx a = { name, arch, 0, 0 };
+    if (paths->extended_states != NULL && read_stanzas(paths->extended_states, find_auto, &a) == 0)
+        out->manual = a.found ? !a.auto_installed : 1;
+
+    char list[PATH_MAX];
+    struct stat st;
+    const char *found = NULL;
+    if (paths->info_dir != NULL) {
+        if (arch != NULL && arch[0] != '\0') {
+            snprintf(list, sizeof list, "%s/%s:%s.list", paths->info_dir, name, arch);
+            if (stat(list, &st) == 0)
+                found = list;
+        }
+        if (found == NULL) {
+            snprintf(list, sizeof list, "%s/%s.list", paths->info_dir, name);
+            if (stat(list, &st) == 0)
+                found = list;
+        }
+    }
+    if (found != NULL)
+        out->installed = st.st_mtime;
+    find_replacement(paths, found, name, out->replaced, sizeof out->replaced, &out->program);
+    char version[MAX_VERSION];
+    if (paths->os_id != NULL && paths->status_file != NULL
+        && gaudit_deb_installed_version(paths->status_file, name, version, sizeof version) == 1)
+        gaudit_deb_built_for(version, paths->os_id, paths->os_version_id, out->built_for,
+                             sizeof out->built_for);
+    /* Built for an older release: the sources switched off at an upgrade
+     * that were for that release are probably where it came from. */
+    if (out->built_for[0] != '\0' && paths->sources_dir != NULL && paths->distro_info != NULL) {
+        gaudit_apt_off_source off[32];
+        size_t n = 0;
+        const char *built = strchr(out->built_for, ' ');  /* "Ubuntu 25.10" -> "25.10" */
+        if (built != NULL && gaudit_apt_upgrade_disabled_list(paths->sources_dir, off, 32, &n)
+                             == GAUDIT_BACKEND_OK) {
+            for (size_t i = 0; i < n; i++) {
+                char v[32];
+                if (!gaudit_distro_info_version(paths->distro_info, off[i].suite, v, sizeof v)
+                    || strcmp(v, built + 1) != 0 || strstr(out->likely_source, off[i].label) != NULL)
+                    continue;
+                size_t used = strlen(out->likely_source);
+                snprintf(out->likely_source + used, sizeof out->likely_source - used, "%s%s",
+                         used > 0 ? ", " : "", off[i].label);
+            }
+        }
+    }
+    return 0;
+}
+
 typedef struct {
     const char *name;
     char *out;
@@ -812,6 +1075,40 @@ gaudit_backend_status gaudit_deb_scan(const char *status_file, const char *lists
     return gaudit_deb_scan_ex(status_file, lists_dir, prefs_file, prefs_dir, out, NULL, NULL);
 }
 
+int gaudit_deb_update_version(const char *version)
+{
+    if (version == NULL)
+        return 0;
+    /* Ubuntu: "1ubuntu0.1", "0ubuntu0.24.04.1"; Debian: "+deb12u1". */
+    const char *u = strstr(version, "ubuntu0.");
+    if (u != NULL && u[8] >= '0' && u[8] <= '9')
+        return 1;
+    for (const char *d = strstr(version, "+deb"); d != NULL; d = strstr(d + 1, "+deb")) {
+        const char *p = d + 4;
+        if (*p < '0' || *p > '9')
+            continue;
+        while (*p >= '0' && *p <= '9')
+            p++;
+        if (*p == 'u' && p[1] >= '0' && p[1] <= '9')
+            return 1;
+    }
+    return 0;
+}
+
+/* Whether name was last installed or upgraded before when (its file list's time). */
+static int installed_before(const char *info_dir, const char *name, const char *arch, time_t when)
+{
+    char path[PATH_MAX + 512];
+    struct stat st;
+    snprintf(path, sizeof path, "%s/%s:%s.list", info_dir, name, arch != NULL ? arch : "");
+    if (arch == NULL || arch[0] == '\0' || stat(path, &st) != 0) {
+        snprintf(path, sizeof path, "%s/%s.list", info_dir, name);
+        if (stat(path, &st) != 0)
+            return 0;
+    }
+    return st.st_mtime < when;
+}
+
 gaudit_backend_status gaudit_deb_scan_ex(const char *status_file, const char *lists_dir,
                                          const char *prefs_file, const char *prefs_dir,
                                          gaudit_deb_counts *out,
@@ -882,6 +1179,20 @@ gaudit_backend_status gaudit_deb_scan_ex(const char *status_file, const char *li
     out->obsolete = 0;
     out->upgradable = 0;
     out->security = 0;
+    /* When the release was last upgraded: base-files is replaced then, so
+     * its file list's time. 0 when it cannot be told. */
+    char info_dir[PATH_MAX];
+    snprintf(info_dir, sizeof info_dir, "%s", status_file);
+    char *slash = strrchr(info_dir, '/');
+    time_t upgraded = 0;
+    if (slash != NULL) {
+        snprintf(slash, sizeof info_dir - (size_t)(slash - info_dir), "/info");
+        char path[PATH_MAX + 32];
+        struct stat st;
+        snprintf(path, sizeof path, "%s/base-files.list", info_dir);
+        if (stat(path, &st) == 0)
+            upgraded = st.st_mtime;
+    }
     for (size_t i = 0; i < installed.len; i++) {
         const entry *e = &installed.items[i];
         /* Highest priority wins; on a tie the higher version wins. */
@@ -897,6 +1208,13 @@ gaudit_backend_status gaudit_deb_scan_ex(const char *status_file, const char *li
             gaudit_deb_group group = e->older != NULL ? GAUDIT_SOURCELESS_ABOVE_SOURCE
                                    : e->from_distribution ? GAUDIT_SOURCELESS_LEFTOVER
                                    : GAUDIT_SOURCELESS_OTHER_SOURCE;
+            /* Above the source, by the distribution, versioned as an update
+             * after a release, and installed before the release was last
+             * upgraded: probably the release before's update, kept. */
+            if (group == GAUDIT_SOURCELESS_ABOVE_SOURCE && e->from_distribution && upgraded > 0
+                && gaudit_deb_update_version(e->version)
+                && installed_before(info_dir, e->name, e->arch, upgraded))
+                group = GAUDIT_SOURCELESS_KEPT;
             if (on_obsolete != NULL)
                 on_obsolete(e->name, e->arch, e->version, group, e->older, cb_ctx);
         }
@@ -906,4 +1224,28 @@ done:
     free_entries(&installed);
     free(pins);
     return status;
+}
+
+typedef struct {
+    int installed_only;
+    gaudit_deb_each_fn fn;
+    void *ctx;
+} each_ctx;
+
+static int each_one(const stanza *s, void *vctx)
+{
+    each_ctx *c = vctx;
+    if (s->package[0] == '\0' || (c->installed_only && !is_installed(s->status)))
+        return 0;
+    c->fn(s->package, s->arch, s->version, c->ctx);
+    return 0;
+}
+
+int gaudit_deb_each_package(const char *path, int installed_only, gaudit_deb_each_fn fn,
+                            void *ctx)
+{
+    if (path == NULL || fn == NULL)
+        return -1;
+    each_ctx c = { installed_only, fn, ctx };
+    return read_stanzas(path, each_one, &c) == 0 ? 0 : -1;
 }

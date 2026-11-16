@@ -62,6 +62,9 @@ typedef enum {
     GAUDIT_SOURCELESS_LEFTOVER,         /* offered nowhere; by the distribution: probably left
                                            over from an older release */
     GAUDIT_SOURCELESS_OTHER_SOURCE,     /* offered nowhere; by someone else */
+    GAUDIT_SOURCELESS_KEPT,             /* offered only in a lower version, but an update the
+                                           distribution made for the release before, kept
+                                           at the upgrade (Debian backend only) */
     GAUDIT_SOURCELESS_GROUPS
 } gaudit_sourceless_group;
 
@@ -87,7 +90,31 @@ typedef struct {
     int own_setting;       /* gAudit's own drop-in for automatic updates is there */
     int upgrade_updates;   /* the upgrade command can fetch the lists itself (apt 2.7.0 and
                               newer: --update), so the fix needs no second step */
+    int unread_sources;    /* software sources set up whose lists were never fetched */
+    char unread_names[128];/* their hosts, ", " between */
+    int upgrade_off;       /* software sources switched off when the release was upgraded */
+    char upgrade_off_names[128]; /* their names ("ppa:owner/name", a host), ", " between */
 } gaudit_update_settings;
+
+/* What can be told about an installed package without a source, to help
+ * judge it; nothing here is a judgement. */
+typedef struct {
+    char replaced[96];      /* "flatpak <app id>" or "snap <name>" when the same program is
+                               installed that way too (probably replaced); "" otherwise */
+    int needed_by;          /* installed packages that depend on it; -1 unknown */
+    char needed_names[128]; /* the first of them, ", " between */
+    int manual;             /* 1 installed on purpose, 0 as a dependency, -1 unknown */
+    int64_t installed;      /* when it was last installed or upgraded; 0 unknown */
+    int program;            /* 1 it installs a program people start themselves (a desktop
+                               entry), 0 not, -1 unknown */
+    char built_for[32];     /* the older release its version says it was built for, e.g.
+                               "Ubuntu 25.10"; "" when it names none, or this one */
+    char likely_source[128];/* the sources switched off at an upgrade that were for that
+                               release ("ppa:owner/name", ...): probably where it came from */
+    char maintainer[128];   /* who made the package, as the package says (Debian's
+                               Maintainer field); "" unknown */
+    char version[96];       /* the version installed; "" unknown */
+} gaudit_package_details;
 
 typedef struct gaudit_capability {
     const char *id;
@@ -136,6 +163,23 @@ typedef struct gaudit_pkg_backend {
      * NULL where the backend cannot tell security updates apart. */
     gaudit_backend_status (*package_counts)(unsigned *out_obsolete, unsigned *out_upgradable,
                                             unsigned *out_security);
+
+    /* Details of one installed package (see gaudit_package_details). NULL
+     * where the backend has none. */
+    gaudit_backend_status (*package_details)(const char *name, const char *arch,
+                                             gaudit_package_details *out);
+
+    /* Every package, one call each: those installed when index is NULL,
+     * else those an index of the package system's own format lists (an
+     * apt Packages file). NULL where the backend has none. */
+    gaudit_backend_status (*each_package)(const char *index,
+                                          void (*fn)(const char *name, const char *arch,
+                                                     const char *version, void *ctx),
+                                          void *ctx);
+
+    /* Compares two versions by the package system's own rules: <0, 0, >0
+     * as a sorts before, with, after b. NULL where the backend has none. */
+    int (*version_compare)(const char *a, const char *b);
 
     /* How updates are looked for and installed. NULL where not supported. */
     gaudit_backend_status (*update_settings)(gaudit_update_settings *out);

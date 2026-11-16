@@ -17,13 +17,17 @@ static const char *const timers_argv[] = {
     "/usr/bin/systemctl", "enable", "--now", "apt-daily.timer", "apt-daily-upgrade.timer", NULL,
 };
 static const char *const reinstall_argv[] = { APT_GET, "install", "--reinstall", NULL };
+/* Sets the PPA up for the release running, with its signing key from
+ * Launchpad, and fetches the lists; -y: nothing could answer its question. */
+static const char *const add_ppa_argv[] = { "/usr/bin/add-apt-repository", "-y", NULL };
 
 static const gaudit_apt_op ops[] = {
-    { "apt-update",         update_argv,         0 },
-    { "apt-upgrade",        upgrade_argv,        0 },
-    { "apt-upgrade-update", upgrade_update_argv, 0 },
-    { "enable-apt-timers",  timers_argv,         0 },
-    { "reinstall",          reinstall_argv,      1 },
+    { "apt-update",         update_argv,         GAUDIT_APT_ARGS_NONE },
+    { "apt-upgrade",        upgrade_argv,        GAUDIT_APT_ARGS_NONE },
+    { "apt-upgrade-update", upgrade_update_argv, GAUDIT_APT_ARGS_NONE },
+    { "enable-apt-timers",  timers_argv,         GAUDIT_APT_ARGS_NONE },
+    { "reinstall",          reinstall_argv,      GAUDIT_APT_ARGS_PACKAGES },
+    { "add-ppa",            add_ppa_argv,        GAUDIT_APT_ARGS_PPA },
 };
 
 const gaudit_apt_op *gaudit_apt_op_find(const char *name)
@@ -43,10 +47,30 @@ static int append(char *buf, size_t len, size_t *used, const char *word)
     return 0;
 }
 
-int gaudit_apt_op_shown(const gaudit_apt_op *op, const char *const *packages, size_t n_packages,
+int gaudit_apt_op_args_ok(const gaudit_apt_op *op, const char *const *args, size_t n_args)
+{
+    if (op == NULL || (n_args > 0 && args == NULL))
+        return 0;
+    switch (op->args) {
+    case GAUDIT_APT_ARGS_NONE:
+        return n_args == 0;
+    case GAUDIT_APT_ARGS_PACKAGES:
+        if (n_args == 0 || n_args > GAUDIT_APT_MAX_PACKAGES)
+            return 0;
+        for (size_t i = 0; i < n_args; i++)
+            if (!gaudit_apt_plain_package(args[i]))
+                return 0;
+        return 1;
+    case GAUDIT_APT_ARGS_PPA:
+        return n_args == 1 && gaudit_apt_plain_ppa(args[0]);
+    }
+    return 0;
+}
+
+int gaudit_apt_op_shown(const gaudit_apt_op *op, const char *const *args, size_t n_args,
                         char *buf, size_t len)
 {
-    if (op == NULL || buf == NULL || len == 0 || (n_packages > 0 && !op->takes_packages))
+    if (buf == NULL || len == 0 || !gaudit_apt_op_args_ok(op, args, n_args))
         return -1;
     size_t used = 0;
     buf[0] = '\0';
@@ -57,8 +81,8 @@ int gaudit_apt_op_shown(const gaudit_apt_op *op, const char *const *packages, si
     for (size_t i = 1; op->argv[i] != NULL; i++)
         if (append(buf, len, &used, op->argv[i]) != 0)
             return -1;
-    for (size_t i = 0; i < n_packages; i++)
-        if (!gaudit_apt_plain_package(packages[i]) || append(buf, len, &used, packages[i]) != 0)
+    for (size_t i = 0; i < n_args; i++)
+        if (append(buf, len, &used, args[i]) != 0)
             return -1;
     return 0;
 }
@@ -84,4 +108,26 @@ int gaudit_apt_plain_package(const char *name)
         if (!((*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') || *c == '-'))
             return 0;
     return 1;
+}
+
+/* Launchpad's names: lower-case letters, digits, "+", "." and "-". */
+static int plain_launchpad_name(const char *s, size_t len)
+{
+    if (len == 0 || len > 64 || !((s[0] >= 'a' && s[0] <= 'z') || (s[0] >= '0' && s[0] <= '9')))
+        return 0;
+    for (size_t i = 0; i < len; i++) {
+        char c = s[i];
+        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '+' || c == '.' || c == '-'))
+            return 0;
+    }
+    return 1;
+}
+
+int gaudit_apt_plain_ppa(const char *ppa)
+{
+    if (ppa == NULL || strncmp(ppa, "ppa:", 4) != 0)
+        return 0;
+    const char *owner = ppa + 4, *slash = strchr(owner, '/');
+    return slash != NULL && plain_launchpad_name(owner, (size_t)(slash - owner))
+           && plain_launchpad_name(slash + 1, strlen(slash + 1));
 }

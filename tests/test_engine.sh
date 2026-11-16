@@ -16,7 +16,7 @@ for n in 1 2 3 4 5 6 7 8 9 10 11 12 13; do
         echo "private-files-$n: report differs:" >&2; diff "$data/private-files-$n.out" out.$$ >&2; status=1
     fi
 done
-for n in 1 2 3 4 5 6; do
+for n in 1 2 3 4 5 6 7 8 9 10 11 12 13; do
     if ! "$engine" report core.updates < "$data/updates-$n.in" > out.$$ 2>/dev/null; then
         echo "updates-$n: no report" >&2; status=1
     elif ! cmp -s out.$$ "$data/updates-$n.out"; then

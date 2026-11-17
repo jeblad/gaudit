@@ -86,7 +86,7 @@ static void file_line(file_ctx *c, const char *path, const char *problem)
 {
     if (c->shown >= MAX_SHOWN)
         return;
-    char p[300];
+    char p[256];  /* a text field holds at most 255 bytes */
     plain(path, p, sizeof p);
     fprintf(c->out, "(self-file (path \"%s\") (problem \"%s\"))\n", p, problem);
     c->shown++;
@@ -131,9 +131,14 @@ static void extras(file_ctx *c, const char *dir, int depth)
 
 /* --- Processes -------------------------------------------------------------- */
 
+static unsigned processes_shown;  /* lines written in this check, at most MAX_SHOWN */
+
 static void process_line(FILE *out, const char *which, const char *problem, const char *detail)
 {
-    char d[300];
+    if (processes_shown >= MAX_SHOWN)
+        return;
+    processes_shown++;
+    char d[256];
     plain(detail, d, sizeof d);
     fprintf(out, "(self-process (which \"%s\") (problem \"%s\") (detail \"%s\"))\n", which, problem, d);
 }
@@ -240,6 +245,7 @@ void gaudit_selfcheck(const gaudit_selfcheck_env *env, FILE *out)
 {
     gaudit_manifest m = { 0 };
     const char *status;
+    processes_shown = 0;
     file_ctx c = { .out = out, .m = &m };
     unsigned long long seen = seen_version(env->state_file);
     unsigned long long min = seen > env->min_version ? seen : env->min_version;
@@ -288,7 +294,8 @@ void gaudit_selfcheck(const gaudit_selfcheck_env *env, FILE *out)
     }
     fprintf(out,
             "(self (manifest \"%s\") (version %llu) (files %zu) (changed %u) (missing %u) (extra %u)"
-            " (processes %u) (process-problems %d))\n",
-            status, m.version, m.n_files, c.changed, c.missing, c.extra, processes, process_problems);
+            " (files-shown %u) (processes %u) (process-problems %d) (processes-shown %u))\n",
+            status, m.version, m.n_files, c.changed, c.missing, c.extra, c.shown, processes,
+            process_problems, processes_shown);
     gaudit_manifest_free(&m);
 }

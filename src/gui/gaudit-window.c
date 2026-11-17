@@ -5,6 +5,7 @@
 
 #include "gaudit-window.h"
 #include "gaudit-environ.h"
+#include "gaudit-self.h"
 #include "gaudit-crossfade.h"
 #include "gaudit-category.h"
 #include "gaudit-firewall-text.h"
@@ -97,6 +98,14 @@ struct _GauditWindow {
     AdwActionRow *check_rows[GAUDIT_WINDOW_MAX_TASKS];  /* weak: rows of tasks on Home */
     AdwActionRow *empty_rows[GAUDIT_WINDOW_MAX_TASKS];  /* weak: "no report at this level" */
     GtkWidget *chevrons[GAUDIT_WINDOW_MAX_TASKS];       /* weak: in the plugins' group titles */
+
+    /* gAudit checking itself: its row under "This computer" (weak) and its
+     * latest result, kept for the session. */
+    AdwActionRow *self_row;
+    GauditRunResult *self_result;
+    char self_when[16];
+    gboolean self_running, self_waiting;
+    const char *self_note;  /* static, translated: why the last attempt gave nothing */
 };
 
 G_DEFINE_FINAL_TYPE(GauditWindow, gaudit_window, ADW_TYPE_APPLICATION_WINDOW)
@@ -125,6 +134,16 @@ static gboolean strict_passed(GauditWindow *self)
         if (!self->results[i].have || self->results[i].verdict != GAUDIT_VERDICT_OK)
             return FALSE;
         any = TRUE;
+    }
+    /* gAudit checking itself needs the password too, at Thorough. */
+    if (level >= GAUDIT_LEVEL_THOROUGH) {
+        if (self->self_result == NULL)
+            return FALSE;
+        if (!gaudit_self_not_applicable(self->self_result)) {
+            if (gaudit_self_verdict(&self->self_result->self) != GAUDIT_VERDICT_OK)
+                return FALSE;
+            any = TRUE;
+        }
     }
     return any;
 }
@@ -763,10 +782,65 @@ static void fill_check_row(GauditWindow *self, gsize i)
     fill_check_row_inner(self, i);
 }
 
+/* The self-check's row: shown at Thorough, and always once it has a
+ * result or runs. It needs administrator rights, so before it has run it
+ * says so with the question mark, as a task's row does. */
+static void fill_self_row(GauditWindow *self)
+{
+    AdwActionRow *row = self->self_row;
+    if (row == NULL)
+        return;
+    gtk_widget_set_visible(GTK_WIDGET(row), home_level(self) >= GAUDIT_LEVEL_THOROUGH
+                                            || self->self_result != NULL || self->self_running);
+    GtkWidget *prefix = g_object_get_data(G_OBJECT(row), "gaudit-prefix");
+    GtkWidget *old = gtk_widget_get_first_child(prefix);
+    if (old != NULL)
+        gtk_box_remove(GTK_BOX(prefix), old);
+    GtkWidget *chevron = g_object_get_data(G_OBJECT(row), "gaudit-chevron");
+    gtk_widget_set_visible(chevron, self->self_result != NULL && !self->self_running);
+    gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row),
+                                     self->self_result != NULL && !self->self_running);
+    if (self->self_running && self->self_waiting) {
+        gtk_box_append(GTK_BOX(prefix), gtk_image_new_from_icon_name("gaudit-questionmark-symbolic"));
+        adw_action_row_set_subtitle(row, _("Switch to administrator to run this check"));
+        return;
+    }
+    if (self->self_running) {
+        gtk_box_append(GTK_BOX(prefix), row_spinner());
+        adw_action_row_set_subtitle(row, _("Checking…"));
+        return;
+    }
+    if (self->self_result != NULL) {
+        gtk_box_append(GTK_BOX(prefix), gaudit_self_not_applicable(self->self_result)
+                                        ? gaudit_self_not_applicable_icon_new()
+                                        : verdict_icon(gaudit_self_verdict(&self->self_result->self)));
+        g_autofree char *title = gaudit_self_title(self->self_result);
+        g_autofree char *subtitle = g_strdup_printf(_("%s · checked at %s"), title, self->self_when);
+        adw_action_row_set_subtitle(row, subtitle);
+        return;
+    }
+    gboolean waits = !gaudit_session_elevated();
+    gtk_box_append(GTK_BOX(prefix), gtk_image_new_from_icon_name(
+        waits ? "gaudit-questionmark-symbolic" : "gaudit-status-unknown-symbolic"));
+    adw_action_row_set_subtitle(row, self->self_note != NULL ? self->self_note
+                                   : waits ? _("Switch to administrator to run this check")
+                                   : _("Not run yet"));
+}
+
+static void on_self_row_activated(AdwActionRow *row, gpointer user_data)
+{
+    (void)row;
+    GauditWindow *self = GAUDIT_WINDOW(user_data);
+    if (self->self_result != NULL && !self->self_running)
+        adw_navigation_view_push(self->content,
+                                 gaudit_self_page_new(self->self_result, self->self_when));
+}
+
 static void fill_check_rows(GauditWindow *self)
 {
     for (gsize i = 0; i < GAUDIT_WINDOW_MAX_TASKS; i++)
         fill_check_row(self, i);
+    fill_self_row(self);
 }
 
 static GPtrArray *copy_home_rows(GPtrArray *rows)
@@ -854,16 +928,29 @@ static AdwNavigationPage *build_home(GauditWindow *self)
             AdwActionRow *env_row = ADW_ACTION_ROW(adw_action_row_new());
             adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(env_row), FALSE);
             adw_preferences_row_set_title(ADW_PREFERENCES_ROW(env_row),
-                                          _("gAudit was started with settings that load other code"));
+                                          _("The program was started with settings that load other code"));
             /* Translators: %s is a list of environment variable names, e.g. "LD_PRELOAD, GTK_MODULES". */
             g_autofree char *sub = g_strdup_printf(
-                _("Removed before gAudit opened: %s. Code they pointed to may have run all the same, "
-                  "so look into where they came from."), removed);
+                _("Removed before the program opened: %s. Code they pointed to may have run all "
+                  "the same, so look into where they came from."), removed);
             adw_action_row_set_subtitle(env_row, sub);
             adw_action_row_set_subtitle_lines(env_row, 0);
             adw_action_row_add_prefix(env_row, gaudit_verdict_icon_new(GAUDIT_VERDICT_WARNING));
             adw_preferences_group_add(machine, GTK_WIDGET(env_row));
         }
+        /* gAudit checking itself, at Thorough: it needs the password. */
+        AdwActionRow *self_row = ADW_ACTION_ROW(adw_action_row_new());
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(self_row), _("The program itself"));
+        GtkWidget *self_prefix = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+        adw_action_row_add_prefix(self_row, self_prefix);
+        g_object_set_data(G_OBJECT(self_row), "gaudit-prefix", self_prefix);
+        GtkWidget *self_chevron = gtk_image_new_from_icon_name("go-next-symbolic");
+        adw_action_row_add_suffix(self_row, self_chevron);
+        g_object_set_data(G_OBJECT(self_row), "gaudit-chevron", self_chevron);
+        g_signal_connect(self_row, "activated", G_CALLBACK(on_self_row_activated), self);
+        adw_preferences_group_add(machine, GTK_WIDGET(self_row));
+        set_weak(&self->self_row, self_row);
+        fill_self_row(self);
         gtk_box_append(GTK_BOX(box), GTK_WIDGET(machine));
 
         gtk_box_append(GTK_BOX(box), build_level(self));
@@ -1471,8 +1558,8 @@ static GtkWidget *switch_new(GauditWindow *self, gboolean collapsed_only)
     gtk_widget_set_margin_end(pop_box, 6);
     /* The times are the helper's lease (src/helper/lease.h). */
     GtkWidget *pop_text = gtk_label_new(
-        _("gAudit holds administrator rights. They end 2 minutes after the last check "
-          "that needs them, and at the latest 30 minutes after you gave the password."));
+        _("The program holds administrator rights. They end 2 minutes after the last check that "
+          "needs them, and at the latest 30 minutes after you gave the password."));
     gtk_label_set_wrap(GTK_LABEL(pop_text), TRUE);
     gtk_label_set_max_width_chars(GTK_LABEL(pop_text), 36);
     gtk_label_set_xalign(GTK_LABEL(pop_text), 0.0f);
@@ -1598,6 +1685,8 @@ static void gaudit_window_dispose(GObject *object)
 {
     GauditWindow *win = GAUDIT_WINDOW(object);
     set_weak(&win->home_status, NULL);
+    set_weak(&win->self_row, NULL);
+    g_clear_pointer(&win->self_result, g_free);
     for (int i = 0; i < GAUDIT_WINDOW_MAX_TASKS; i++) {
         set_weak(&win->check_rows[i], NULL);
         set_weak(&win->empty_rows[i], NULL);
@@ -1767,9 +1856,30 @@ guint gaudit_window_home_level(GauditWindow *self)
     return home_level(self);
 }
 
+void gaudit_window_self_report(GauditWindow *self, const GauditRunResult *result)
+{
+    g_return_if_fail(GAUDIT_IS_WINDOW(self) && result != NULL && result->kind == GAUDIT_RESULT_SELF);
+    g_free(self->self_result);
+    self->self_result = g_memdup2(result, sizeof *result);
+    self->self_result->lines = NULL;  /* none for this kind; never shared */
+    self->self_result->args = NULL;
+    self->self_running = self->self_waiting = FALSE;
+    self->self_note = NULL;
+    g_autoptr(GDateTime) now = g_date_time_new_now_local();
+    g_autofree char *when = g_date_time_format(now, "%H:%M");
+    g_strlcpy(self->self_when, when != NULL ? when : "", sizeof self->self_when);
+    fill_self_row(self);
+}
+
 void gaudit_window_task_running(GauditWindow *self, gsize task_index)
 {
     g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    if (task_index == GAUDIT_WINDOW_SELF) {
+        self->self_running = TRUE;
+        self->self_note = NULL;
+        fill_self_row(self);
+        return;
+    }
     if (task_index >= GAUDIT_WINDOW_MAX_TASKS)
         return;
     self->results[task_index].running = TRUE;
@@ -1780,6 +1890,11 @@ void gaudit_window_task_running(GauditWindow *self, gsize task_index)
 void gaudit_window_task_waiting(GauditWindow *self, gsize task_index, gboolean waiting)
 {
     g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    if (task_index == GAUDIT_WINDOW_SELF) {
+        self->self_waiting = waiting;
+        fill_self_row(self);
+        return;
+    }
     if (task_index >= GAUDIT_WINDOW_MAX_TASKS)
         return;
     self->results[task_index].waiting = waiting;
@@ -1798,6 +1913,16 @@ void gaudit_window_set_attention(GauditWindow *self, gboolean on)
 void gaudit_window_task_failed(GauditWindow *self, gsize task_index, gaudit_run_status status)
 {
     g_return_if_fail(GAUDIT_IS_WINDOW(self));
+    if (task_index == GAUDIT_WINDOW_SELF) {
+        self->self_running = self->self_waiting = FALSE;
+        self->self_note =
+            status == GAUDIT_RUN_CANCELLED ? _("Not checked: no password was given, or it was stopped")
+            : status == GAUDIT_RUN_DENIED ? _("Not checked: the password was not accepted")
+            : status == GAUDIT_RUN_OK ? _("Another check is running. Try again when it has finished")
+            : _("The check could not be completed");
+        fill_self_row(self);
+        return;
+    }
     if (task_index >= GAUDIT_WINDOW_MAX_TASKS)
         return;
     /* Nothing new: an earlier result stays; otherwise the row says why. */

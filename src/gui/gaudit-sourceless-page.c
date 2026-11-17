@@ -201,7 +201,7 @@ static void on_done(gboolean broken, gpointer user_data)
                      _("Nothing is known about them from this attempt."));
     else if (job->summary.status == GAUDIT_SOURCELESS_UNSUPPORTED)
         show_message(job, "dialog-information-symbolic", _("Not supported on this system yet"),
-                     _("gAudit cannot list these packages here yet."));
+                     _("The program cannot list these packages here yet."));
     else if (job->summary.count == 0)
         show_message(job, "emblem-ok-symbolic", _("Every package has a source"), NULL);
     else if (job->stack != NULL && job->page != NULL) {

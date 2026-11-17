@@ -111,7 +111,7 @@ int gaudit_manifest_signature_ok(const unsigned char *data, size_t len, const ch
 
 static int number(const char *s, unsigned long long *out)
 {
-    if (s == NULL || *s < '0' || *s > '9' || strlen(s) > 19)
+    if (s == NULL || *s < '0' || *s > '9' || strlen(s) > 18)  /* fits a signed 64-bit field */
         return -1;
     char *e;
     errno = 0;

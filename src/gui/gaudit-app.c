@@ -11,6 +11,7 @@
 #include "gaudit-report-run.h"
 #include "gaudit-updates.h"
 #include "gaudit-run-page.h"
+#include "gaudit-self.h"
 #include "gaudit-session.h"
 #include "gaudit-task.h"
 #include "gaudit-window.h"
@@ -157,6 +158,17 @@ static LevelJob *level_job;  /* the one under way, if any */
 static void level_next(LevelJob *job);
 static void start_level_job(GauditApp *app, GauditWindow *view);
 
+/* The command for an entry of the queue: a task's at the job's level, or
+ * gAudit checking itself (GAUDIT_WINDOW_SELF). */
+static const char *job_command(const LevelJob *job, gsize index)
+{
+    if (index == GAUDIT_WINDOW_SELF)
+        return GAUDIT_SELF_COMMAND;
+    gsize n_tasks;
+    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
+    return index < n_tasks ? gaudit_task_home_command(&tasks[index], job->level) : NULL;
+}
+
 /* status: why the tasks still waiting did not run (GAUDIT_RUN_OK when
  * every one did); they lose their spinner with that said. */
 static void level_finish(LevelJob *job, gaudit_run_status status)
@@ -194,16 +206,13 @@ static void on_level_done(gaudit_run_status status, const GauditRunResult *resul
 
 static void level_next(LevelJob *job)
 {
-    gsize n_tasks;
-    const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
     if (job->pos >= job->order->len) {
         level_finish(job, GAUDIT_RUN_OK);
         return;
     }
     job->current = g_array_index(job->order, gsize, job->pos++);
     gaudit_window_task_running(job->view, job->current);
-    if (!gaudit_session_run(gaudit_task_home_command(&tasks[job->current], job->level), NULL,
-                            on_level_done, job)) {
+    if (!gaudit_session_run(job_command(job, job->current), NULL, on_level_done, job)) {
         /* The same plugin is already at work (e.g. from its page 2). */
         gaudit_window_task_failed(job->view, job->current, GAUDIT_RUN_OK);
         level_next(job);
@@ -219,10 +228,8 @@ static void start_level_job(GauditApp *app, GauditWindow *view)
         /* Asked for anew while one is under way: that one finishes first,
          * then this starts; one that waits for the password would never
          * finish, so it stops now. */
-        gsize n_tasks;
-        const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
         level_job->again = TRUE;
-        const char *command = gaudit_task_home_command(&tasks[level_job->current], level_job->level);
+        const char *command = job_command(level_job, level_job->current);
         if (gaudit_session_waiting_for(command))
             gaudit_session_cancel_for(command);
         return;
@@ -240,6 +247,11 @@ static void start_level_job(GauditApp *app, GauditWindow *view)
             if (gaudit_task_home_command(&tasks[i], level) != NULL
                 && gaudit_task_home_needs_admin(&tasks[i], level) == (gboolean)admin)
                 g_array_append_val(job->order, i);
+    if (level >= GAUDIT_LEVEL_THOROUGH) {
+        /* gAudit checking itself, last: it needs the password. */
+        gsize self_index = GAUDIT_WINDOW_SELF;
+        g_array_append_val(job->order, self_index);
+    }
     level_job = job;
     /* Every task waiting its turn has its spinner from the start, and loses
      * it only when its own run is done. */
@@ -303,6 +315,7 @@ static void on_waiting(const char *command, gboolean waiting, gboolean first, gp
 {
     gsize index;
     const GauditTaskInfo *task = gaudit_task_for_command(command, &index);
+    gboolean is_self = g_strcmp0(command, GAUDIT_SELF_COMMAND) == 0;
     gboolean any = gaudit_session_any_waiting();
     for (GList *w = gtk_application_get_windows(GTK_APPLICATION(app)); w != NULL; w = w->next) {
         if (!GAUDIT_IS_WINDOW(w->data))
@@ -311,11 +324,16 @@ static void on_waiting(const char *command, gboolean waiting, gboolean first, gp
         gaudit_window_set_attention(view, any);
         if (task != NULL)
             gaudit_window_task_waiting(view, index, waiting);
+        else if (is_self)
+            gaudit_window_task_waiting(view, GAUDIT_WINDOW_SELF, waiting);
         if (waiting && first) {
             /* Translators: %s is a plugin, e.g. "Updates". */
             g_autofree char *text = task != NULL
                 ? g_strdup_printf(_("%s needs administrator rights. Use the switch beside the title."),
                                   _(task->title))
+                : is_self
+                ? g_strdup(_("Checking the program itself needs administrator rights. Use the "
+                             "switch beside the title."))
                 : g_strdup(_("This change needs administrator rights. Use the switch beside the title."));
             gaudit_window_toast(view, text);
         }
@@ -493,6 +511,25 @@ static void on_session_result(const char *command, const GauditRunResult *result
                               gpointer app)
 {
     GauditApp *self = GAUDIT_APP(app);
+    if (result->kind == GAUDIT_RESULT_SELF) {
+        /* gAudit checking itself: in the model like a task, so a sign that
+         * gAudit has been changed makes the summary worse. */
+        if (g_strcmp0(command, GAUDIT_SELF_COMMAND) != 0)
+            return;
+        /* A developer build has nothing to compare its files with: that
+         * does not apply, so it is not counted. */
+        if (!gaudit_self_not_applicable(result)
+            && gaudit_model_add_finding(self->model, GAUDIT_SELF_ID,
+                                        gaudit_self_verdict(&result->self)) != GAUDIT_OK)
+            g_warning("gaudit: could not record finding %s", GAUDIT_SELF_ID);
+        gaudit_verdict worst = gaudit_model_summary(self->model);
+        for (GList *w = gtk_application_get_windows(GTK_APPLICATION(self)); w != NULL; w = w->next)
+            if (GAUDIT_IS_WINDOW(w->data)) {
+                gaudit_window_self_report(GAUDIT_WINDOW(w->data), result);
+                gaudit_window_set_worst(GAUDIT_WINDOW(w->data), worst);
+            }
+        return;
+    }
     gsize n_tasks;
     const GauditTaskInfo *tasks = gaudit_tasks_get(&n_tasks);
     /* Every task has its row in its group on Home: its result is kept for

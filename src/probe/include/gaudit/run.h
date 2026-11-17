@@ -18,6 +18,15 @@
  *                       installed (A install) on request; R one of
  *                       gaudit_vendor_result_known's names, hash the
  *                       signature's hash algorithm ("SHA1", "SHA256")
+ *   (self-file (path "...") (problem "changed|missing|extra"))
+ *   (self-process (which "orchestrator|gui") (problem "exe|env|maps|gone")
+ *                 (detail "..."))
+ *   (self (manifest "S") (version N) (files N) (changed N) (missing N) (extra N)
+ *         (files-shown N) (processes N) (process-problems N) (processes-shown N))
+ *                       gAudit checking itself in the helper (selfcheck.h):
+ *                       the findings it lists (at most GAUDIT_SELF_SHOWN
+ *                       of each), then the result; S one of
+ *                       gaudit_self_manifest_known's names
  *   (end (status S))    always last; S is a gaudit_run_status */
 #pragma once
 
@@ -98,6 +107,40 @@ typedef struct {
     char hash[16];
 } gaudit_vendor_report;
 
+/* gAudit checking itself: the signed manifest, its files, the processes
+ * that asked. */
+#define GAUDIT_SELF_SHOWN 40
+
+typedef struct {
+    char manifest[16];          /* ok, bad-signature, bad-format, expired, too-old,
+                                   from-future, missing (none installed), no-key
+                                   (a build without gAudit's key) */
+    unsigned long long version;
+    unsigned files, changed, missing, extra, files_shown;
+    unsigned processes, process_problems, processes_shown;
+} gaudit_self_report;
+
+typedef struct {
+    char path[256];
+    char problem[8];            /* changed, missing, extra */
+} gaudit_self_file;
+
+typedef struct {
+    char which[16];             /* orchestrator, gui */
+    char problem[8];            /* exe, env, maps, gone */
+    char detail[256];           /* the program, the variable or the file */
+} gaudit_self_process;
+
+/* 1 if name is one of the manifest states above. */
+int gaudit_self_manifest_known(const char *name);
+
+/* The verdict: a file that differs, is missing or is extra, a process not
+ * as it should be, or a manifest that is not good (not signed by gAudit's
+ * key, unreadable, older than one seen, from the future, expired) is a
+ * warning; no manifest to check with (none installed, a build without
+ * the key) leaves it unknown; otherwise OK. */
+gaudit_verdict gaudit_self_verdict(const gaudit_self_report *r);
+
 /* 1 if result is one of the names checking or installing a vendor
  * package can give: verified, weak (verified, but the signature's hash is
  * weaker than expected), installed, and the refusals no-file, too-large,
@@ -116,6 +159,9 @@ typedef enum {
     GAUDIT_RUN_EVENT_CONF,
     GAUDIT_RUN_EVENT_EXEC,
     GAUDIT_RUN_EVENT_VENDOR,
+    GAUDIT_RUN_EVENT_SELF_FILE,
+    GAUDIT_RUN_EVENT_SELF_PROCESS,
+    GAUDIT_RUN_EVENT_SELF,
     GAUDIT_RUN_EVENT_END,
 } gaudit_run_event_type;
 
@@ -128,6 +174,9 @@ typedef struct {
     gaudit_conf_report conf;            /* _CONF */
     gaudit_exec_report exec;            /* _EXEC */
     gaudit_vendor_report vendor;        /* _VENDOR */
+    gaudit_self_file self_file;         /* _SELF_FILE */
+    gaudit_self_process self_process;   /* _SELF_PROCESS */
+    gaudit_self_report self;            /* _SELF */
     gaudit_run_status status;           /* _END */
 } gaudit_run_event;
 

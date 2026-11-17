@@ -11,6 +11,8 @@
  *   signed <seconds since 1970> when it was signed (covered by the signature)
  *   expires <seconds since 1970>
  *   file <sha256 hex> <size> <absolute path>     one per file
+ *
+ * Every number is at most 18 digits, so it fits a signed 64-bit field.
  */
 #pragma once
 

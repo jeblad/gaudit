@@ -212,6 +212,73 @@ int main(void)
                                 " (missing 0) (unreadable 0) (excluded 0) (diverted 0) (bad-lines 0)"
                                 " (megabytes 0) (shown 2) (seconds 0))", &ev) != 0);
 
+    /* gAudit checking itself: round trip, then what is refused. */
+    {
+        gaudit_run_event sf = { .type = GAUDIT_RUN_EVENT_SELF_FILE,
+                                .self_file = { .path = "/usr/libexec/gaudit/gaudit-helper",
+                                               .problem = "changed" } };
+        gaudit_run_event sp2 = { .type = GAUDIT_RUN_EVENT_SELF_PROCESS,
+                                 .self_process = { .which = "gui", .problem = "env",
+                                                   .detail = "LD_PRELOAD" } };
+        gaudit_run_event so = { .type = GAUDIT_RUN_EVENT_SELF,
+                                .self = { .manifest = "ok", .version = 999999999999999999ULL,
+                                          .files = 40, .changed = 1, .extra = 2, .files_shown = 1,
+                                          .processes = 2, .process_problems = 1,
+                                          .processes_shown = 1 } };
+        const gaudit_run_event *self_evs[] = { &sf, &sp2, &so };
+        for (size_t i = 0; i < 3; i++) {
+            char rl[512];
+            gaudit_run_event back;
+            CHECK(gaudit_run_format(self_evs[i], rl, sizeof rl) == 0);
+            CHECK(gaudit_run_parse_line(rl, &back) == 0 && back.type == self_evs[i]->type
+                  && memcmp(&back.self_file, &self_evs[i]->self_file, sizeof back.self_file) == 0
+                  && memcmp(&back.self_process, &self_evs[i]->self_process, sizeof back.self_process) == 0
+                  && memcmp(&back.self, &self_evs[i]->self, sizeof back.self) == 0);
+        }
+        CHECK(gaudit_self_verdict(&so.self) == GAUDIT_VERDICT_WARNING);
+        gaudit_self_report sr = { .manifest = "ok", .files = 3, .processes = 2 };
+        CHECK(gaudit_self_verdict(&sr) == GAUDIT_VERDICT_OK);
+        sr.process_problems = 1;
+        CHECK(gaudit_self_verdict(&sr) == GAUDIT_VERDICT_WARNING);
+        sr = (gaudit_self_report){ .manifest = "missing", .processes = 2 };
+        CHECK(gaudit_self_verdict(&sr) == GAUDIT_VERDICT_UNKNOWN);  /* nothing to check files with */
+        snprintf(sr.manifest, sizeof sr.manifest, "no-key");
+        CHECK(gaudit_self_verdict(&sr) == GAUDIT_VERDICT_UNKNOWN);
+        snprintf(sr.manifest, sizeof sr.manifest, "too-old");
+        CHECK(gaudit_self_verdict(&sr) == GAUDIT_VERDICT_WARNING);   /* an older gAudit put back */
+        snprintf(sr.manifest, sizeof sr.manifest, "bad-signature");
+        CHECK(gaudit_self_verdict(&sr) == GAUDIT_VERDICT_WARNING);
+        /* Refused: unknown names, a quote, findings beyond what it says,
+         * files counted without a good manifest. */
+        CHECK(gaudit_run_parse_line("(self-file (path \"/x\") (problem \"gone\"))", &ev) != 0);
+        CHECK(gaudit_run_parse_line("(self-file (path \"x\") (problem \"extra\"))", &ev) != 0);
+        CHECK(gaudit_run_parse_line("(self-file (path \"/a\\\"b\") (problem \"extra\"))", &ev) != 0);
+        CHECK(gaudit_run_parse_line("(self-process (which \"helper\") (problem \"env\") (detail \"\"))", &ev) != 0);
+        CHECK(gaudit_run_parse_line("(self-process (which \"gui\") (problem \"odd\") (detail \"\"))", &ev) != 0);
+        CHECK(gaudit_run_parse_line("(self-process (which \"gui\") (problem \"gone\") (detail \"\"))", &ev) == 0
+              && ev.type == GAUDIT_RUN_EVENT_SELF_PROCESS);
+        const char *head = "(self (manifest \"%s\") (version 1) (files %d) (changed %d) (missing 0)"
+                           " (extra 0) (files-shown %d) (processes 2) (process-problems 0)"
+                           " (processes-shown 0))";
+        char sline[400];
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+        snprintf(sline, sizeof sline, head, "ok", 3, 1, 1);
+        CHECK(gaudit_run_parse_line(sline, &ev) == 0 && ev.type == GAUDIT_RUN_EVENT_SELF);
+        snprintf(sline, sizeof sline, head, "fine", 3, 1, 1);
+        CHECK(gaudit_run_parse_line(sline, &ev) != 0);   /* no such state */
+        snprintf(sline, sizeof sline, head, "ok", 3, 1, 2);
+        CHECK(gaudit_run_parse_line(sline, &ev) != 0);   /* shows more than it found */
+        snprintf(sline, sizeof sline, head, "ok", 1, 2, 0);
+        CHECK(gaudit_run_parse_line(sline, &ev) != 0);   /* more changed than listed */
+        snprintf(sline, sizeof sline, head, "missing", 3, 0, 0);
+        CHECK(gaudit_run_parse_line(sline, &ev) != 0);   /* files without a manifest */
+#pragma GCC diagnostic pop
+        CHECK(gaudit_run_parse_line("(self (manifest \"ok\") (version 1) (files 1) (changed 0) (missing 0)"
+                                    " (extra 0) (files-shown 0) (processes 3) (process-problems 0)"
+                                    " (processes-shown 0))", &ev) != 0);  /* only two ask */
+    }
+
     /* The integrity verdict. */
     gaudit_integrity_report ir = { .files = 10, .checked = 10 };
     CHECK(gaudit_integrity_verdict(&ir) == GAUDIT_VERDICT_OK);

@@ -214,7 +214,8 @@ static gboolean on_line(const char *line, gpointer user_data)
         }
         return TRUE;
     case GAUDIT_RUN_EVENT_FIREWALL:
-        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0)
+        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0
+            || R->result.n_self_files > 0 || R->result.n_self_processes > 0)
             return FALSE;  /* unasked, twice, or after another kind's findings */
         R->have_result = TRUE;
         R->result.kind = GAUDIT_RESULT_FIREWALL;
@@ -222,8 +223,9 @@ static gboolean on_line(const char *line, gpointer user_data)
         return TRUE;
     case GAUDIT_RUN_EVENT_INTEGRITY_FILE:
         if (R == NULL || !R->wants_result || R->have_result
-            || R->result.n_files >= GAUDIT_INTEGRITY_SHOWN)
-            return FALSE;  /* unasked, after the result, or too many */
+            || R->result.n_files >= GAUDIT_INTEGRITY_SHOWN
+            || R->result.n_self_files > 0 || R->result.n_self_processes > 0)
+            return FALSE;  /* unasked, after the result, too many, or after another kind's */
         R->result.files[R->result.n_files++] = ev.file;
         return TRUE;
     case GAUDIT_RUN_EVENT_INTEGRITY:
@@ -235,7 +237,8 @@ static gboolean on_line(const char *line, gpointer user_data)
         R->result.integrity = ev.integrity;
         return TRUE;
     case GAUDIT_RUN_EVENT_CONF:
-        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0)
+        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0
+            || R->result.n_self_files > 0 || R->result.n_self_processes > 0)
             return FALSE;  /* unasked, twice, or after another kind's findings */
         R->have_result = TRUE;
         R->result.kind = GAUDIT_RESULT_CONF;
@@ -254,6 +257,27 @@ static gboolean on_line(const char *line, gpointer user_data)
         R->have_result = TRUE;
         R->result.kind = GAUDIT_RESULT_VENDOR;
         R->result.vendor = ev.vendor;
+        return TRUE;
+    case GAUDIT_RUN_EVENT_SELF_FILE:
+        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0
+            || R->result.n_self_files >= GAUDIT_SELF_SHOWN)
+            return FALSE;
+        R->result.self_files[R->result.n_self_files++] = ev.self_file;
+        return TRUE;
+    case GAUDIT_RUN_EVENT_SELF_PROCESS:
+        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0
+            || R->result.n_self_processes >= GAUDIT_SELF_SHOWN)
+            return FALSE;
+        R->result.self_processes[R->result.n_self_processes++] = ev.self_process;
+        return TRUE;
+    case GAUDIT_RUN_EVENT_SELF:
+        if (R == NULL || !R->wants_result || R->have_result || R->result.n_files > 0
+            || ev.self.files_shown != R->result.n_self_files
+            || ev.self.processes_shown != R->result.n_self_processes)
+            return FALSE;  /* unasked, twice, or not the findings it says it listed */
+        R->have_result = TRUE;
+        R->result.kind = GAUDIT_RESULT_SELF;
+        R->result.self = ev.self;
         return TRUE;
     case GAUDIT_RUN_EVENT_END:
         if (R == NULL)
@@ -702,6 +726,7 @@ gaudit_verdict gaudit_run_result_verdict(const GauditRunResult *result)
     case GAUDIT_RESULT_CONF:       return GAUDIT_VERDICT_UNKNOWN;
     case GAUDIT_RESULT_EXEC:       return GAUDIT_VERDICT_UNKNOWN;
     case GAUDIT_RESULT_VENDOR:     return GAUDIT_VERDICT_UNKNOWN;
+    case GAUDIT_RESULT_SELF:       return gaudit_self_verdict(&result->self);
     }
     return GAUDIT_VERDICT_UNKNOWN;
 }

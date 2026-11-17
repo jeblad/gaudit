@@ -37,6 +37,13 @@ guint gaudit_window_home_level(GauditWindow *self);
 void gaudit_window_task_running(GauditWindow *self, gsize task_index);
 void gaudit_window_task_failed(GauditWindow *self, gsize task_index, gaudit_run_status status);
 
+/* gAudit checking itself, a row of "This computer" at Thorough: passed as
+ * the task index to the three above, it is that row's state. */
+#define GAUDIT_WINDOW_SELF G_MAXSIZE
+
+/* Its result (kind GAUDIT_RESULT_SELF), kept for the session. */
+void gaudit_window_self_report(GauditWindow *self, const GauditRunResult *result);
+
 /* Its run waits for administrator rights, or no longer does. */
 void gaudit_window_task_waiting(GauditWindow *self, gsize task_index, gboolean waiting);
 

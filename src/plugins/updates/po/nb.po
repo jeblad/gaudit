@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit-updates\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 23:33+0100\n"
+"POT-Creation-Date: 2026-11-17 03:53+0100\n"
 "PO-Revision-Date: 2026-11-15 12:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -74,13 +74,13 @@ msgstr ""
 "med signeringsnøkkelen fra Launchpad, og henter så listene over "
 "oppdateringer."
 
+#
 #: src/plugins/updates/gaudit-updates.c:152
+#
 msgid ""
-"Afterwards, gAudit checks that the PPA could be read for this release: add-"
-"apt-repository does not say so itself."
-msgstr ""
-"Etterpå sjekker gAudit at PPA-en kunne leses for denne utgaven: add-apt-"
-"repository sier ikke fra om det selv."
+"Afterwards, the program checks that the PPA could be read for this release: "
+"add-apt-repository does not say so itself."
+msgstr "Etterpå sjekker programmet at PPA-en kunne leses for denne utgaven: add-apt-repository sier ikke fra om det selv."
 
 #: src/plugins/updates/gaudit-updates.c:156
 msgid "enable --now switches the jobs on now, and at every start."
@@ -126,30 +126,34 @@ msgstr ""
 msgid "Switch On"
 msgstr "Slå på"
 
+#
 #: src/plugins/updates/gaudit-updates.c:228
 msgid ""
-"Writes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates: "
-"this computer then looks for updates every day and installs them as "
+"Writes the program's own file /etc/apt/apt.conf.d/52gaudit-automatic-"
+"updates: this computer then looks for updates every day and installs them as "
 "unattended-upgrades is set up (on Debian and Ubuntu: security updates). It "
 "can be removed again here."
 msgstr ""
-"Skriver gAudits egen fil /etc/apt/apt.conf.d/52gaudit-automatic-updates: "
+"Skriver programmets egen fil /etc/apt/apt.conf.d/52gaudit-automatic-updates: "
 "datamaskinen ser da etter oppdateringer hver dag og installerer dem slik "
 "unattended-upgrades er satt opp (for Debian og Ubuntu: "
 "sikkerhetsoppdateringer). Den kan fjernes igjen her."
 
+#
 #: src/plugins/updates/gaudit-updates.c:234
-msgid "Remove gAudit's Setting"
-msgstr "Fjern gAudits innstilling"
+msgid "Remove the Program's Setting"
+msgstr "Fjern programmets innstilling"
 
+#
 #: src/plugins/updates/gaudit-updates.c:235
 msgid ""
-"Removes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates, if "
-"it is still as gAudit wrote it. Settings made elsewhere are not touched."
+"Removes the program's own file /etc/apt/apt.conf.d/52gaudit-automatic-"
+"updates, if it is still as the program wrote it. Settings made elsewhere are "
+"not touched."
 msgstr ""
-"Fjerner gAudits egen fil /etc/apt/apt.conf.d/52gaudit-automatic-updates, "
-"hvis den fortsatt er slik gAudit skrev den. Innstillinger gjort andre steder "
-"røres ikke."
+"Fjerner programmets egen fil /etc/apt/apt.conf.d/52gaudit-automatic-updates, "
+"hvis den fortsatt er slik programmet skrev den. Innstillinger gjort andre "
+"steder røres ikke."
 
 #: src/plugins/updates/gaudit-updates.c:243
 #: src/plugins/updates/gaudit-updates.c:250
@@ -157,17 +161,20 @@ msgstr ""
 msgid "Install Updates Automatically"
 msgstr "Installer oppdateringer automatisk"
 
+#
 #: src/plugins/updates/gaudit-updates.c:244
-msgid "gAudit has set this computer up to install updates by itself."
-msgstr "gAudit har satt opp datamaskinen til å installere oppdateringer selv."
+msgid "The program has set this computer up to install updates by itself."
+msgstr ""
+"Programmet har satt opp datamaskinen til å installere oppdateringer selv."
 
+#
 #: src/plugins/updates/gaudit-updates.c:245
 msgid ""
-"It is gAudit's own setting, and it can be taken away again here. Then the "
-"computer's other settings decide."
+"It is the program's own setting, and it can be taken away again here. Then "
+"the computer's other settings decide."
 msgstr ""
-"Det er gAudits egen innstilling, og den kan tas bort igjen her. Da bestemmer "
-"datamaskinens andre innstillinger."
+"Det er programmets egen innstilling, og den kan tas bort igjen her. Da "
+"bestemmer datamaskinens andre innstillinger."
 
 #: src/plugins/updates/gaudit-updates.c:251
 #: src/plugins/updates/gaudit-updates.c:267
@@ -178,13 +185,14 @@ msgstr ""
 "Oppdateringer installeres ikke av seg selv på denne datamaskinen, så den er "
 "bare så oppdatert som sist noen installerte dem."
 
+#
 #: src/plugins/updates/gaudit-updates.c:253
 msgid ""
-"gAudit can switch it on with a setting of its own: security updates are then "
-"installed by themselves. You are asked to confirm first, and it can be taken "
-"away again here."
+"The program can switch it on with a setting of its own: security updates are "
+"then installed by themselves. You are asked to confirm first, and it can be "
+"taken away again here."
 msgstr ""
-"gAudit kan slå det på med en egen innstilling: sikkerhetsoppdateringer "
+"Programmet kan slå det på med en egen innstilling: sikkerhetsoppdateringer "
 "installeres da av seg selv. Du blir bedt om å bekrefte først, og det kan tas "
 "bort igjen her."
 
@@ -222,22 +230,22 @@ msgstr ""
 #, c-format
 msgid ""
 "Version %s is out; this computer has %s. %s does not sign its package, so "
-"gAudit cannot check that %s made it, and does not install it. Download it "
-"from %s's own page: %s"
+"the program cannot check that %s made it, and does not install it. Download "
+"it from %s's own page: %s"
 msgstr ""
 "Versjon %s er ute; denne datamaskinen har %s. %s signerer ikke pakken sin, "
-"så gAudit kan ikke sjekke at %s har laget den, og installerer den ikke. Last "
-"den ned fra siden til %s: %s"
+"så programmet kan ikke sjekke at %s har laget den, og installerer den ikke. "
+"Last den ned fra siden til %s: %s"
 
 #. Translators: the newest version, the one installed, then who makes it.
 #: src/plugins/updates/gaudit-updates.c:379
 #, c-format
 msgid ""
-"Version %s is out; this computer has %s. gAudit can download it from %s, "
-"check that %s signed it, and install it."
+"Version %s is out; this computer has %s. The program can download it from "
+"%s, check that %s signed it, and install it."
 msgstr ""
-"Versjon %s er ute; denne datamaskinen har %s. gAudit kan laste den ned fra "
-"%s, sjekke at %s har signert den, og installere den."
+"Versjon %s er ute; denne datamaskinen har %s. Programmet kan laste den ned "
+"fra %s, sjekke at %s har signert den, og installere den."
 
 #: src/plugins/updates/gaudit-updates.c:388
 #, c-format
@@ -274,9 +282,12 @@ msgstr ""
 msgid "The download could not be read, so nothing was installed."
 msgstr "Nedlastingen kunne ikke leses, så ingenting ble installert."
 
+#
 #: src/plugins/updates/gaudit-updates.c:495
-msgid "The download is larger than gAudit accepts, so nothing was installed."
-msgstr "Nedlastingen er større enn gAudit godtar, så ingenting ble installert."
+msgid ""
+"The download is larger than the program accepts, so nothing was installed."
+msgstr ""
+"Nedlastingen er større enn programmet godtar, så ingenting ble installert."
 
 #: src/plugins/updates/gaudit-updates.c:497
 msgid ""
@@ -290,13 +301,13 @@ msgstr ""
 #: src/plugins/updates/gaudit-updates.c:502
 #, c-format
 msgid ""
-"The package is signed with a key gAudit does not know for %s, so it was not "
-"installed. If %s has changed its key, a newer gAudit will know it; until "
-"then, install it from the maker's page yourself."
+"The package is signed with a key the program does not know for %s, so it was "
+"not installed. If %s has changed its key, a newer version of the program "
+"will know it; until then, install it from the maker's page yourself."
 msgstr ""
-"Pakken er signert med en nøkkel gAudit ikke kjenner for %s, så den ble ikke "
-"installert. Har %s byttet nøkkel, vil en nyere gAudit kjenne den; inntil da "
-"kan du installere den fra produsentens side selv."
+"Pakken er signert med en nøkkel programmet ikke kjenner for %s, så den ble "
+"ikke installert. Har %s byttet nøkkel, vil en nyere versjon av programmet "
+"kjenne den; inntil da kan du installere den fra produsentens side selv."
 
 #: src/plugins/updates/gaudit-updates.c:506
 msgid "The signature does not match the package. It was not installed."
@@ -364,12 +375,13 @@ msgstr "Den er allerede i gang."
 #: src/plugins/updates/gaudit-updates.c:581
 #, c-format
 msgid ""
-"The package is signed by %s with the key gAudit knows for it, and every part "
-"of it matches the signature. But the signature uses %s, an older method that "
-"apt no longer accepts for software sources. Install it anyway, or go back."
+"The package is signed by %s with the key the program knows for it, and every "
+"part of it matches the signature. But the signature uses %s, an older method "
+"that apt no longer accepts for software sources. Install it anyway, or go "
+"back."
 msgstr ""
-"Pakken er signert av %s med nøkkelen gAudit kjenner for den, og hver del av "
-"den stemmer med signaturen. Men signaturen bruker %s, en eldre metode som "
+"Pakken er signert av %s med nøkkelen programmet kjenner for den, og hver del "
+"av den stemmer med signaturen. Men signaturen bruker %s, en eldre metode som "
 "apt ikke lenger godtar for programvarekilder. Installer den likevel, eller "
 "gå tilbake."
 
@@ -518,13 +530,13 @@ msgstr[1] ""
 #: src/plugins/updates/gaudit-updates.c:794
 #, c-format
 msgid ""
-"The copy was made for %s, not for %s, which this computer runs. gAudit does "
-"not recommend using a source made for another release: it was made and "
+"The copy was made for %s, not for %s, which this computer runs. The program "
+"does not recommend using a source made for another release: it was made and "
 "tested for that release, against the libraries it has."
 msgstr ""
-"Kopien ble laget for %s, ikke for %s, som denne datamaskinen kjører. gAudit "
-"anbefaler ikke å bruke en kilde laget for en annen utgave: den ble laget og "
-"testet for den utgaven, mot de bibliotekene den har."
+"Kopien ble laget for %s, ikke for %s, som denne datamaskinen kjører. "
+"Programmet anbefaler ikke å bruke en kilde laget for en annen utgave: den "
+"ble laget og testet for den utgaven, mot de bibliotekene den har."
 
 #. Translators: a version (13.3), then a package name (cuda-toolkit-13-3).
 #: src/plugins/updates/gaudit-updates.c:807
@@ -561,13 +573,15 @@ msgstr ""
 "%s har ingen programvarekilde for denne utgaven (%s) ennå. Se på "
 "nedlastingssiden til %s av og til: %s"
 
+#
 #: src/plugins/updates/gaudit-updates.c:831
 msgid ""
 "This is a recommendation: staying on a version can be deliberate, such as "
-"for a project that needs it. gAudit downloads and installs nothing for it."
+"for a project that needs it. The program downloads and installs nothing for "
+"it."
 msgstr ""
 "Dette er en anbefaling: å bli på en versjon kan være et bevisst valg, for "
-"eksempel for et prosjekt som trenger den. gAudit laster ikke ned eller "
+"eksempel for et prosjekt som trenger den. Programmet laster ikke ned eller "
 "installerer noe for den."
 
 #. Translators: %s is a release, e.g. "Ubuntu 26.04".
@@ -581,14 +595,14 @@ msgstr "Vis kilden for %s"
 #, c-format
 msgid ""
 "%s has a source for %s, the release before. Using a source made for an "
-"earlier release is not something gAudit recommends: it was made and tested "
-"for that release, against the libraries it has. If you choose it anyway, set "
-"it up from %s's download page, choosing %s."
+"earlier release is not something the program recommends: it was made and "
+"tested for that release, against the libraries it has. If you choose it "
+"anyway, set it up from %s's download page, choosing %s."
 msgstr ""
-"%s har en kilde for %s, utgaven før. gAudit anbefaler ikke å bruke en kilde "
-"laget for en tidligere utgave: den ble laget og testet for den utgaven, mot "
-"de bibliotekene den har. Velger du den likevel, sett den opp fra "
-"nedlastingssiden til %s, og velg %s."
+"%s har en kilde for %s, utgaven før. Programmet anbefaler ikke å bruke en "
+"kilde laget for en tidligere utgave: den ble laget og testet for den "
+"utgaven, mot de bibliotekene den har. Velger du den likevel, sett den opp "
+"fra nedlastingssiden til %s, og velg %s."
 
 #: src/plugins/updates/gaudit-updates.c:922
 msgid ""
@@ -758,13 +772,14 @@ msgstr ""
 "pakker for denne utgaven. Har den det, slå den på i systemets innstillinger "
 "for programvarekilder."
 
+#
 #: src/plugins/updates/gaudit-updates.c:1056
 msgid ""
-"gAudit does not switch them on: only the source's own page can tell whether "
-"it is ready for this release."
+"The program does not switch them on: only the source's own page can tell "
+"whether it is ready for this release."
 msgstr ""
-"gAudit slår dem ikke på: bare kildens egen side kan si om den er klar for "
-"denne utgaven."
+"Programmet slår dem ikke på: bare kildens egen side kan si om den er klar "
+"for denne utgaven."
 
 #. Translators: %s is one or more host names, e.g. "prerelease.keybase.io".
 #: src/plugins/updates/gaudit-updates.c:1064
@@ -898,11 +913,11 @@ msgstr ""
 #: src/plugins/updates/gaudit-updates.c:1153
 #, c-format
 msgid ""
-"Packages managed by %s are on this computer. gAudit does not check them, so "
-"it cannot tell whether they get updates."
+"Packages managed by %s are on this computer. The program does not check "
+"them, so it cannot tell whether they get updates."
 msgstr ""
-"Denne datamaskinen har pakker som styres av %s. gAudit sjekker dem ikke, så "
-"den kan ikke si om de får oppdateringer."
+"Denne datamaskinen har pakker som styres av %s. Programmet sjekker dem ikke, "
+"så det kan ikke si om de får oppdateringer."
 
 #: src/plugins/updates/gaudit-updates.c:1156
 msgid "Other Package Systems"
@@ -1010,8 +1025,8 @@ msgid "Updates are installed automatically"
 msgstr "Oppdateringer installeres automatisk"
 
 #: src/plugins/updates/rules/report.scm:164
-msgid "Set up by gAudit"
-msgstr "Satt opp av gAudit"
+msgid "Set up by the program"
+msgstr "Satt opp av programmet"
 
 #: src/plugins/updates/rules/report.scm:167
 msgid "Not run yet"
@@ -1462,6 +1477,9 @@ msgid ""
 msgstr ""
 "Hver fil en pakke installerte, sammenlignet med sjekksummen den kom med. "
 "Dine egne innstillinger i /etc telles ikke med."
+
+#~ msgid "Set up by gAudit"
+#~ msgstr "Satt opp av gAudit"
 
 #~ msgid ""
 #~ "This is a recommendation: you chose this package, and there may be a good "

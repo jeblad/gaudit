@@ -121,10 +121,12 @@ static const struct {
      * folder; "run vendor-install <id> [anyway]" installs that copy. */
     { "run vendor-verify",      NULL,                  15 * 60 * 1000L },
     { "run vendor-install",     NULL,                  50 * 60 * 1000L },
+    /* gAudit checking itself (selfcheck.h): its files and these processes. */
+    { "run self-check",         "self-check\n",        5 * 60 * 1000L },
 };
 enum { RUN_FIREWALL, RUN_INTEGRITY, RUN_ELEVATE, RUN_CONF_ON, RUN_CONF_REMOVE,
        RUN_APT_UPDATE, RUN_APT_UPGRADE, RUN_APT_UPGRADE_UPDATE, RUN_APT_TIMERS, RUN_REINSTALL,
-       RUN_ADD_PPA, RUN_VENDOR_VERIFY, RUN_VENDOR_INSTALL, RUN_KINDS };
+       RUN_ADD_PPA, RUN_VENDOR_VERIFY, RUN_VENDOR_INSTALL, RUN_SELF_CHECK, RUN_KINDS };
 
 static int is_exec_kind(int kind)
 {
@@ -228,6 +230,10 @@ typedef struct {
     gaudit_conf_report conf;
     gaudit_exec_report exec;
     gaudit_vendor_report vendor;
+    gaudit_self_report self;
+    gaudit_self_file self_files[GAUDIT_SELF_SHOWN];
+    gaudit_self_process self_processes[GAUDIT_SELF_SHOWN];
+    unsigned n_self_files, n_self_processes;
     char helper_line[4096];     /* what goes to the helper for this run */
 } session_state;
 
@@ -348,6 +354,52 @@ static int on_integrity_line(session_state *st, char *line, long long *failed,
     return -1;
 }
 
+/* A line of the self-check: findings, the result, then the helper's
+ * summary; read with the run events' own strict parser (the helper writes
+ * the same lines), and passed on only when the run has succeeded. */
+static int on_self_line(session_state *st, char *line, long long *failed,
+                        const gaudit_sexpr_field *summary)
+{
+    gaudit_run_event ev;
+    if (!st->have_result && gaudit_run_parse_line(line, &ev) == 0) {
+        if (ev.type == GAUDIT_RUN_EVENT_SELF_FILE && st->n_self_files < GAUDIT_SELF_SHOWN) {
+            st->self_files[st->n_self_files++] = ev.self_file;
+            return 0;
+        }
+        if (ev.type == GAUDIT_RUN_EVENT_SELF_PROCESS && st->n_self_processes < GAUDIT_SELF_SHOWN) {
+            st->self_processes[st->n_self_processes++] = ev.self_process;
+            return 0;
+        }
+        if (ev.type == GAUDIT_RUN_EVENT_SELF && ev.self.files_shown == st->n_self_files
+            && ev.self.processes_shown == st->n_self_processes) {
+            st->self = ev.self;
+            st->have_result = 1;
+            return 0;
+        }
+        return -1;
+    }
+    if (gaudit_sexpr_parse(line, "helper", summary, 4) != 0)
+        return -1;
+    st->running = 0;
+    if (*failed != 0 || !st->have_result)
+        return emit_end(GAUDIT_RUN_FAILED);
+    for (unsigned i = 0; i < st->n_self_files; i++) {
+        gaudit_run_event e = { .type = GAUDIT_RUN_EVENT_SELF_FILE, .self_file = st->self_files[i] };
+        if (emit(&e) != 0)
+            return -1;
+    }
+    for (unsigned i = 0; i < st->n_self_processes; i++) {
+        gaudit_run_event e = { .type = GAUDIT_RUN_EVENT_SELF_PROCESS,
+                               .self_process = st->self_processes[i] };
+        if (emit(&e) != 0)
+            return -1;
+    }
+    gaudit_run_event res = { .type = GAUDIT_RUN_EVENT_SELF, .self = st->self };
+    if (emit(&res) != 0)
+        return -1;
+    return emit_end(GAUDIT_RUN_OK);
+}
+
 static int on_helper_line(char *line, void *ctx)
 {
     session_state *st = ctx;
@@ -402,6 +454,8 @@ static int on_helper_line(char *line, void *ctx)
         return -1;  /* nothing else comes unasked */
     if (st->kind == RUN_INTEGRITY)
         return on_integrity_line(st, line, &failed, summary);
+    if (st->kind == RUN_SELF_CHECK)
+        return on_self_line(st, line, &failed, summary);
     if (is_exec_kind(st->kind)) {
         gaudit_run_event ev;
         if (!st->have_result && gaudit_run_parse_line(line, &ev) == 0
@@ -605,6 +659,7 @@ static int on_gui_line(char *line, void *ctx)
     st->overdue = 0;
     st->have_result = 0;
     st->n_files = 0;
+    st->n_self_files = st->n_self_processes = 0;
     clock_gettime(CLOCK_MONOTONIC, &st->run_start);
     if (st->pid > 0 && st->to_helper < 0) {
         st->queued = 1;  /* the helper is ending; a new one follows */

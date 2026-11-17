@@ -30,6 +30,7 @@ add_executable(gaudit
   gaudit-report-run.c
   gaudit-category.c
   gaudit-crossfade.c
+  gaudit-self.c
   gaudit-sourceless-page.c
   gaudit-session.c
   gaudit-window.c

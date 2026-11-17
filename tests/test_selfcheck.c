@@ -5,6 +5,7 @@
  * program from a folder the user owns. */
 #define _GNU_SOURCE
 #include "selfcheck.h"
+#include "gaudit/run.h"
 
 #include <signal.h>
 #include <sodium.h>
@@ -53,6 +54,23 @@ static void sign(const unsigned char *sk, const unsigned char id[8], const char 
     snprintf(sig, len, "untrusted comment: s\n%s\ntrusted comment: test 123\n%s\n", l2, l4);
 }
 
+/* Every line the helper writes is a run event the orchestrator accepts. */
+static void all_parse(const char *out)
+{
+    char *copy = strdup(out), *save = NULL;
+    int lines = 0;
+    for (char *l = strtok_r(copy, "\n", &save); l != NULL; l = strtok_r(NULL, "\n", &save)) {
+        gaudit_run_event ev;
+        lines++;
+        if (gaudit_run_parse_line(l, &ev) != 0) {
+            fprintf(stderr, "not a run event: %s\n", l);
+            failures++;
+        }
+    }
+    CHECK(lines > 0);
+    free(copy);
+}
+
 static char *run(const gaudit_selfcheck_env *env)
 {
     char *buf = NULL;
@@ -60,6 +78,7 @@ static char *run(const gaudit_selfcheck_env *env)
     FILE *out = open_memstream(&buf, &len);
     gaudit_selfcheck(env, out);
     fclose(out);
+    all_parse(buf);
     return buf;
 }
 
@@ -164,6 +183,7 @@ int main(void)
     int problems = gaudit_selfcheck_process(&env, p1, "gui", "/usr/bin/sleep", mem);
     fclose(mem);
     CHECK(problems == 1 && strstr(buf, "(problem \"env\") (detail \"GTK_MODULES\")") != NULL);
+    all_parse(buf);
     free(buf);
     stop(p1);
     /* ... and a copy of it from a folder the user owns: not the program it

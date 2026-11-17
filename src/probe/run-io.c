@@ -82,6 +82,71 @@ static int vendor_valid(const gaudit_vendor_report *v)
         && plain_version(v->hash);
 }
 
+int gaudit_self_manifest_known(const char *name)
+{
+    static const char *const names[] = {
+        "ok", "bad-signature", "bad-format", "expired", "too-old", "from-future", "missing", "no-key",
+    };
+    for (size_t i = 0; name != NULL && i < sizeof names / sizeof names[0]; i++)
+        if (strcmp(name, names[i]) == 0)
+            return 1;
+    return 0;
+}
+
+gaudit_verdict gaudit_self_verdict(const gaudit_self_report *r)
+{
+    if (r == NULL)
+        return GAUDIT_VERDICT_UNKNOWN;
+    if (r->process_problems > 0 || r->changed > 0 || r->missing > 0 || r->extra > 0)
+        return GAUDIT_VERDICT_WARNING;
+    if (strcmp(r->manifest, "ok") == 0)
+        return GAUDIT_VERDICT_OK;
+    if (strcmp(r->manifest, "missing") == 0 || strcmp(r->manifest, "no-key") == 0)
+        return GAUDIT_VERDICT_UNKNOWN;
+    return GAUDIT_VERDICT_WARNING;
+}
+
+static int one_of(const char *s, const char *const *names, size_t n)
+{
+    for (size_t i = 0; i < n; i++)
+        if (strcmp(s, names[i]) == 0)
+            return 1;
+    return 0;
+}
+
+/* Printable ASCII without a quote or a backslash, as the helper writes it. */
+static int plain_text(const char *s)
+{
+    for (const char *c = s; *c != '\0'; c++)
+        if (*c < 0x20 || *c >= 0x7f || *c == '"' || *c == '\\')
+            return 0;
+    return 1;
+}
+
+static int self_file_valid(const gaudit_self_file *f)
+{
+    static const char *const problems[] = { "changed", "missing", "extra" };
+    return f->path[0] == '/' && plain_text(f->path) && one_of(f->problem, problems, 3);
+}
+
+static int self_process_valid(const gaudit_self_process *p)
+{
+    static const char *const which[] = { "orchestrator", "gui" };
+    static const char *const problems[] = { "exe", "env", "maps", "gone" };
+    return one_of(p->which, which, 2) && one_of(p->problem, problems, 4) && plain_text(p->detail);
+}
+
+static int self_valid(const gaudit_self_report *r)
+{
+    return gaudit_self_manifest_known(r->manifest)
+        && r->files_shown <= GAUDIT_SELF_SHOWN && r->processes_shown <= GAUDIT_SELF_SHOWN
+        && r->files_shown <= r->changed + r->missing + r->extra
+        && r->changed + r->missing <= r->files
+        && r->processes_shown <= r->process_problems && r->processes <= 2
+        && (strcmp(r->manifest, "ok") == 0 || (r->files == 0 && r->changed == 0
+                                                && r->missing == 0 && r->extra == 0));
+}
+
 gaudit_verdict gaudit_integrity_verdict(const gaudit_integrity_report *r)
 {
     if (r == NULL)
@@ -158,6 +223,30 @@ int gaudit_run_format(const gaudit_run_event *ev, char *buf, size_t len)
                      ev->vendor.id, ev->vendor.action, ev->vendor.result, ev->vendor.version,
                      ev->vendor.hash);
         break;
+    case GAUDIT_RUN_EVENT_SELF_FILE:
+        if (!self_file_valid(&ev->self_file))
+            return -1;
+        n = snprintf(buf, len, "(self-file (path \"%s\") (problem \"%s\"))\n",
+                     ev->self_file.path, ev->self_file.problem);
+        break;
+    case GAUDIT_RUN_EVENT_SELF_PROCESS:
+        if (!self_process_valid(&ev->self_process))
+            return -1;
+        n = snprintf(buf, len, "(self-process (which \"%s\") (problem \"%s\") (detail \"%s\"))\n",
+                     ev->self_process.which, ev->self_process.problem, ev->self_process.detail);
+        break;
+    case GAUDIT_RUN_EVENT_SELF: {
+        const gaudit_self_report *r = &ev->self;
+        if (!self_valid(r))
+            return -1;
+        n = snprintf(buf, len,
+                     "(self (manifest \"%s\") (version %llu) (files %u) (changed %u) (missing %u)"
+                     " (extra %u) (files-shown %u) (processes %u) (process-problems %u)"
+                     " (processes-shown %u))\n",
+                     r->manifest, r->version, r->files, r->changed, r->missing, r->extra,
+                     r->files_shown, r->processes, r->process_problems, r->processes_shown);
+        break;
+    }
     case GAUDIT_RUN_EVENT_END:
         n = snprintf(buf, len, "(end (status %d))\n", (int)ev->status);
         break;
@@ -276,6 +365,57 @@ int gaudit_run_parse_line(const char *line, gaudit_run_event *out)
         if (!vendor_valid(&ev.vendor))
             return -1;
         ev.type = GAUDIT_RUN_EVENT_VENDOR;
+        *out = ev;
+        return 0;
+    }
+    const gaudit_sexpr_field self_file[] = {
+        { .key = "path",    .text = ev.self_file.path,    .text_len = sizeof ev.self_file.path },
+        { .key = "problem", .text = ev.self_file.problem, .text_len = sizeof ev.self_file.problem },
+    };
+    if (gaudit_sexpr_parse(copy, "self-file", self_file, 2) == 0) {
+        if (!self_file_valid(&ev.self_file))
+            return -1;
+        ev.type = GAUDIT_RUN_EVENT_SELF_FILE;
+        *out = ev;
+        return 0;
+    }
+    const gaudit_sexpr_field self_process[] = {
+        { .key = "which",   .text = ev.self_process.which,   .text_len = sizeof ev.self_process.which },
+        { .key = "problem", .text = ev.self_process.problem, .text_len = sizeof ev.self_process.problem },
+        { .key = "detail",  .text = ev.self_process.detail,  .text_len = sizeof ev.self_process.detail },
+    };
+    if (gaudit_sexpr_parse(copy, "self-process", self_process, 3) == 0) {
+        if (!self_process_valid(&ev.self_process))
+            return -1;
+        ev.type = GAUDIT_RUN_EVENT_SELF_PROCESS;
+        *out = ev;
+        return 0;
+    }
+    long long sv[9];
+    static const char *const self_keys[9] = {
+        "version", "files", "changed", "missing", "extra", "files-shown", "processes",
+        "process-problems", "processes-shown",
+    };
+    gaudit_sexpr_field self[10];
+    self[0] = (gaudit_sexpr_field){ .key = "manifest", .text = ev.self.manifest,
+                                    .text_len = sizeof ev.self.manifest };
+    for (int i = 0; i < 9; i++)
+        self[i + 1] = (gaudit_sexpr_field){ .key = self_keys[i], .value = &sv[i], .max = MAX_COUNT };
+    self[1].max = 999999999999999999LL;  /* a version: at most 18 digits (manifest.h) */
+    if (gaudit_sexpr_parse(copy, "self", self, 10) == 0) {
+        gaudit_self_report *r = &ev.self;
+        r->version = (unsigned long long)sv[0];
+        r->files = (unsigned)sv[1];
+        r->changed = (unsigned)sv[2];
+        r->missing = (unsigned)sv[3];
+        r->extra = (unsigned)sv[4];
+        r->files_shown = (unsigned)sv[5];
+        r->processes = (unsigned)sv[6];
+        r->process_problems = (unsigned)sv[7];
+        r->processes_shown = (unsigned)sv[8];
+        if (!self_valid(r))
+            return -1;
+        ev.type = GAUDIT_RUN_EVENT_SELF;
         *out = ev;
         return 0;
     }

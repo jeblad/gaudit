@@ -239,5 +239,5 @@ add_test(NAME manifest COMMAND test_manifest)
 
 # gAudit checking itself: the manifest's files, and the processes that ask.
 add_executable(test_selfcheck test_selfcheck.c)
-target_link_libraries(test_selfcheck PRIVATE gaudit_sandbox)
+target_link_libraries(test_selfcheck PRIVATE gaudit_sandbox gaudit_probe)
 add_test(NAME selfcheck COMMAND test_selfcheck)

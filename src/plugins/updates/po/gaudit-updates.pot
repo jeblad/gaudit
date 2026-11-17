@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-16 23:33+0100\n"
+"POT-Creation-Date: 2026-11-17 03:53+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,8 +67,8 @@ msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:152
 msgid ""
-"Afterwards, gAudit checks that the PPA could be read for this release: add-"
-"apt-repository does not say so itself."
+"Afterwards, the program checks that the PPA could be read for this release: "
+"add-apt-repository does not say so itself."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:156
@@ -107,20 +107,21 @@ msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:228
 msgid ""
-"Writes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates: "
-"this computer then looks for updates every day and installs them as "
+"Writes the program's own file /etc/apt/apt.conf.d/52gaudit-automatic-"
+"updates: this computer then looks for updates every day and installs them as "
 "unattended-upgrades is set up (on Debian and Ubuntu: security updates). It "
 "can be removed again here."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:234
-msgid "Remove gAudit's Setting"
+msgid "Remove the Program's Setting"
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:235
 msgid ""
-"Removes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates, if "
-"it is still as gAudit wrote it. Settings made elsewhere are not touched."
+"Removes the program's own file /etc/apt/apt.conf.d/52gaudit-automatic-"
+"updates, if it is still as the program wrote it. Settings made elsewhere are "
+"not touched."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:243
@@ -130,13 +131,13 @@ msgid "Install Updates Automatically"
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:244
-msgid "gAudit has set this computer up to install updates by itself."
+msgid "The program has set this computer up to install updates by itself."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:245
 msgid ""
-"It is gAudit's own setting, and it can be taken away again here. Then the "
-"computer's other settings decide."
+"It is the program's own setting, and it can be taken away again here. Then "
+"the computer's other settings decide."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:251
@@ -148,9 +149,9 @@ msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:253
 msgid ""
-"gAudit can switch it on with a setting of its own: security updates are then "
-"installed by themselves. You are asked to confirm first, and it can be taken "
-"away again here."
+"The program can switch it on with a setting of its own: security updates are "
+"then installed by themselves. You are asked to confirm first, and it can be "
+"taken away again here."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:256
@@ -180,16 +181,16 @@ msgstr ""
 #, c-format
 msgid ""
 "Version %s is out; this computer has %s. %s does not sign its package, so "
-"gAudit cannot check that %s made it, and does not install it. Download it "
-"from %s's own page: %s"
+"the program cannot check that %s made it, and does not install it. Download "
+"it from %s's own page: %s"
 msgstr ""
 
 #. Translators: the newest version, the one installed, then who makes it.
 #: src/plugins/updates/gaudit-updates.c:379
 #, c-format
 msgid ""
-"Version %s is out; this computer has %s. gAudit can download it from %s, "
-"check that %s signed it, and install it."
+"Version %s is out; this computer has %s. The program can download it from "
+"%s, check that %s signed it, and install it."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:388
@@ -224,7 +225,8 @@ msgid "The download could not be read, so nothing was installed."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:495
-msgid "The download is larger than gAudit accepts, so nothing was installed."
+msgid ""
+"The download is larger than the program accepts, so nothing was installed."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:497
@@ -237,9 +239,9 @@ msgstr ""
 #: src/plugins/updates/gaudit-updates.c:502
 #, c-format
 msgid ""
-"The package is signed with a key gAudit does not know for %s, so it was not "
-"installed. If %s has changed its key, a newer gAudit will know it; until "
-"then, install it from the maker's page yourself."
+"The package is signed with a key the program does not know for %s, so it was "
+"not installed. If %s has changed its key, a newer version of the program "
+"will know it; until then, install it from the maker's page yourself."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:506
@@ -297,9 +299,10 @@ msgstr ""
 #: src/plugins/updates/gaudit-updates.c:581
 #, c-format
 msgid ""
-"The package is signed by %s with the key gAudit knows for it, and every part "
-"of it matches the signature. But the signature uses %s, an older method that "
-"apt no longer accepts for software sources. Install it anyway, or go back."
+"The package is signed by %s with the key the program knows for it, and every "
+"part of it matches the signature. But the signature uses %s, an older method "
+"that apt no longer accepts for software sources. Install it anyway, or go "
+"back."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:585
@@ -423,8 +426,8 @@ msgstr[1] ""
 #: src/plugins/updates/gaudit-updates.c:794
 #, c-format
 msgid ""
-"The copy was made for %s, not for %s, which this computer runs. gAudit does "
-"not recommend using a source made for another release: it was made and "
+"The copy was made for %s, not for %s, which this computer runs. The program "
+"does not recommend using a source made for another release: it was made and "
 "tested for that release, against the libraries it has."
 msgstr ""
 
@@ -458,7 +461,8 @@ msgstr ""
 #: src/plugins/updates/gaudit-updates.c:831
 msgid ""
 "This is a recommendation: staying on a version can be deliberate, such as "
-"for a project that needs it. gAudit downloads and installs nothing for it."
+"for a project that needs it. The program downloads and installs nothing for "
+"it."
 msgstr ""
 
 #. Translators: %s is a release, e.g. "Ubuntu 26.04".
@@ -472,9 +476,9 @@ msgstr ""
 #, c-format
 msgid ""
 "%s has a source for %s, the release before. Using a source made for an "
-"earlier release is not something gAudit recommends: it was made and tested "
-"for that release, against the libraries it has. If you choose it anyway, set "
-"it up from %s's download page, choosing %s."
+"earlier release is not something the program recommends: it was made and "
+"tested for that release, against the libraries it has. If you choose it "
+"anyway, set it up from %s's download page, choosing %s."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:922
@@ -613,8 +617,8 @@ msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:1056
 msgid ""
-"gAudit does not switch them on: only the source's own page can tell whether "
-"it is ready for this release."
+"The program does not switch them on: only the source's own page can tell "
+"whether it is ready for this release."
 msgstr ""
 
 #. Translators: %s is one or more host names, e.g. "prerelease.keybase.io".
@@ -726,8 +730,8 @@ msgstr ""
 #: src/plugins/updates/gaudit-updates.c:1153
 #, c-format
 msgid ""
-"Packages managed by %s are on this computer. gAudit does not check them, so "
-"it cannot tell whether they get updates."
+"Packages managed by %s are on this computer. The program does not check "
+"them, so it cannot tell whether they get updates."
 msgstr ""
 
 #: src/plugins/updates/gaudit-updates.c:1156
@@ -834,7 +838,7 @@ msgid "Updates are installed automatically"
 msgstr ""
 
 #: src/plugins/updates/rules/report.scm:164
-msgid "Set up by gAudit"
+msgid "Set up by the program"
 msgstr ""
 
 #: src/plugins/updates/rules/report.scm:167

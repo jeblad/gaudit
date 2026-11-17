@@ -161,7 +161,7 @@
                ;; Set up by gAudit: its page can take it away again.
                ((and (known? own) (= (value own) 1))
                 (row 'ok (msg (G_ "Updates are installed automatically"))
-                     (msg (G_ "Set up by gAudit")) (cons 'automatic-on f)))
+                     (msg (G_ "Set up by the program")) (cons 'automatic-on f)))
                ((and (known? last) (< (value last) 0))
                 (row 'ok (msg (G_ "Updates are installed automatically"))
                      (msg (G_ "Not run yet")) #f))

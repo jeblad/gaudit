@@ -5,7 +5,7 @@
 (row (verdict ok) (title (msgn "{n} other update is waiting" "{n} other updates are waiting" 2 (n 2))) (subtitle (msg "Not security updates; install them when it suits you")))
 (section (title (msg "Keeps itself up to date")) (description (msg "Whether this computer looks for updates and installs them by itself.")))
 (row (verdict ok) (title (msg "Updates are looked for every day")) (subtitle (msg "Set up as it should be")))
-(row (verdict ok) (title (msg "Updates are installed automatically")) (subtitle (msg "Set up by gAudit")) (fix automatic-on (item 4)))
+(row (verdict ok) (title (msg "Updates are installed automatically")) (subtitle (msg "Set up by the program")) (fix automatic-on (item 4)))
 (section (title (msg "Where updates come from")) (description (msg "Security updates should come straight from the distribution, and every installed package from a software source.")))
 (row (verdict ok) (title (msg "Security updates come from the distribution itself")) (subtitle (msg "Not from a mirror that may lag behind")))
 (row (verdict ok) (title (msg "All installed packages come from a software source")) (subtitle (msg "So they get updates")))

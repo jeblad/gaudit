@@ -129,7 +129,7 @@ AdwNavigationPage *gaudit_category_page_new(const GauditCategory *category,
     if (shown == 0) {
         AdwPreferencesGroup *none = ADW_PREFERENCES_GROUP(adw_preferences_group_new());
         adw_preferences_group_set_description(none,
-            _("gAudit does not know how to install these on this system yet."));
+            _("The program does not know how to install these on this system yet."));
         adw_preferences_page_add(page, none);
     }
     return gaudit_page_wrap(GTK_WIDGET(page), _(category->title), "category");

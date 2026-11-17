@@ -25,7 +25,7 @@ void gaudit_firewall_text(const gaudit_firewall_report *f, const char **icon,
     case GAUDIT_VERDICT_UNKNOWN:
         *icon = "gaudit-status-unknown-symbolic";
         *title = g_strdup(_("The firewall could not be checked fully"));
-        *description = g_strdup(_("This system uses the older iptables, whose rules gAudit cannot read yet."));
+        *description = g_strdup(_("This system uses the older iptables, whose rules the program cannot read yet."));
         break;
     default:
         *icon = "gaudit-status-medium-symbolic";

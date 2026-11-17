@@ -19,6 +19,7 @@ typedef enum {
     GAUDIT_RESULT_CONF,        /* what writing a configuration did */
     GAUDIT_RESULT_EXEC,        /* how a system tool run on request ended */
     GAUDIT_RESULT_VENDOR,      /* a vendor package checked or installed */
+    GAUDIT_RESULT_SELF,        /* gAudit checking itself */
 } GauditResultKind;
 
 /* What a run found: one kind of result, with its findings. */
@@ -31,6 +32,10 @@ typedef struct {
     gaudit_vendor_report vendor;
     gaudit_integrity_file files[GAUDIT_INTEGRITY_SHOWN];
     unsigned n_files;
+    gaudit_self_report self;   /* SELF, with the findings it lists */
+    gaudit_self_file self_files[GAUDIT_SELF_SHOWN];
+    gaudit_self_process self_processes[GAUDIT_SELF_SHOWN];
+    unsigned n_self_files, n_self_processes;
     GPtrArray *lines;  /* COLLECTION: its lines (char *), each checked by the plugin */
     gboolean full;     /* started with the plugin's parameters (Run on Parameters);
                           FALSE for Home's runs, whose reports are simplified */

@@ -260,12 +260,12 @@ static void conf_page_unref(gpointer p)
 static const char *conf_result_text(const char *result)
 {
     static const struct { const char *name, *text; } texts[] = {
-        { "written",      N_("Done. gAudit's setting is written; it is checked again now.") },
+        { "written",      N_("Done. The program's setting is written; it is checked again now.") },
         { "unchanged",    N_("It was already set up this way, so nothing was changed.") },
-        { "removed",      N_("Done. gAudit's setting is removed; it is checked again now.") },
-        { "not-there",    N_("There was no setting of gAudit's to remove.") },
-        { "foreign",      N_("A file of that name that gAudit did not write is already there, so nothing was changed.") },
-        { "edited",       N_("gAudit's file has been changed since it was written, so it was left as it is.") },
+        { "removed",      N_("Done. The program's setting is removed; it is checked again now.") },
+        { "not-there",    N_("The program had no setting there to remove.") },
+        { "foreign",      N_("A file of that name that the program did not write is already there, so nothing was changed.") },
+        { "edited",       N_("The program's file has been changed since it was written, so it was left as it is.") },
         { "precondition", N_("Something it needs is missing or not as expected, so nothing was written.") },
         { "unsafe",       N_("A folder on the way can be changed by others, so nothing was written.") },
     };
@@ -812,10 +812,10 @@ AdwNavigationPage *gaudit_home_info_page_new(void)
         .summary = N_("Overall status"),
         .icon = "gaudit-home-symbolic",
         .details = N_("Home shows the state of this computer at a glance. At the top, which "
-                      "computer this is and how gAudit checks it. Below, one group for each "
+                      "computer this is and how the program checks it. Below, one group for each "
                       "check, with a short summary of what it found: a check mark when all is "
-                      "well, a warning where something needs your attention. The shield at the "
-                      "top sums them all up."),
+                      "well, a warning where something needs your attention. The shield at the top "
+                      "sums them all up."),
         .why = N_("Security problems are easy to miss when they are spread over many places: an "
                   "update that never ran, a firewall that is off, a key others can read. One "
                   "page shows whether the basics are in place, without you having to know where "

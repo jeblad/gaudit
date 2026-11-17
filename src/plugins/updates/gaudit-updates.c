@@ -149,8 +149,8 @@ static gsize apt_explain(const char *op, const char **out)
                       "runs, with its signing key from Launchpad, and then fetches the lists of "
                       "updates.");
         out[n++] = P_("-y answers yes on your behalf, so it does not stop to ask.");
-        out[n++] = P_("Afterwards, gAudit checks that the PPA could be read for this release: "
-                      "add-apt-repository does not say so itself.");
+        out[n++] = P_("Afterwards, the program checks that the PPA could be read for this "
+                      "release: add-apt-repository does not say so itself.");
     }
     if (strcmp(op, "enable-apt-timers") == 0) {
         out[n++] = P_("enable --now switches the jobs on now, and at every start.");
@@ -225,15 +225,15 @@ static AdwNavigationPage *automatic_page(GPtrArray *lines, gboolean on, const co
     gboolean debian = cmd != NULL && strcmp(cmd->backend, "debian") == 0;
     GauditConfAction a = {
         P_("Switch On"),
-        P_("Writes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates: this "
-           "computer then looks for updates every day and installs them as unattended-upgrades "
-           "is set up (on Debian and Ubuntu: security updates). It can be removed again here."),
+        P_("Writes the program's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates: this "
+           "computer then looks for updates every day and installs them as unattended-upgrades is "
+           "set up (on Debian and Ubuntu: security updates). It can be removed again here."),
         "run automatic-updates-on",
     };
     GauditConfAction u = {
-        P_("Remove gAudit's Setting"),
-        P_("Removes gAudit's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates, if it is "
-           "still as gAudit wrote it. Settings made elsewhere are not touched."),
+        P_("Remove the Program's Setting"),
+        P_("Removes the program's own file /etc/apt/apt.conf.d/52gaudit-automatic-updates, if it "
+           "is still as the program wrote it. Settings made elsewhere are not touched."),
         "run automatic-updates-remove",
     };
     /* Set up by gAudit: its own setting, which it can take away again;
@@ -241,8 +241,8 @@ static AdwNavigationPage *automatic_page(GPtrArray *lines, gboolean on, const co
     if (debian && on && mine)
         return gaudit_fix_page_new_conf(
             P_("Install Updates Automatically"),
-            P_("gAudit has set this computer up to install updates by itself."),
-            P_("It is gAudit's own setting, and it can be taken away again here. Then the "
+            P_("The program has set this computer up to install updates by itself."),
+            P_("It is the program's own setting, and it can be taken away again here. Then the "
                "computer's other settings decide."),
             NULL, &a, &u, TRUE, recollect, NULL, NULL);
     if (debian && have_tools && tools.value == 0)
@@ -250,9 +250,9 @@ static AdwNavigationPage *automatic_page(GPtrArray *lines, gboolean on, const co
             P_("Install Updates Automatically"),
             P_("Updates are not installed by themselves on this computer, so it is only as up to "
                "date as the last time someone installed them."),
-            P_("gAudit can switch it on with a setting of its own: security updates are then "
-               "installed by themselves. You are asked to confirm first, and it can be taken "
-               "away again here."),
+            P_("The program can switch it on with a setting of its own: security updates are then "
+               "installed by themselves. You are asked to confirm first, and it can be taken away "
+               "again here."),
             P_("If it is off on purpose, for example because changes must be planned, keep it off "
                "and install the updates regularly yourself."),
             &a, &u, mine, recollect, NULL, NULL);
@@ -367,8 +367,8 @@ static void show_latest(VendorUi *ui, const gaudit_update_latest *l)
         g_autofree char *text = g_strdup_printf(
             /* Translators: the newest version, the one installed, who makes it (three
              * times), then the address of their download page. */
-            P_("Version %s is out; this computer has %s. %s does not sign its package, so "
-               "gAudit cannot check that %s made it, and does not install it. Download it from "
+            P_("Version %s is out; this computer has %s. %s does not sign its package, so the "
+               "program cannot check that %s made it, and does not install it. Download it from "
                "%s's own page: %s"),
             l->version, l->installed, p->vendor, p->vendor, p->vendor, p->download);
         say(ui->latest, text);
@@ -376,8 +376,8 @@ static void show_latest(VendorUi *ui, const gaudit_update_latest *l)
     } else if (l->status == 0 && l->newer) {
         g_autofree char *text = g_strdup_printf(
             /* Translators: the newest version, the one installed, then who makes it. */
-            P_("Version %s is out; this computer has %s. gAudit can download it from %s, check "
-               "that %s signed it, and install it."),
+            P_("Version %s is out; this computer has %s. The program can download it from %s, "
+               "check that %s signed it, and install it."),
             l->version, l->installed, p->vendor, p->vendor);
         say(ui->latest, text);
         g_strlcpy(ui->version, l->version, sizeof ui->version);
@@ -492,16 +492,16 @@ static char *vendor_outcome_text(const gaudit_vendor_package *p, const gaudit_ve
     if (strcmp(r, "no-file") == 0)
         return g_strdup(P_("The download could not be read, so nothing was installed."));
     if (strcmp(r, "too-large") == 0)
-        return g_strdup(P_("The download is larger than gAudit accepts, so nothing was installed."));
+        return g_strdup(P_("The download is larger than the program accepts, so nothing was installed."));
     if (strcmp(r, "not-signed") == 0)
         return g_strdup(P_("The package is not signed, so who made it cannot be checked. It was "
                            "not installed."));
     if (strcmp(r, "unknown-key") == 0)
         return g_strdup_printf(
             /* Translators: %s is who makes the program, twice. */
-            P_("The package is signed with a key gAudit does not know for %s, so it was not "
-               "installed. If %s has changed its key, a newer gAudit will know it; until then, "
-               "install it from the maker's page yourself."), p->vendor, p->vendor);
+            P_("The package is signed with a key the program does not know for %s, so it was not "
+               "installed. If %s has changed its key, a newer version of the program will know it; "
+               "until then, install it from the maker's page yourself."), p->vendor, p->vendor);
     if (strcmp(r, "bad-signature") == 0)
         return g_strdup(P_("The signature does not match the package. It was not installed."));
     if (strcmp(r, "weak-md5") == 0)
@@ -578,9 +578,9 @@ static void on_verified(gaudit_run_status status, const GauditRunResult *result,
     } else if (r != NULL && strcmp(r, "weak") == 0 && p != NULL) {
         g_autofree char *text = g_strdup_printf(
             /* Translators: who makes it, then a hash method's name, e.g. SHA1. */
-            P_("The package is signed by %s with the key gAudit knows for it, and every part of it "
-               "matches the signature. But the signature uses %s, an older method that apt no "
-               "longer accepts for software sources. Install it anyway, or go back."),
+            P_("The package is signed by %s with the key the program knows for it, and every part "
+               "of it matches the signature. But the signature uses %s, an older method that apt "
+               "no longer accepts for software sources. Install it anyway, or go back."),
             p->vendor, result->vendor.hash[0] != '\0' ? result->vendor.hash : "?");
         say(ui->status, P_("Checked."));
         say(ui->weak, text);
@@ -791,8 +791,8 @@ static AdwNavigationPage *vendor_local_page(const char *line)
             "security fixes.", l.packages));
     g_autofree char *other = l.running[0] != '\0' && strcmp(l.running, l.made_for) != 0
         /* Translators: the release the copy was made for, then the one running. */
-        ? g_strdup_printf(P_("The copy was made for %s, not for %s, which this computer runs. "
-                             "gAudit does not recommend using a source made for another release: "
+        ? g_strdup_printf(P_("The copy was made for %s, not for %s, which this computer runs. The "
+                             "program does not recommend using a source made for another release: "
                              "it was made and tested for that release, against the libraries it "
                              "has."), made, running)
         : g_strdup("");
@@ -829,7 +829,7 @@ static AdwNavigationPage *vendor_local_page(const char *line)
     AdwNavigationPage *page = gaudit_fix_page_new(
         title, problem, how, NULL,
         P_("This is a recommendation: staying on a version can be deliberate, such as for a "
-           "project that needs it. gAudit downloads and installs nothing for it."),
+           "project that needs it. The program downloads and installs nothing for it."),
         NULL, NULL, NULL, NULL);
     GtkWidget *box = g_object_get_data(G_OBJECT(page), "gaudit-fix-box");
     GtkWidget *how_label = g_object_get_data(G_OBJECT(page), "gaudit-fix-how");
@@ -843,10 +843,10 @@ static AdwNavigationPage *vendor_local_page(const char *line)
     gtk_widget_set_halign(button, GTK_ALIGN_END);
     g_autofree char *text = g_strdup_printf(
         /* Translators: who makes it, the release before, who makes it, the release before. */
-        P_("%s has a source for %s, the release before. Using a source made for an earlier "
-           "release is not something gAudit recommends: it was made and tested for that "
-           "release, against the libraries it has. If you choose it anyway, set it up from %s's "
-           "download page, choosing %s."),
+        P_("%s has a source for %s, the release before. Using a source made for an earlier release "
+           "is not something the program recommends: it was made and tested for that release, "
+           "against the libraries it has. If you choose it anyway, set it up from %s's download "
+           "page, choosing %s."),
         v->vendor, previous, v->vendor, previous);
     GtkWidget *reveal = note_label();
     gtk_label_set_text(GTK_LABEL(reveal), text);
@@ -1053,8 +1053,8 @@ AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines,
                "software sources."), NULL);
         return gaudit_fix_page_new(
             P_("Software Sources Switched Off"), problem, how, NULL,
-            P_("gAudit does not switch them on: only the source's own page can tell whether it "
-               "is ready for this release."),
+            P_("The program does not switch them on: only the source's own page can tell whether "
+               "it is ready for this release."),
             NULL, NULL, NULL, NULL);
     }
 
@@ -1150,8 +1150,8 @@ AdwNavigationPage *gaudit_updates_fix_page(const char *fix_id, GPtrArray *lines,
     if (strcmp(fix_id, "other-systems") == 0 && f.key == GAUDIT_UPDATE_OTHER_SYSTEMS) {
         g_autofree char *problem = g_strdup_printf(
             /* Translators: %s is a list of package systems, e.g. "rpm, Nix". */
-            P_("Packages managed by %s are on this computer. gAudit does not check them, so it "
-               "cannot tell whether they get updates."), f.text[0] != '\0' ? f.text : "?");
+            P_("Packages managed by %s are on this computer. The program does not check them, so "
+               "it cannot tell whether they get updates."), f.text[0] != '\0' ? f.text : "?");
         return gaudit_fix_page_new(
             P_("Other Package Systems"), problem,
             P_("Keep them up to date with their own tools. If they are left over and nothing uses "

@@ -8,10 +8,14 @@
  * and no executable code from outside the system's folders. It reports;
  * it changes nothing but the record of the highest manifest version seen.
  *
- *   (self (manifest "S") (version N) (files N) (changed N) (missing N) (extra N)
- *         (processes N) (process-problems N))
  *   (self-file (path "...") (problem "changed|missing|extra"))         at most 40
  *   (self-process (which "orchestrator|gui") (problem "exe|env|maps|gone") (detail "..."))
+ *                                                                      at most 40
+ *   (self (manifest "S") (version N) (files N) (changed N) (missing N) (extra N)
+ *         (files-shown N) (processes N) (process-problems N) (processes-shown N))
+ *
+ * The same lines as the run events of gaudit/run.h, so the orchestrator
+ * reads them with its strict parser.
  */
 #pragma once
 

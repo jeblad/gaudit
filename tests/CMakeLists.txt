@@ -231,3 +231,13 @@ set_tests_properties(release-paths PROPERTIES
 add_executable(test_sandbox_net test_sandbox_net.c)
 target_link_libraries(test_sandbox_net PRIVATE gaudit_sandbox)
 add_test(NAME sandbox-net COMMAND test_sandbox_net)
+
+# The signed manifest: signatures, format, time and version, files.
+add_executable(test_manifest test_manifest.c)
+target_link_libraries(test_manifest PRIVATE gaudit_sandbox)
+add_test(NAME manifest COMMAND test_manifest)
+
+# gAudit checking itself: the manifest's files, and the processes that ask.
+add_executable(test_selfcheck test_selfcheck.c)
+target_link_libraries(test_selfcheck PRIVATE gaudit_sandbox)
+add_test(NAME selfcheck COMMAND test_selfcheck)

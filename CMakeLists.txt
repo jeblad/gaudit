@@ -78,6 +78,17 @@ else()
   set(GAUDIT_PACMAN_PROBE_PATH ${GAUDIT_PKGLIBEXECDIR}/gaudit-pacman-probe)
 endif()
 set(GAUDIT_GUI_PATH ${CMAKE_INSTALL_FULL_BINDIR}/gaudit)
+# The signed manifest of gAudit's own files, and the lowest version the
+# helper accepts (raise it with each release that must not be rolled back).
+set(GAUDIT_MANIFEST_PATH ${CMAKE_INSTALL_FULL_DATADIR}/gaudit/manifest)
+set(GAUDIT_MANIFEST_MIN_VERSION 1)
+# What the helper expects the GUI to run as: the build tree's in developer
+# builds, which also drop the check that code is root-owned.
+if(GAUDIT_DEVELOPER_BUILD)
+  set(GAUDIT_SELF_GUI_PATH ${PROJECT_BINARY_DIR}/src/gui/gaudit)
+else()
+  set(GAUDIT_SELF_GUI_PATH ${GAUDIT_GUI_PATH})
+endif()
 
 # --- Hardening and warnings -------------------------------------------------
 
@@ -104,6 +115,7 @@ find_package(PkgConfig REQUIRED)
 # refused here, so it cannot be made by mistake.
 if(NOT GAUDIT_DEVELOPER_BUILD)
   foreach(_path GAUDIT_HELPER_PATH GAUDIT_ORCHESTRATOR_PATH GAUDIT_ENGINE_PATH GAUDIT_RULES_DIR
+                GAUDIT_MANIFEST_PATH GAUDIT_SELF_GUI_PATH
                 GAUDIT_VENDOR_KEYS_DIR GAUDIT_LOCALEDIR GAUDIT_PKGLIBEXECDIR GAUDIT_SCHEMA_DIR
                 GAUDIT_FLATPAK_PROBE_PATH GAUDIT_SNAP_PROBE_PATH GAUDIT_DNF_PROBE_PATH
                 GAUDIT_PACMAN_PROBE_PATH)

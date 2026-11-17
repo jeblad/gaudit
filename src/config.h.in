@@ -20,6 +20,12 @@
 #define GAUDIT_ENGINE_PATH   "@GAUDIT_ENGINE_PATH@"
 /* Plugins' rule files: <dir>/<plugin-id>/report.scm. */
 #define GAUDIT_RULES_DIR     "@GAUDIT_RULES_DIR@"
+/* The signed manifest (and <path>.minisig), the lowest version allowed,
+ * and the program the helper expects the GUI to run. */
+#define GAUDIT_MANIFEST_PATH "@GAUDIT_MANIFEST_PATH@"
+#define GAUDIT_MANIFEST_MIN_VERSION @GAUDIT_MANIFEST_MIN_VERSION@ULL
+#define GAUDIT_SELF_GUI_PATH "@GAUDIT_SELF_GUI_PATH@"
+#define GAUDIT_PREFIX "@CMAKE_INSTALL_PREFIX@"
 /* Vendors' signing keys: <dir>/<file> from the vendor table. */
 #define GAUDIT_VENDOR_KEYS_DIR "@GAUDIT_VENDOR_KEYS_DIR@"
 /* "" means the system schema directory. */

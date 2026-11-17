@@ -1,0 +1,8 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Generated from the public key files in data/keys/manifest/: gAudit's public keys for the
+ * signed manifest, minisign public key files as text. */
+#pragma once
+
+static const char *const gaudit_manifest_key_texts[] = {
+@GAUDIT_MANIFEST_KEYS@    NULL,
+};

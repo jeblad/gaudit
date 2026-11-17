@@ -34,6 +34,8 @@
 #include "apt.h"
 #include "vendor-pkg.h"
 #include "vendor.h"
+#include "selfcheck.h"
+#include "manifest-keys.h"
 #include "automatic.h"
 #include "integrity.h"
 #include "lease.h"
@@ -384,6 +386,72 @@ static int vendor_args_ok(const char *name)
            && (n_vendor_args == 1 || (n_vendor_args == 2 && strcmp(vendor_args[1], "anyway") == 0));
 }
 
+/* --- gAudit checking itself -------------------------------------------- */
+
+/* Who asked: the helper's parent (pkexec runs the helper in its own place),
+ * taken before anything else. */
+static pid_t asker;
+
+static void self_check(void *ctx)
+{
+    (void)ctx;
+    gaudit_manifest_key keys[4];
+    size_t n_keys = 0;
+    for (size_t i = 0; gaudit_manifest_key_texts[i] != NULL && n_keys < 4; i++)
+        if (gaudit_manifest_key_parse(gaudit_manifest_key_texts[i], &keys[n_keys]) == 0)
+            n_keys++;
+    static const char *const dirs[] = { GAUDIT_RULES_DIR, GAUDIT_VENDOR_KEYS_DIR, GAUDIT_PKGLIBEXECDIR };
+#if GAUDIT_DEVELOPER_BUILD
+    static const char *const code_dirs[] = { "/usr/", "/lib", GAUDIT_PREFIX "/", PROJECT_BINARY_DIR "/" };
+#else
+    static const char *const code_dirs[] = { "/usr/", "/lib" };
+#endif
+    mkdir("/var/lib/gaudit", 0755);
+    gaudit_selfcheck_env env = {
+        .manifest_path = GAUDIT_MANIFEST_PATH, .sig_path = GAUDIT_MANIFEST_PATH ".minisig",
+        .keys = keys, .n_keys = n_keys, .min_version = GAUDIT_MANIFEST_MIN_VERSION,
+        .state_file = "/var/lib/gaudit/manifest-version",
+        .dirs = dirs, .n_dirs = sizeof dirs / sizeof dirs[0],
+        .orchestrator = asker, .orchestrator_exe = GAUDIT_ORCHESTRATOR_PATH,
+        .gui_exe = GAUDIT_SELF_GUI_PATH,
+        .code_dirs = code_dirs, .n_code_dirs = sizeof code_dirs / sizeof code_dirs[0],
+        .developer = GAUDIT_DEVELOPER_BUILD, .now = (int64_t)time(NULL),
+    };
+    gaudit_selfcheck(&env, stdout);
+}
+
+/* --- The root-owned log -------------------------------------------------- */
+
+/* One line per command the helper ran, in a log only root can write, so
+ * what the user's side keeps can be compared with it afterwards. Readable
+ * by all: it names commands and counts, nothing private. */
+static void log_command(long caller, const char *name, int ok, int failed)
+{
+    mkdir("/var/log/gaudit", 0755);
+    int fd = open("/var/log/gaudit/helper.log",
+                  O_WRONLY | O_APPEND | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0644);
+    if (fd < 0)
+        return;
+    struct stat st;
+    if (fstat(fd, &st) != 0 || !S_ISREG(st.st_mode) || st.st_uid != 0) {
+        close(fd);
+        return;
+    }
+    fchmod(fd, 0644);
+    char when[32] = "";
+    time_t now = time(NULL);
+    struct tm tm;
+    if (gmtime_r(&now, &tm) != NULL)
+        strftime(when, sizeof when, "%Y-%m-%dT%H:%M:%SZ", &tm);
+    char line[256];
+    int n = snprintf(line, sizeof line, "%s caller=%ld command=%s ok=%d failed=%d\n", when, caller,
+                     name, ok, failed);
+    if (n > 0 && (size_t)n < sizeof line && write(fd, line, (size_t)n) < 0) {
+        /* nothing to do: the command's own result still goes to the caller */
+    }
+    close(fd);
+}
+
 /* --- main ----------------------------------------------------------------- */
 
 /* PKEXEC_UID as set by pkexec, -1 if absent or not a plain number. Only
@@ -460,6 +528,14 @@ static const check_def vendor_verify_checks[] = {
     { "vendor-verify",  { .to_nobody = 0, .caps = read_caps, .n_caps = 1 }, vendor_verify,
       10 * 60 * 1000L, 0 },
 };
+/* Reading the orchestrator's and the GUI's environment and memory map
+ * takes CAP_SYS_PTRACE (they are the user's); reading gAudit's files,
+ * CAP_DAC_READ_SEARCH. */
+static const cap_value_t self_caps[] = { CAP_SYS_PTRACE, CAP_DAC_READ_SEARCH };
+static const check_def self_check_checks[] = {
+    { "self-check", { .to_nobody = 0, .caps = self_caps, .n_caps = 2 }, self_check,
+      2 * 60 * 1000L, 16384 },
+};
 static const check_def vendor_install_checks[] = {
     { "vendor-install", { .unconfined = 1 }, vendor_install, APT_TIMEOUT_MS, 0 },
 };
@@ -489,6 +565,7 @@ static const struct {
     { "add-ppa", apt_add_ppa_checks, 1 },
     { "vendor-verify", vendor_verify_checks, 1 },
     { "vendor-install", vendor_install_checks, 1 },
+    { "self-check", self_check_checks, 1 },
 };
 
 static int find_command(const char *name)
@@ -518,6 +595,7 @@ static int run_command(int i, long caller)
         }
         free(out);
     }
+    log_command(caller, commands[i].name, ok, failed);
     printf("(helper (version 1) (caller %ld) (checks-ok %d) (checks-failed %d))\n",
            caller, ok, failed);
     return fflush(stdout) == 0 && failed == 0 ? 0 : 1;
@@ -663,6 +741,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    asker = getppid();
     long caller = caller_uid();
     if (clearenv() != 0)
         return 1;

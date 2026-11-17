@@ -15,7 +15,8 @@ static const gaudit_vendor_package table[] = {
       "https://zoom.us/download?os=linux", "us.zoom.Zoom",
       "https://zoom.us/client/latest/zoom_amd64.deb", "https://cdn.zoom.us/prod/", "/zoom_amd64.deb",
       "zoom.gpg",
-      zoom_keys, sizeof zoom_keys / sizeof zoom_keys[0] },
+      zoom_keys, sizeof zoom_keys / sizeof zoom_keys[0],
+      GAUDIT_FLATPAK_UNVERIFIED, "flathub.org/apps/us.zoom.Zoom, 2026-11-17" },
     /* Discord signs nothing: no _gpgbuilder in the package, nothing beside
      * it (checked on 1.0.169, 2026-11-16). So no key: gAudit may say a newer
      * version is out, but never installs it. */
@@ -24,7 +25,7 @@ static const gaudit_vendor_package table[] = {
       "https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable"
       "&platform=linux&arch=x64",
       "https://stable.dl2.discordapp.net/distro/app/stable/linux/x64/", "/Discord.deb",
-      NULL, NULL, 0 },
+      NULL, NULL, 0, GAUDIT_FLATPAK_NOT_CHECKED, NULL },
 };
 
 const gaudit_vendor_package *gaudit_vendor_match(const char *package, const char *maintainer)

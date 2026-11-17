@@ -20,6 +20,12 @@ typedef struct {
     const char *taken;        /* where and when the fingerprint was taken */
 } gaudit_vendor_key;
 
+typedef enum {
+    GAUDIT_FLATPAK_NOT_CHECKED = 0,  /* the page says what the marks mean */
+    GAUDIT_FLATPAK_VERIFIED,         /* "Verified": the vendor makes it */
+    GAUDIT_FLATPAK_UNVERIFIED,       /* "Unverified": someone else does */
+} gaudit_vendor_flatpak_mark;
+
 typedef struct {
     const char *id;           /* stable, e.g. "zoom" */
     const char *package;      /* the package name, e.g. "zoom" */
@@ -35,6 +41,10 @@ typedef struct {
                                  vendor signs nothing: then gAudit never installs it */
     const gaudit_vendor_key *keys;
     size_t n_keys;
+    /* Who makes the Flatpak, as Flathub marks it, checked by hand like the
+     * keys (flatpak_checked: where and when): the page then says so. */
+    gaudit_vendor_flatpak_mark flatpak_mark;
+    const char *flatpak_checked;
 } gaudit_vendor_package;
 
 /* The entry for an installed package with this name and Maintainer field

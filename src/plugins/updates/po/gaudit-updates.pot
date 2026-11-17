@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 05:21+0100\n"
+"POT-Creation-Date: 2026-11-17 05:30+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -354,7 +354,24 @@ msgid "Download new versions from %s's own page and install them: %s"
 msgstr ""
 
 #. Translators: a Flatpak app id, then who makes the program.
-#: src/plugins/updates/gaudit-updates.c:689
+#: src/plugins/updates/gaudit-updates.c:692
+#, c-format
+msgid ""
+"Or use it as a Flatpak instead (%s on Flathub), which gets updates. Flathub "
+"marks it “Verified”: %s makes it."
+msgstr ""
+
+#. Translators: a Flatpak app id, then who makes the program.
+#: src/plugins/updates/gaudit-updates.c:696
+#, c-format
+msgid ""
+"Or use it as a Flatpak instead (%s on Flathub), which gets updates. Flathub "
+"marks it “Unverified”: someone other than %s makes it, so you trust them as "
+"well."
+msgstr ""
+
+#. Translators: a Flatpak app id, then who makes the program.
+#: src/plugins/updates/gaudit-updates.c:701
 #, c-format
 msgid ""
 "Or use it as a Flatpak instead (%s on Flathub), which gets updates. On its "
@@ -362,57 +379,57 @@ msgid ""
 "the page says “Unverified”, or has no mark, someone else does."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:698
+#: src/plugins/updates/gaudit-updates.c:710
 msgid ""
 "Looking for the newest version and installing it here is a fallback for a "
 "package without a source: you chose this package, and there may be a good "
 "reason for it."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:701
+#: src/plugins/updates/gaudit-updates.c:713
 msgid ""
 "Looking for the newest version here is a fallback for a package without a "
 "source: you chose this package, and there may be a good reason for it."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:716
+#: src/plugins/updates/gaudit-updates.c:728
 msgid "Check for a New Version"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:718
+#: src/plugins/updates/gaudit-updates.c:730
 msgid ""
 "Asks the maker's page which version is the newest. Nothing is downloaded or "
 "installed."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:722
+#: src/plugins/updates/gaudit-updates.c:734
 msgid "Install"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:724
+#: src/plugins/updates/gaudit-updates.c:736
 msgid "Downloads the newer version, checks its signature and installs it"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:730
+#: src/plugins/updates/gaudit-updates.c:742
 msgid "Install Anyway"
 msgstr ""
 
 #. Translators: %s is a product, e.g. "CUDA".
-#: src/plugins/updates/gaudit-updates.c:783
+#: src/plugins/updates/gaudit-updates.c:795
 #, c-format
 msgid "%s From a Local Copy"
 msgstr ""
 
 #. Translators: a product, its version, who makes it, the release the copy
 #. * was made for (e.g. "Ubuntu 26.04"), then a sentence about the packages.
-#: src/plugins/updates/gaudit-updates.c:787
+#: src/plugins/updates/gaudit-updates.c:799
 #, c-format
 msgid ""
 "%s %s was installed from a local copy of %s's software source, made for %s. "
 "%s"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:789
+#: src/plugins/updates/gaudit-updates.c:801
 msgid ""
 "The copy never changes, so the package from it never gets updates, not even "
 "security fixes."
@@ -423,7 +440,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: the release the copy was made for, then the one running.
-#: src/plugins/updates/gaudit-updates.c:795
+#: src/plugins/updates/gaudit-updates.c:807
 #, c-format
 msgid ""
 "The copy was made for %s, not for %s, which this computer runs. The program "
@@ -432,7 +449,7 @@ msgid ""
 msgstr ""
 
 #. Translators: a version (13.3), then a package name (cuda-toolkit-13-3).
-#: src/plugins/updates/gaudit-updates.c:808
+#: src/plugins/updates/gaudit-updates.c:820
 #, c-format
 msgid ""
 " To stay on version %s, install the package %s: it keeps that version, and "
@@ -441,7 +458,7 @@ msgstr ""
 
 #. Translators: who makes it, the release running, who makes it, the release
 #. * running, the download page, the product, then the sentence about one version.
-#: src/plugins/updates/gaudit-updates.c:813
+#: src/plugins/updates/gaudit-updates.c:825
 #, c-format
 msgid ""
 "%s has a software source for this release (%s). Set it up from %s's download "
@@ -451,14 +468,14 @@ msgid ""
 msgstr ""
 
 #. Translators: who makes it, the release running, who makes it, its download page.
-#: src/plugins/updates/gaudit-updates.c:820
+#: src/plugins/updates/gaudit-updates.c:832
 #, c-format
 msgid ""
 "%s has no software source for this release (%s) yet. Look on %s's download "
 "page now and then: %s"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:832
+#: src/plugins/updates/gaudit-updates.c:844
 msgid ""
 "This is a recommendation: staying on a version can be deliberate, such as "
 "for a project that needs it. The program downloads and installs nothing for "
@@ -466,13 +483,13 @@ msgid ""
 msgstr ""
 
 #. Translators: %s is a release, e.g. "Ubuntu 26.04".
-#: src/plugins/updates/gaudit-updates.c:842
+#: src/plugins/updates/gaudit-updates.c:854
 #, c-format
 msgid "Show the Source for %s"
 msgstr ""
 
 #. Translators: who makes it, the release before, who makes it, the release before.
-#: src/plugins/updates/gaudit-updates.c:847
+#: src/plugins/updates/gaudit-updates.c:859
 #, c-format
 msgid ""
 "%s has a source for %s, the release before. Using a source made for an "
@@ -481,126 +498,126 @@ msgid ""
 "anyway, set it up from %s's download page, choosing %s."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:923
+#: src/plugins/updates/gaudit-updates.c:935
 msgid ""
 "Files installed by packages were changed or are gone. It may be harmless, "
 "such as a program changing its own file, but nothing should change installed "
 "files."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:927
+#: src/plugins/updates/gaudit-updates.c:939
 msgid ""
 "Not every package is in the command: only those listed in the report, with "
 "plain names. Check again afterwards to see what is left."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:929
+#: src/plugins/updates/gaudit-updates.c:941
 msgid "Afterwards, it is checked again: the files should then match."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:934
-#: src/plugins/updates/gaudit-updates.c:938
+#: src/plugins/updates/gaudit-updates.c:946
+#: src/plugins/updates/gaudit-updates.c:950
 msgid "Put the Package Files Back"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:935
+#: src/plugins/updates/gaudit-updates.c:947
 msgid ""
 "If you did not change them yourself, reinstall the packages: it puts their "
 "own files back, and keeps your settings in /etc."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:939
+#: src/plugins/updates/gaudit-updates.c:951
 msgid ""
 "If you did not change them yourself, reinstall the packages with your "
 "package manager."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:965
-#: src/plugins/updates/gaudit-updates.c:975
+#: src/plugins/updates/gaudit-updates.c:977
+#: src/plugins/updates/gaudit-updates.c:987
 msgid "Look for Updates"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:966
-#: src/plugins/updates/gaudit-updates.c:976
+#: src/plugins/updates/gaudit-updates.c:978
+#: src/plugins/updates/gaudit-updates.c:988
 msgid ""
 "This computer never looks for updates, so it never finds security updates "
 "either."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:967
+#: src/plugins/updates/gaudit-updates.c:979
 msgid ""
 "In your system's settings for software updates, choose to look for updates "
 "every day. Until then, you can look once yourself."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:970
-#: src/plugins/updates/gaudit-updates.c:980
+#: src/plugins/updates/gaudit-updates.c:982
+#: src/plugins/updates/gaudit-updates.c:992
 msgid "Looking once is not enough: updates come out all the time."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:977
+#: src/plugins/updates/gaudit-updates.c:989
 msgid ""
 "In your system's settings for software updates, choose to look for updates "
 "every day. Until then, you can look once yourself with this command in a "
 "terminal."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:990
-#: src/plugins/updates/gaudit-updates.c:1001
+#: src/plugins/updates/gaudit-updates.c:1002
+#: src/plugins/updates/gaudit-updates.c:1013
 msgid "Switch On the Daily Jobs"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:991
-#: src/plugins/updates/gaudit-updates.c:1002
+#: src/plugins/updates/gaudit-updates.c:1003
+#: src/plugins/updates/gaudit-updates.c:1014
 msgid ""
 "The jobs that look for and install updates every day are switched off, so "
 "the settings for updates have no effect."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:993
+#: src/plugins/updates/gaudit-updates.c:1005
 msgid "Switch them on again:"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:995
+#: src/plugins/updates/gaudit-updates.c:1007
 msgid "Afterwards, it is checked again: the jobs should then be listed as on."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1004
+#: src/plugins/updates/gaudit-updates.c:1016
 msgid "Run this command in a terminal to switch them on again."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1006
+#: src/plugins/updates/gaudit-updates.c:1018
 msgid "Afterwards, check again: the jobs should then be listed as on."
 msgstr ""
 
 #. Translators: %s is one or more sources, e.g. "ppa:cappelikan/ppa".
-#: src/plugins/updates/gaudit-updates.c:1012
+#: src/plugins/updates/gaudit-updates.c:1024
 #, c-format
 msgid ""
 "These software sources were switched off when the release was upgraded: %s. "
 "Nothing from them gets updates while they are off."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1014
+#: src/plugins/updates/gaudit-updates.c:1026
 msgid ""
 "The upgrade switches off sources it does not know, since they may not have "
 "packages for the new release yet; switching one on then gives an error the "
 "next time updates are looked for."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1039
+#: src/plugins/updates/gaudit-updates.c:1051
 msgid ""
 "Check the PPA's page on Launchpad first for packages for this release. If it "
 "has them, set it up again here. Other sources are switched on in your "
 "system's settings for software sources."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1043
-#: src/plugins/updates/gaudit-updates.c:1056
+#: src/plugins/updates/gaudit-updates.c:1055
+#: src/plugins/updates/gaudit-updates.c:1068
 msgid "Software Sources Switched Off"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1044
+#: src/plugins/updates/gaudit-updates.c:1056
 msgid ""
 "Only the PPA's own page can tell whether it is ready: on Launchpad, it must "
 "list packages for exactly this release. Packages for older releases are not "
@@ -608,137 +625,137 @@ msgid ""
 "there before you run the command."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1052
+#: src/plugins/updates/gaudit-updates.c:1064
 msgid ""
 "Check the source's page first (for a PPA, its page on Launchpad) for "
 "packages for this release. If it has them, switch it on in your system's "
 "settings for software sources."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1057
+#: src/plugins/updates/gaudit-updates.c:1069
 msgid ""
 "The program does not switch them on: only the source's own page can tell "
 "whether it is ready for this release."
 msgstr ""
 
 #. Translators: %s is one or more host names, e.g. "prerelease.keybase.io".
-#: src/plugins/updates/gaudit-updates.c:1065
+#: src/plugins/updates/gaudit-updates.c:1077
 #, c-format
 msgid ""
 "The software source %s is set up, but its lists of packages have never been "
 "fetched, so nothing from it gets updates."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1067
+#: src/plugins/updates/gaudit-updates.c:1079
 msgid ""
 "Look for updates: that fetches the lists from every source. If it still "
 "cannot be read, the command shows why, often a signing key that is missing "
 "or has expired, or a source that no longer exists."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1070
+#: src/plugins/updates/gaudit-updates.c:1082
 msgid ""
 "It often happens after an upgrade of the release, or when a source is added "
 "without looking for updates since."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1073
-#: src/plugins/updates/gaudit-updates.c:1075
+#: src/plugins/updates/gaudit-updates.c:1085
+#: src/plugins/updates/gaudit-updates.c:1087
 msgid "Read the Software Source"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1082
-#: src/plugins/updates/gaudit-updates.c:1091
+#: src/plugins/updates/gaudit-updates.c:1094
+#: src/plugins/updates/gaudit-updates.c:1103
 msgid "Look for Updates Now"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1083
-#: src/plugins/updates/gaudit-updates.c:1092
+#: src/plugins/updates/gaudit-updates.c:1095
+#: src/plugins/updates/gaudit-updates.c:1104
 msgid ""
 "This computer has not looked for updates for a long time, so it does not "
 "know about updates published since."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1085
+#: src/plugins/updates/gaudit-updates.c:1097
 msgid ""
 "Look for them now. If it keeps happening, check that the computer looks for "
 "updates by itself."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1095
+#: src/plugins/updates/gaudit-updates.c:1107
 msgid ""
 "Run this command in a terminal. If it keeps happening, check that the "
 "computer looks for updates by itself."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1097
+#: src/plugins/updates/gaudit-updates.c:1109
 msgid ""
 "Install the updates with the command below; it looks for new ones first."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1114
-#: src/plugins/updates/gaudit-updates.c:1128
+#: src/plugins/updates/gaudit-updates.c:1126
+#: src/plugins/updates/gaudit-updates.c:1140
 msgid "Install the Updates"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1116
-#: src/plugins/updates/gaudit-updates.c:1130
+#: src/plugins/updates/gaudit-updates.c:1128
+#: src/plugins/updates/gaudit-updates.c:1142
 msgid ""
 "Security updates are waiting. Until they are installed, the problems they "
 "fix stay open on this computer."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1118
-#: src/plugins/updates/gaudit-updates.c:1132
+#: src/plugins/updates/gaudit-updates.c:1130
+#: src/plugins/updates/gaudit-updates.c:1144
 msgid "Updates are waiting, and some of them may be security updates."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1119
+#: src/plugins/updates/gaudit-updates.c:1131
 msgid "Install them with your system's software updater, or here:"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1121
-#: src/plugins/updates/gaudit-updates.c:1136
+#: src/plugins/updates/gaudit-updates.c:1133
+#: src/plugins/updates/gaudit-updates.c:1148
 msgid "Installing updates automatically keeps this from building up again."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1133
+#: src/plugins/updates/gaudit-updates.c:1145
 msgid ""
 "Install them with your system's software updater, or run this command in a "
 "terminal."
 msgstr ""
 
 #. Translators: %s is a host name, e.g. no.archive.ubuntu.com.
-#: src/plugins/updates/gaudit-updates.c:1142
+#: src/plugins/updates/gaudit-updates.c:1154
 #, c-format
 msgid ""
 "Security updates come from %s, a mirror. A mirror may lag behind, and "
 "security updates should not wait."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1145
+#: src/plugins/updates/gaudit-updates.c:1157
 msgid "Get Security Updates from the Source"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1146
+#: src/plugins/updates/gaudit-updates.c:1158
 msgid ""
 "In your system's settings for software sources, let security updates come "
 "from the distribution's own server. Mirrors are fine for the other updates."
 msgstr ""
 
 #. Translators: %s is a list of package systems, e.g. "rpm, Nix".
-#: src/plugins/updates/gaudit-updates.c:1154
+#: src/plugins/updates/gaudit-updates.c:1166
 #, c-format
 msgid ""
 "Packages managed by %s are on this computer. The program does not check "
 "them, so it cannot tell whether they get updates."
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1157
+#: src/plugins/updates/gaudit-updates.c:1169
 msgid "Other Package Systems"
 msgstr ""
 
-#: src/plugins/updates/gaudit-updates.c:1158
+#: src/plugins/updates/gaudit-updates.c:1170
 msgid ""
 "Keep them up to date with their own tools. If they are left over and nothing "
 "uses them any more, they still need updates as long as they are installed."

@@ -684,12 +684,24 @@ static AdwNavigationPage *vendor_page(const char *line, GPtrArray *lines)
     g_autofree char *download = g_strdup_printf(
         /* Translators: who makes it, then the address of their download page. */
         P_("Download new versions from %s's own page and install them: %s"), p->vendor, p->download);
-    g_autofree char *flatpak = p->flatpak == NULL ? g_strdup("") : g_strdup_printf(
-        /* Translators: a Flatpak app id, then who makes the program. */
-        P_("Or use it as a Flatpak instead (%s on Flathub), which gets updates. On its page on "
-           "Flathub, the mark “Verified” (a blue badge) means %s makes it; where the page "
-           "says “Unverified”, or has no mark, someone else does."),
-        p->flatpak, p->vendor);
+    /* Who makes the Flatpak, when the table says (checked by hand). */
+    g_autofree char *flatpak =
+        p->flatpak == NULL ? g_strdup("")
+        : p->flatpak_mark == GAUDIT_FLATPAK_VERIFIED ? g_strdup_printf(
+            /* Translators: a Flatpak app id, then who makes the program. */
+            P_("Or use it as a Flatpak instead (%s on Flathub), which gets updates. Flathub marks "
+               "it “Verified”: %s makes it."), p->flatpak, p->vendor)
+        : p->flatpak_mark == GAUDIT_FLATPAK_UNVERIFIED ? g_strdup_printf(
+            /* Translators: a Flatpak app id, then who makes the program. */
+            P_("Or use it as a Flatpak instead (%s on Flathub), which gets updates. Flathub marks "
+               "it “Unverified”: someone other than %s makes it, so you trust them as well."),
+            p->flatpak, p->vendor)
+        : g_strdup_printf(
+            /* Translators: a Flatpak app id, then who makes the program. */
+            P_("Or use it as a Flatpak instead (%s on Flathub), which gets updates. On its page on "
+               "Flathub, the mark “Verified” (a blue badge) means %s makes it; where the page "
+               "says “Unverified”, or has no mark, someone else does."),
+            p->flatpak, p->vendor);
     g_autofree char *how = g_strjoin("\n\n", source, download, flatpak, NULL);
     g_strchomp(how);
     AdwNavigationPage *page = gaudit_fix_page_new(

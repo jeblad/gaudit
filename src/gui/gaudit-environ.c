@@ -183,6 +183,53 @@ gaudit_env_kind gaudit_environ_kind(const char *name)
     return GAUDIT_ENV_OTHER;
 }
 
+#if defined(__x86_64__)
+#define MULTIARCH "x86_64-linux-gnu"
+#elif defined(__aarch64__)
+#define MULTIARCH "aarch64-linux-gnu"
+#elif defined(__i386__)
+#define MULTIARCH "i386-linux-gnu"
+#elif defined(__arm__)
+#define MULTIARCH "arm-linux-gnueabihf"
+#elif defined(__powerpc64__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define MULTIARCH "powerpc64le-linux-gnu"
+#elif defined(__s390x__)
+#define MULTIARCH "s390x-linux-gnu"
+#elif defined(__riscv) && __riscv_xlen == 64
+#define MULTIARCH "riscv64-linux-gnu"
+#else
+#define MULTIARCH "unknown"
+#endif
+
+int gaudit_environ_module_file(const char *name, char *out, size_t len)
+{
+    /* The library folders a distribution keeps GTK 3 in (Debian's
+     * multiarch, Fedora's and SUSE's lib64, Arch's lib), and below each
+     * the folders GTK 3 looks in: 3.0.0/<host>/modules, 3.0.0/modules,
+     * <host>/modules, modules. */
+    static const char *const libdirs[] = {
+        "/usr/lib/" MULTIARCH "/gtk-3.0", "/usr/lib64/gtk-3.0", "/usr/lib/gtk-3.0",
+    };
+    static const char *const subs[] = {
+        "3.0.0/" MULTIARCH "/modules", "3.0.0/modules", MULTIARCH "/modules", "modules",
+    };
+    if (name == NULL || *name == '\0' || strchr(name, '/') != NULL || strlen(name) > 128)
+        return -1;
+    for (size_t d = 0; d < sizeof libdirs / sizeof libdirs[0]; d++)
+        for (size_t s = 0; s < sizeof subs / sizeof subs[0]; s++)
+            for (int lib = 1; lib >= 0; lib--) {
+                char path[PATH_MAX];
+                snprintf(path, sizeof path, "%s/%s/%s%s.so", libdirs[d], subs[s], lib ? "lib" : "",
+                         name);
+                struct stat st;
+                if (stat(path, &st) == 0 && S_ISREG(st.st_mode)) {
+                    snprintf(out, len, "%s", path);
+                    return 0;
+                }
+            }
+    return -1;
+}
+
 static int group_has_members(gid_t gid)
 {
     struct group *gr = getgrgid(gid);

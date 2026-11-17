@@ -29,13 +29,21 @@ static char **parts(const char *name, const char *value)
     return g_strsplit_set(value, seps, 64);
 }
 
-/* Who can change one part, judged; a module named without a folder is the
- * system's. */
-static void judge_part(const char *name, const char *part, gaudit_env_judgement *j)
+/* Who can change one part, judged. A module named without a folder is
+ * judged by the file GTK 3 would load it from; with none there, nothing is
+ * loaded (*file stays ""). */
+static void judge_part(const char *name, const char *part, gaudit_env_judgement *j, char *file,
+                       size_t file_len)
 {
     memset(j, 0, sizeof *j);
+    if (file_len > 0)
+        file[0] = '\0';
     if (gaudit_environ_kind(name) == GAUDIT_ENV_MODULES && strchr(part, '/') == NULL) {
-        j->reach = GAUDIT_ENV_ROOT_ONLY;
+        if (part[0] == '\0' || gaudit_environ_module_file(part, file, file_len) != 0) {
+            j->reach = GAUDIT_ENV_ROOT_ONLY;
+            return;
+        }
+        gaudit_environ_judge_path(file, j);
         return;
     }
     gaudit_environ_judge_path(part, j);
@@ -53,8 +61,12 @@ static gboolean entry_open(const char *entry)
         /* LD_PRELOAD's separators may leave empty parts that mean nothing. */
         if (p[i][0] == '\0' && strcmp(name, "LD_PRELOAD") == 0)
             continue;
+        /* GTK_MODULES' separators may leave empty parts that mean nothing. */
+        if (p[i][0] == '\0' && gaudit_environ_kind(name) == GAUDIT_ENV_MODULES)
+            continue;
         gaudit_env_judgement j;
-        judge_part(name, p[i], &j);
+        char file[512];
+        judge_part(name, p[i], &j, file, sizeof file);
         if (j.reach != GAUDIT_ENV_ROOT_ONLY)
             return TRUE;
     }
@@ -86,8 +98,10 @@ static const char *what_it_does(const char *name)
         return _("Programs that use GTK, GIO, GStreamer or GObject look for modules or data here "
                  "before the system's own.");
     case GAUDIT_ENV_MODULES:
-        return _("GTK loads these modules into every window. A module named without a folder is "
-                 "taken from the system's folders.");
+        return _("GTK 3 loads these modules into every window of the programs that use it. A "
+                 "module named without a folder is taken from GTK's own folders. The program "
+                 "itself uses GTK 4, which does not read this; every GTK 3 program you start "
+                 "still does.");
     default:
         return _("Changes how programs are loaded or run, but loads no code of its own.");
     }
@@ -200,14 +214,20 @@ AdwNavigationPage *gaudit_environ_page_new(void)
         } else {
             g_auto(GStrv) p = parts(name, value);
             for (guint k = 0; p[k] != NULL; k++) {
-                if (p[k][0] == '\0' && strcmp(name, "LD_PRELOAD") == 0)
+                gboolean module = gaudit_environ_kind(name) == GAUDIT_ENV_MODULES;
+                if (p[k][0] == '\0' && (module || strcmp(name, "LD_PRELOAD") == 0))
                     continue;
                 gaudit_env_judgement j;
-                judge_part(name, p[k], &j);
-                g_autofree char *who = gaudit_environ_kind(name) == GAUDIT_ENV_MODULES
-                                               && strchr(p[k], '/') == NULL
-                                           ? g_strdup(_("Taken from the system's folders"))
-                                           : reach_text(&j);
+                char file[512];
+                judge_part(name, p[k], &j, file, sizeof file);
+                g_autofree char *reach = reach_text(&j);
+                g_autofree char *who =
+                    module && strchr(p[k], '/') == NULL && file[0] == '\0'
+                    ? g_strdup(_("Not found in GTK's own folders, so nothing is loaded"))
+                    : module && strchr(p[k], '/') == NULL
+                    /* Translators: "<the file a module is loaded from> · <who can change it>". */
+                    ? g_strdup_printf(_("%s · %s"), file, reach)
+                    : g_strdup(reach);
                 adw_preferences_group_add(group, GTK_WIDGET(row_new(
                     j.reach == GAUDIT_ENV_ROOT_ONLY ? GAUDIT_VERDICT_OK : GAUDIT_VERDICT_WARNING,
                     p[k][0] != '\0' ? p[k] : _("(empty)"), who)));
@@ -222,16 +242,19 @@ AdwNavigationPage *gaudit_environ_page_new(void)
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
     const char *where =
         _("Such settings are usually made in a file that is read when you log in or open a "
-          "terminal. Started from a terminal, the program gets the terminal's settings; started "
-          "from the menu, only those of the login. This shows the lines that set them:");
+          "terminal: your own, or the system's for every account. Started from a terminal, the "
+          "program gets the terminal's settings; started from the menu, only those of the "
+          "login. This shows the lines that set them:");
     GtkWidget *label = gtk_label_new(where);
     gtk_label_set_wrap(GTK_LABEL(label), TRUE);
     gtk_label_set_xalign(GTK_LABEL(label), 0);
     gtk_box_append(GTK_BOX(box), label);
     if (names->len > 0) {
         g_autofree char *cmd = g_strdup_printf(
-            "grep -n -E '%s' ~/.bashrc ~/.profile ~/.bash_profile ~/.config/environment.d/*.conf "
-            "/etc/environment /etc/profile.d/*.sh 2>/dev/null", names->str);
+            "grep -n -E '%s' ~/.bashrc ~/.profile ~/.bash_profile ~/.xsessionrc "
+            "~/.config/environment.d/*.conf /etc/environment /etc/environment.d/*.conf "
+            "/usr/lib/environment.d/*.conf /etc/profile.d/*.sh /etc/X11/Xsession.d/* 2>/dev/null",
+            names->str);
         gtk_box_append(GTK_BOX(box), gaudit_command_field_new(cmd));
     }
     const char *advice =

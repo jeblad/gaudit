@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 05:10+0100\n"
+"POT-Creation-Date: 2026-11-17 05:21+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -366,7 +366,8 @@ msgstr ""
 
 #. Translators: "<system> · <how gAudit checks it>",
 #. * e.g. "Ubuntu 26.04 LTS · checked as Debian".
-#: src/gui/gaudit-window.c:920
+#. Translators: "<the file a module is loaded from> · <who can change it>".
+#: src/gui/gaudit-window.c:920 src/gui/gaudit-environ-page.c:229
 #, c-format
 msgid "%s · %s"
 msgstr ""
@@ -1278,73 +1279,75 @@ msgstr ""
 msgid "The program does not know how to install these on this system yet."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:78
+#: src/gui/gaudit-environ-page.c:90
 msgid ""
 "Loads these libraries into every program started with it, before the "
 "program's own."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:81
+#: src/gui/gaudit-environ-page.c:93
 msgid ""
 "Programs look for their libraries in these folders before the system's own."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:83
+#: src/gui/gaudit-environ-page.c:95
 msgid "Loads these libraries to follow how a program loads others."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:86
+#: src/gui/gaudit-environ-page.c:98
 msgid ""
 "Programs that use GTK, GIO, GStreamer or GObject look for modules or data "
 "here before the system's own."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:89
+#: src/gui/gaudit-environ-page.c:101
 msgid ""
-"GTK loads these modules into every window. A module named without a folder "
-"is taken from the system's folders."
+"GTK 3 loads these modules into every window of the programs that use it. A "
+"module named without a folder is taken from GTK's own folders. The program "
+"itself uses GTK 4, which does not read this; every GTK 3 program you start "
+"still does."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:92
+#: src/gui/gaudit-environ-page.c:106
 msgid "Changes how programs are loaded or run, but loads no code of its own."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:115
+#: src/gui/gaudit-environ-page.c:129
 msgid "Only the administrator can change it"
 msgstr ""
 
 #. Translators: "<folder or file> belongs to <account>, not the administrator".
-#: src/gui/gaudit-environ-page.c:121
+#: src/gui/gaudit-environ-page.c:135
 #, c-format
 msgid "%s belongs to %s, not the administrator"
 msgstr ""
 
 #. Translators: "<folder> can be changed by the accounts in the group <group>: <accounts>".
-#: src/gui/gaudit-environ-page.c:130
+#: src/gui/gaudit-environ-page.c:144
 #, c-format
 msgid "%s can be changed by the accounts in the group %s: %s"
 msgstr ""
 
 #. Translators: %s is a folder or file.
-#: src/gui/gaudit-environ-page.c:135
+#: src/gui/gaudit-environ-page.c:149
 #, c-format
 msgid "%s can be changed by every account"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:137
+#: src/gui/gaudit-environ-page.c:151
 msgid ""
 "An empty entry, from a colon first, last or two in a row: programs then look "
 "in the folder they are started from, before the system's own. That folder is "
 "yours, so anything on your account can put code there."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:143
+#: src/gui/gaudit-environ-page.c:157
 msgid ""
 "Not a full path: it is looked for from the folder the program is started "
 "from, which can be any folder."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:176
+#: src/gui/gaudit-environ-page.c:190
 msgid ""
 "The program was started with these settings, environment variables that make "
 "programs load code or modules from the places they name. It started itself "
@@ -1353,31 +1356,31 @@ msgid ""
 "they point to."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:199 src/gui/gaudit-environ-page.c:213
+#: src/gui/gaudit-environ-page.c:213 src/gui/gaudit-environ-page.c:233
 msgid "(empty)"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:199
+#: src/gui/gaudit-environ-page.c:213
 msgid "Loads no code of its own"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:209
-msgid "Taken from the system's folders"
+#: src/gui/gaudit-environ-page.c:226
+msgid "Not found in GTK's own folders, so nothing is loaded"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:221
+#: src/gui/gaudit-environ-page.c:241
 msgid "What You Can Do"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:224
+#: src/gui/gaudit-environ-page.c:244
 msgid ""
 "Such settings are usually made in a file that is read when you log in or "
-"open a terminal. Started from a terminal, the program gets the terminal's "
-"settings; started from the menu, only those of the login. This shows the "
-"lines that set them:"
+"open a terminal: your own, or the system's for every account. Started from a "
+"terminal, the program gets the terminal's settings; started from the menu, "
+"only those of the login. This shows the lines that set them:"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:239
+#: src/gui/gaudit-environ-page.c:262
 msgid ""
 "If you set it yourself, or a guide for another program asked you to "
 "(NVIDIA's CUDA asks for LD_LIBRARY_PATH), let it point only to folders the "
@@ -1387,26 +1390,26 @@ msgid ""
 "stick you start it from is then the way to be sure."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:245
+#: src/gui/gaudit-environ-page.c:268
 msgid ""
 "They point only to folders the administrator controls, so nothing on your "
 "account can have put code there. You can leave them as they are: the program "
 "starts itself without them all the same."
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:256
+#: src/gui/gaudit-environ-page.c:279
 msgid "How to Change Them, File by File"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:257
+#: src/gui/gaudit-environ-page.c:280
 msgid "On the program's wiki, in your browser"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:260
+#: src/gui/gaudit-environ-page.c:283
 msgid "Opens in your browser"
 msgstr ""
 
-#: src/gui/gaudit-environ-page.c:268
+#: src/gui/gaudit-environ-page.c:291
 msgid "Settings That Load Code"
 msgstr ""
 

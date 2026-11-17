@@ -65,5 +65,11 @@ typedef struct {
  * nobody is in can only be joined by root. */
 void gaudit_environ_judge_path(const char *path, gaudit_env_judgement *out);
 
+/* Where GTK 3 would load a module named without a folder from: the first
+ * of lib<name>.so, <name>.so in the system's GTK 3 module folders (as GTK
+ * 3 looks, without GTK_PATH), into out. 0 when found, -1 when none is
+ * there (then nothing is loaded). */
+int gaudit_environ_module_file(const char *name, char *out, size_t len);
+
 /* The members of a group, ", " between ("" for none), into buf. */
 void gaudit_environ_group_members(gid_t group, char *buf, size_t len);

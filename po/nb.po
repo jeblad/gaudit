@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 05:10+0100\n"
+"POT-Creation-Date: 2026-11-17 05:21+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -373,7 +373,8 @@ msgstr "Ukjent system"
 
 #. Translators: "<system> · <how gAudit checks it>",
 #. * e.g. "Ubuntu 26.04 LTS · checked as Debian".
-#: src/gui/gaudit-window.c:920
+#. Translators: "<the file a module is loaded from> · <who can change it>".
+#: src/gui/gaudit-window.c:920 src/gui/gaudit-environ-page.c:229
 #, c-format
 msgid "%s · %s"
 msgstr "%s · %s"
@@ -1449,7 +1450,7 @@ msgstr "Slå det så på:"
 msgid "The program does not know how to install these on this system yet."
 msgstr "Programmet vet ikke ennå hvordan disse installeres på dette systemet."
 
-#: src/gui/gaudit-environ-page.c:78
+#: src/gui/gaudit-environ-page.c:90
 msgid ""
 "Loads these libraries into every program started with it, before the "
 "program's own."
@@ -1457,19 +1458,19 @@ msgstr ""
 "Laster inn disse bibliotekene i hvert program som startes med den, før "
 "programmets egne."
 
-#: src/gui/gaudit-environ-page.c:81
+#: src/gui/gaudit-environ-page.c:93
 msgid ""
 "Programs look for their libraries in these folders before the system's own."
 msgstr ""
 "Programmer leter etter bibliotekene sine i disse mappene før systemets egne."
 
-#: src/gui/gaudit-environ-page.c:83
+#: src/gui/gaudit-environ-page.c:95
 msgid "Loads these libraries to follow how a program loads others."
 msgstr ""
 "Laster inn disse bibliotekene for å følge med på hvordan et program laster "
 "inn andre."
 
-#: src/gui/gaudit-environ-page.c:86
+#: src/gui/gaudit-environ-page.c:98
 msgid ""
 "Programs that use GTK, GIO, GStreamer or GObject look for modules or data "
 "here before the system's own."
@@ -1477,44 +1478,45 @@ msgstr ""
 "Programmer som bruker GTK, GIO, GStreamer eller GObject, leter etter moduler "
 "eller data her før systemets egne."
 
-#: src/gui/gaudit-environ-page.c:89
+#: src/gui/gaudit-environ-page.c:101
+#
 msgid ""
-"GTK loads these modules into every window. A module named without a folder "
-"is taken from the system's folders."
-msgstr ""
-"GTK laster inn disse modulene i hvert vindu. En modul som er oppgitt uten "
-"mappe, hentes fra systemets mapper."
+"GTK 3 loads these modules into every window of the programs that use it. A "
+"module named without a folder is taken from GTK's own folders. The program "
+"itself uses GTK 4, which does not read this; every GTK 3 program you start "
+"still does."
+msgstr "GTK 3 laster inn disse modulene i hvert vindu i programmene som bruker det. En modul som er oppgitt uten mappe, hentes fra GTKs egne mapper. Programmet selv bruker GTK 4, som ikke leser dette, men alle GTK 3-programmer du starter gjør det fortsatt."
 
-#: src/gui/gaudit-environ-page.c:92
+#: src/gui/gaudit-environ-page.c:106
 msgid "Changes how programs are loaded or run, but loads no code of its own."
 msgstr ""
 "Endrer hvordan programmer lastes inn eller kjører, men laster ikke inn kode "
 "selv."
 
 #
-#: src/gui/gaudit-environ-page.c:115
+#: src/gui/gaudit-environ-page.c:129
 msgid "Only the administrator can change it"
 msgstr "Bare administratoren kan endre den"
 
 #. Translators: "<folder or file> belongs to <account>, not the administrator".
-#: src/gui/gaudit-environ-page.c:121
+#: src/gui/gaudit-environ-page.c:135
 #, c-format
 msgid "%s belongs to %s, not the administrator"
 msgstr "%s tilhører %s, ikke administratoren"
 
 #. Translators: "<folder> can be changed by the accounts in the group <group>: <accounts>".
-#: src/gui/gaudit-environ-page.c:130
+#: src/gui/gaudit-environ-page.c:144
 #, c-format
 msgid "%s can be changed by the accounts in the group %s: %s"
 msgstr "%s kan endres av kontoene i gruppa %s: %s"
 
 #. Translators: %s is a folder or file.
-#: src/gui/gaudit-environ-page.c:135
+#: src/gui/gaudit-environ-page.c:149
 #, c-format
 msgid "%s can be changed by every account"
 msgstr "%s kan endres av alle kontoer"
 
-#: src/gui/gaudit-environ-page.c:137
+#: src/gui/gaudit-environ-page.c:151
 msgid ""
 "An empty entry, from a colon first, last or two in a row: programs then look "
 "in the folder they are started from, before the system's own. That folder is "
@@ -1524,7 +1526,7 @@ msgstr ""
 "programmer leter da i mappa de startes fra, før systemets egne. Den mappa er "
 "din, så alt på kontoen din kan legge kode der."
 
-#: src/gui/gaudit-environ-page.c:143
+#: src/gui/gaudit-environ-page.c:157
 msgid ""
 "Not a full path: it is looked for from the folder the program is started "
 "from, which can be any folder."
@@ -1532,7 +1534,7 @@ msgstr ""
 "Ikke en fullstendig sti: den letes etter fra mappa programmet startes fra, "
 "som kan være hvilken som helst mappe."
 
-#: src/gui/gaudit-environ-page.c:176
+#: src/gui/gaudit-environ-page.c:190
 msgid ""
 "The program was started with these settings, environment variables that make "
 "programs load code or modules from the places they name. It started itself "
@@ -1546,35 +1548,33 @@ msgstr ""
 "Koden de pekte på kan likevel ha kjørt før det, så det som teller er hvem "
 "som kan endre det de peker på."
 
-#: src/gui/gaudit-environ-page.c:199 src/gui/gaudit-environ-page.c:213
+#: src/gui/gaudit-environ-page.c:213 src/gui/gaudit-environ-page.c:233
 msgid "(empty)"
 msgstr "(tom)"
 
-#: src/gui/gaudit-environ-page.c:199
+#: src/gui/gaudit-environ-page.c:213
 msgid "Loads no code of its own"
 msgstr "Laster ikke inn kode selv"
 
-#: src/gui/gaudit-environ-page.c:209
-msgid "Taken from the system's folders"
-msgstr "Hentes fra systemets mapper"
+#: src/gui/gaudit-environ-page.c:226
+#
+msgid "Not found in GTK's own folders, so nothing is loaded"
+msgstr "Finnes ikke i GTKs egne mapper, så ingenting lastes inn"
 
-#: src/gui/gaudit-environ-page.c:221
+#: src/gui/gaudit-environ-page.c:241
 msgid "What You Can Do"
 msgstr "Hva du kan gjøre"
 
-#: src/gui/gaudit-environ-page.c:224
+#: src/gui/gaudit-environ-page.c:244
+#
 msgid ""
 "Such settings are usually made in a file that is read when you log in or "
-"open a terminal. Started from a terminal, the program gets the terminal's "
-"settings; started from the menu, only those of the login. This shows the "
-"lines that set them:"
-msgstr ""
-"Slike innstillinger settes vanligvis i en fil som leses når du logger inn "
-"eller åpner en terminal. Startet fra en terminal får programmet terminalens "
-"innstillinger, startet fra menyen bare innloggingens. Dette viser linjene "
-"som setter dem:"
+"open a terminal: your own, or the system's for every account. Started from a "
+"terminal, the program gets the terminal's settings; started from the menu, "
+"only those of the login. This shows the lines that set them:"
+msgstr "Slike innstillinger settes vanligvis i en fil som leses når du logger inn eller åpner en terminal: din egen, eller systemets for alle kontoer. Startet fra en terminal får programmet terminalens innstillinger, startet fra menyen bare innloggingens. Dette viser linjene som setter dem:"
 
-#: src/gui/gaudit-environ-page.c:239
+#: src/gui/gaudit-environ-page.c:262
 msgid ""
 "If you set it yourself, or a guide for another program asked you to "
 "(NVIDIA's CUDA asks for LD_LIBRARY_PATH), let it point only to folders the "
@@ -1590,7 +1590,7 @@ msgstr ""
 "på kontoen din kan ha satt den. Å sjekke datamaskinen fra en USB-pinne du "
 "starter den fra er da måten å være sikker."
 
-#: src/gui/gaudit-environ-page.c:245
+#: src/gui/gaudit-environ-page.c:268
 msgid ""
 "They point only to folders the administrator controls, so nothing on your "
 "account can have put code there. You can leave them as they are: the program "
@@ -1600,20 +1600,20 @@ msgstr ""
 "kan ha lagt kode der. Du kan la dem være som de er: programmet starter seg "
 "selv uten dem uansett."
 
-#: src/gui/gaudit-environ-page.c:256
+#: src/gui/gaudit-environ-page.c:279
 msgid "How to Change Them, File by File"
 msgstr "Slik endrer du dem, fil for fil"
 
 #
-#: src/gui/gaudit-environ-page.c:257
+#: src/gui/gaudit-environ-page.c:280
 msgid "On the program's wiki, in your browser"
 msgstr "I programmets wiki, i nettleseren"
 
-#: src/gui/gaudit-environ-page.c:260
+#: src/gui/gaudit-environ-page.c:283
 msgid "Opens in your browser"
 msgstr "Åpnes i nettleseren"
 
-#: src/gui/gaudit-environ-page.c:268
+#: src/gui/gaudit-environ-page.c:291
 msgid "Settings That Load Code"
 msgstr "Innstillinger som laster inn kode"
 
@@ -1657,8 +1657,8 @@ msgid "The list of the program's files has expired"
 msgstr "Lista over programmets filer er utløpt"
 
 #
-#: src/gui/gaudit-self.c:52
 #
+#: src/gui/gaudit-self.c:52
 msgid ""
 "The program runs as it should; its files are not checked in a developer build"
 msgstr "Programmet kjører slik det skal; filene sjekkes ikke i et utviklerbygg"
@@ -1810,15 +1810,21 @@ msgid "Had ended before it could be checked"
 msgstr "Var avsluttet før den kunne sjekkes"
 
 #
-#: src/gui/gaudit-self.c:176
 #
+#: src/gui/gaudit-self.c:176
 msgid ""
 "The program checks that it runs its own programs, without settings or code "
 "that do not belong to it. In a released version it also compares its own "
 "files with the list signed at the release; a developer build has no such "
 "list, so that part is left out. This is done with administrator rights, by "
 "the part of the program the rest of it cannot change."
-msgstr "Programmet sjekker at det kjører sine egne programmer, uten innstillinger eller kode som ikke hører til. I en utgitt versjon sammenligner det også sine egne filer med lista som ble signert ved utgivelsen; et utviklerbygg har ingen slik liste, så den delen utelates. Dette gjøres med administratorrettigheter, av den delen av programmet som resten ikke kan endre."
+msgstr ""
+"Programmet sjekker at det kjører sine egne programmer, uten innstillinger "
+"eller kode som ikke hører til. I en utgitt versjon sammenligner det også "
+"sine egne filer med lista som ble signert ved utgivelsen; et utviklerbygg "
+"har ingen slik liste, så den delen utelates. Dette gjøres med "
+"administratorrettigheter, av den delen av programmet som resten ikke kan "
+"endre."
 
 #
 #: src/gui/gaudit-self.c:181
@@ -2111,6 +2117,9 @@ msgid ""
 "Authentication is required to check the security status of this computer"
 msgstr ""
 "Autentisering kreves for å sjekke sikkerhetstilstanden på denne datamaskinen"
+
+#~ msgid "Taken from the system's folders"
+#~ msgstr "Hentes fra systemets mapper"
 
 #~ msgid ""
 #~ "An empty or relative entry: the folder the program happens to be started "

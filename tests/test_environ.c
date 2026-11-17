@@ -69,6 +69,12 @@ int main(int argc, char *argv[])
         CHECK(gaudit_environ_kind("LD_PRELOAD") == GAUDIT_ENV_PATHS);
         CHECK(gaudit_environ_kind("GTK_MODULES") == GAUDIT_ENV_MODULES);
         CHECK(gaudit_environ_kind("LD_DEBUG") == GAUDIT_ENV_OTHER);
+        /* A module GTK 3 has no file for: nothing is loaded. A name with a
+         * folder is a path, never looked up. */
+        char mod[512];
+        CHECK(gaudit_environ_module_file("gaudit-no-such-module", mod, sizeof mod) == -1);
+        CHECK(gaudit_environ_module_file("../../tmp/x", mod, sizeof mod) == -1);
+        CHECK(gaudit_environ_module_file("", mod, sizeof mod) == -1);
         if (failures > 0)
             return 1;
         /* The first start: some unwanted, some not; and an entry the caller

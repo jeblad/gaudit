@@ -16,7 +16,7 @@ static const gaudit_vendor_package table[] = {
       "https://zoom.us/client/latest/zoom_amd64.deb", "https://cdn.zoom.us/prod/", "/zoom_amd64.deb",
       "zoom.gpg",
       zoom_keys, sizeof zoom_keys / sizeof zoom_keys[0],
-      GAUDIT_FLATPAK_UNVERIFIED, "flathub.org/apps/us.zoom.Zoom, 2026-11-17" },
+      GAUDIT_FLATPAK_UNVERIFIED, "flathub.org/apps/us.zoom.Zoom, 2026-11-17", NULL, NULL },
     /* Discord signs nothing: no _gpgbuilder in the package, nothing beside
      * it (checked on 1.0.169, 2026-11-16). So no key: gAudit may say a newer
      * version is out, but never installs it. */
@@ -25,7 +25,19 @@ static const gaudit_vendor_package table[] = {
       "https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable"
       "&platform=linux&arch=x64",
       "https://stable.dl2.discordapp.net/distro/app/stable/linux/x64/", "/Discord.deb",
-      NULL, NULL, 0, GAUDIT_FLATPAK_NOT_CHECKED, NULL },
+      NULL, NULL, 0, GAUDIT_FLATPAK_NOT_CHECKED, NULL, NULL, NULL },
+    /* Obsidian signs nothing either: no _gpgbuilder, and its GitHub
+     * release has no signature beside the package (checked on 1.15.1,
+     * 2026-11-17). Maintainer is "Dynalist Inc.", without an address. The
+     * newest version is the release tag GitHub's "latest" redirects to.
+     * Its own snap is the one to name; the Flatpak is made by others. */
+    { "obsidian", "obsidian", "Dynalist Inc.", "Obsidian", "Obsidian",
+      "https://obsidian.md/download", "md.obsidian.Obsidian",
+      "https://github.com/obsidianmd/obsidian-releases/releases/latest",
+      "https://github.com/obsidianmd/obsidian-releases/releases/tag/v", "",
+      NULL, NULL, 0,
+      GAUDIT_FLATPAK_UNVERIFIED, "community maintained on Flathub, John, 2026-11-17",
+      "obsidian", "the Snap Store, published by Obsidian, John, 2026-11-17" },
 };
 
 const gaudit_vendor_package *gaudit_vendor_match(const char *package, const char *maintainer)

@@ -702,8 +702,18 @@ static AdwNavigationPage *vendor_page(const char *line, GPtrArray *lines)
                "Flathub, the mark “Verified” (a blue badge) means %s makes it; where the page "
                "says “Unverified”, or has no mark, someone else does."),
             p->flatpak, p->vendor);
-    g_autofree char *how = g_strjoin("\n\n", source, download, flatpak, NULL);
-    g_strchomp(how);
+    /* The vendor's own snap, when there is one (checked by hand). */
+    g_autofree char *snap = p->snap == NULL ? g_strdup("") : g_strdup_printf(
+        /* Translators: a snap's name, then who makes the program. */
+        P_("Or use it as a snap instead (%s in the Snap Store), which gets updates. It is "
+           "published by %s itself."), p->snap, p->vendor);
+    /* The paragraphs that apply, one blank line between. */
+    const char *parts[] = { source, download, snap, flatpak };
+    GString *joined = g_string_new(NULL);
+    for (gsize i = 0; i < G_N_ELEMENTS(parts); i++)
+        if (parts[i][0] != '\0')
+            g_string_append_printf(joined, "%s%s", joined->len > 0 ? "\n\n" : "", parts[i]);
+    g_autofree char *how = g_string_free(joined, FALSE);
     AdwNavigationPage *page = gaudit_fix_page_new(
         title, problem, how, NULL,
         p->key_file != NULL

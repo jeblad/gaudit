@@ -45,6 +45,10 @@ typedef struct {
      * keys (flatpak_checked: where and when): the page then says so. */
     gaudit_vendor_flatpak_mark flatpak_mark;
     const char *flatpak_checked;
+    /* A snap published by the vendor itself, or NULL; checked by hand
+     * (snap_checked: where and when). Only the vendor's own is named. */
+    const char *snap;
+    const char *snap_checked;
 } gaudit_vendor_package;
 
 /* The entry for an installed package with this name and Maintainer field

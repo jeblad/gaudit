@@ -383,6 +383,18 @@ int main(void)
           && strcmp(dv, "1.0.169") == 0);
     CHECK(dc != NULL && !gaudit_vendor_version_from(dc,
               "https://evil.example.org/distro/app/stable/linux/x64/1.0.169/Discord.deb", dv, sizeof dv));
+    /* Obsidian: Maintainer without an address, the version from the release
+     * tag, nothing after it; no key, so never installed. */
+    const gaudit_vendor_package *ob = gaudit_vendor_match("obsidian", "Dynalist Inc.");
+    CHECK(ob != NULL && ob->key_file == NULL && ob->snap != NULL);
+    CHECK(gaudit_vendor_match("obsidian", "Someone Else") == NULL);
+    CHECK(ob != NULL && gaudit_vendor_version_from(ob,
+              "https://github.com/obsidianmd/obsidian-releases/releases/tag/v1.15.1", dv, sizeof dv)
+          && strcmp(dv, "1.15.1") == 0);
+    CHECK(ob != NULL && !gaudit_vendor_version_from(ob,
+              "https://github.com/obsidianmd/obsidian-releases/releases/tag/v1.15.1-beta", dv, sizeof dv));
+    CHECK(ob != NULL && !gaudit_vendor_version_from(ob,
+              "https://github.com/evil/obsidian-releases/releases/tag/v1.15.1", dv, sizeof dv));
 
     /* The newest version, from the headers wget or curl gave. */
     const gaudit_vendor_package *zoom = gaudit_vendor_find("zoom");

@@ -690,18 +690,20 @@ static AdwNavigationPage *vendor_page(const char *line, GPtrArray *lines)
         : p->flatpak_mark == GAUDIT_FLATPAK_VERIFIED ? g_strdup_printf(
             /* Translators: a Flatpak app id, then who makes the program. */
             P_("Or use it as a Flatpak instead (%s on Flathub), which gets updates. Flathub marks "
-               "it “Verified”: %s makes it."), p->flatpak, p->vendor)
+               "it “Verified”: it is published by %s, or by someone %s has authorized."),
+            p->flatpak, p->vendor, p->vendor)
         : p->flatpak_mark == GAUDIT_FLATPAK_UNVERIFIED ? g_strdup_printf(
             /* Translators: a Flatpak app id, then who makes the program. */
             P_("Or use it as a Flatpak instead (%s on Flathub), which gets updates. Flathub marks "
-               "it “Unverified”: someone other than %s makes it, so you trust them as well."),
+               "it “Unverified”: someone other than %s publishes it, so you trust them as well."),
             p->flatpak, p->vendor)
         : g_strdup_printf(
             /* Translators: a Flatpak app id, then who makes the program. */
             P_("Or use it as a Flatpak instead (%s on Flathub), which gets updates. On its page on "
-               "Flathub, the mark “Verified” (a blue badge) means %s makes it; where the page "
-               "says “Unverified”, or has no mark, someone else does."),
-            p->flatpak, p->vendor);
+               "Flathub, the mark “Verified” (a blue badge) means it is published by %s, or by "
+               "someone %s has authorized; where the page says “Unverified”, or has no mark, "
+               "someone else publishes it."),
+            p->flatpak, p->vendor, p->vendor);
     /* The vendor's own snap, when there is one (checked by hand). */
     g_autofree char *snap = p->snap == NULL ? g_strdup("") : g_strdup_printf(
         /* Translators: a snap's name, then who makes the program. */

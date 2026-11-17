@@ -764,6 +764,8 @@ static AdwNavigationPage *vendor_page(const char *line, GPtrArray *lines)
     g_signal_connect(check, "clicked", G_CALLBACK(on_check_latest), ui);
     g_signal_connect(install, "clicked", G_CALLBACK(on_install), ui);
     g_signal_connect(anyway, "clicked", G_CALLBACK(on_anyway), ui);
+    /* After how and the note (gaudit_fix_page_new), so the page only
+     * grows downwards as its lines appear. */
     GtkWidget *after = how_label;
     GtkWidget *order[] = { check, latest, install, status, weak, anyway };
     for (gsize i = 0; i < G_N_ELEMENTS(order); i++) {

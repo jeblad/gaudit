@@ -84,6 +84,17 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
     gtk_box_append(GTK_BOX(box), what);
     GtkWidget *how_label = wrapped_label(how);
     gtk_box_append(GTK_BOX(box), how_label);
+    /* The note right after what to do, before anything to press: the page
+     * then grows only downwards as results appear. A dimmed note pushed
+     * down left its old pixels on screen (GTK, both renderers). */
+    GtkWidget *anchor = how_label;
+    if (note != NULL) {
+        GtkWidget *small = wrapped_label(note);
+        gtk_widget_add_css_class(small, "dim-label");
+        gtk_widget_add_css_class(small, "caption");
+        gtk_box_append(GTK_BOX(box), small);
+        anchor = small;
+    }
     if (command != NULL) {
         GtkWidget *field = gaudit_command_field_new_run(command, run_args);
         /* The run button, if any, carries what to do after a fix. */
@@ -102,21 +113,16 @@ AdwNavigationPage *gaudit_fix_page_new(const char *title, const char *problem, c
     }
     if (data_free != NULL && data != NULL)
         data_free(data);
-    if (note != NULL) {
-        GtkWidget *small = wrapped_label(note);
-        gtk_widget_add_css_class(small, "dim-label");
-        gtk_widget_add_css_class(small, "caption");
-        gtk_box_append(GTK_BOX(box), small);
-    }
     GtkWidget *clamp = adw_clamp_new();
     adw_clamp_set_child(ADW_CLAMP(clamp), box);
     GtkWidget *scroller = gtk_scrolled_window_new();
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroller), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scroller), clamp);
     AdwNavigationPage *page = gaudit_page_wrap(scroller, title, "fix");
-    /* For the configuration page, which adds its buttons after how. */
+    /* For pages that add their own steps or buttons: after how and the
+     * note, so they come last. */
     g_object_set_data(G_OBJECT(page), "gaudit-fix-box", box);
-    g_object_set_data(G_OBJECT(page), "gaudit-fix-how", how_label);
+    g_object_set_data(G_OBJECT(page), "gaudit-fix-how", anchor);
     return page;
 }
 
@@ -1130,9 +1136,10 @@ GtkWidget *gaudit_command_field_new_step(const char *command_text, const char *c
     /* The field and, under it, what running it did. */
     GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 6);
     gtk_box_append(GTK_BOX(box), field);
+    /* Shown from the start, empty, so the line it takes is there already:
+     * a short result then moves nothing below it. */
     GtkWidget *result = wrapped_label("");
     gtk_widget_add_css_class(result, "dim-label");
-    gtk_widget_set_visible(result, FALSE);
     gtk_box_append(GTK_BOX(box), result);
     g_object_set_data(G_OBJECT(run), "gaudit-result", result);
     return box;

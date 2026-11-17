@@ -687,7 +687,8 @@ static AdwNavigationPage *vendor_page(const char *line, GPtrArray *lines)
     g_autofree char *flatpak = p->flatpak == NULL ? g_strdup("") : g_strdup_printf(
         /* Translators: a Flatpak app id, then who makes the program. */
         P_("Or use it as a Flatpak instead (%s on Flathub), which gets updates. On its page on "
-           "Flathub, a Verified mark means %s makes it; without the mark, someone else does."),
+           "Flathub, the mark “Verified” (a blue badge) means %s makes it; where the page "
+           "says “Unverified”, or has no mark, someone else does."),
         p->flatpak, p->vendor);
     g_autofree char *how = g_strjoin("\n\n", source, download, flatpak, NULL);
     g_strchomp(how);

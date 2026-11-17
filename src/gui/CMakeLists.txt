@@ -23,6 +23,7 @@ add_executable(gaudit
   ${CMAKE_CURRENT_BINARY_DIR}/gaudit-resources.c
   main.c
   gaudit-environ.c
+  gaudit-environ-page.c
   gaudit-app.c
   gaudit-orchestrator.c
   gaudit-run-page.c

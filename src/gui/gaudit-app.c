@@ -332,8 +332,8 @@ static void on_waiting(const char *command, gboolean waiting, gboolean first, gp
                 ? g_strdup_printf(_("%s needs administrator rights. Use the switch beside the title."),
                                   _(task->title))
                 : is_self
-                ? g_strdup(_("Checking the program itself needs administrator rights. Use the "
-                             "switch beside the title."))
+                ? g_strdup(_("The program's self-check needs administrator rights. Use the switch "
+                             "beside the title."))
                 : g_strdup(_("This change needs administrator rights. Use the switch beside the title."));
             gaudit_window_toast(view, text);
         }

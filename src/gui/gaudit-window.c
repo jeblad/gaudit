@@ -5,6 +5,7 @@
 
 #include "gaudit-window.h"
 #include "gaudit-environ.h"
+#include "gaudit-environ-page.h"
 #include "gaudit-self.h"
 #include "gaudit-crossfade.h"
 #include "gaudit-category.h"
@@ -827,6 +828,12 @@ static void fill_self_row(GauditWindow *self)
                                    : _("Not run yet"));
 }
 
+static void on_environ_row_activated(AdwActionRow *row, gpointer user_data)
+{
+    (void)row;
+    adw_navigation_view_push(GAUDIT_WINDOW(user_data)->content, gaudit_environ_page_new());
+}
+
 static void on_self_row_activated(AdwActionRow *row, gpointer user_data)
 {
     (void)row;
@@ -920,27 +927,42 @@ static AdwNavigationPage *build_home(GauditWindow *self)
                                       host[0] != '\0' ? host : _("Unknown host name"));
         adw_action_row_set_subtitle(id_row, system);
         adw_preferences_group_add(machine, GTK_WIDGET(id_row));
-        /* gAudit was started with variables that load other code; it
-         * started itself again without them. Said plainly, also that it
-         * proves nothing: such code may have run before they were gone. */
+        /* The program was started with variables that load other code; it
+         * started itself again without them. The row says whether any
+         * points to something others than the administrator can change,
+         * and leads to a page saying what each was and what to do. */
         const char *removed = gaudit_environ_removed();
         if (removed != NULL) {
+            gaudit_verdict env = gaudit_environ_verdict();
             AdwActionRow *env_row = ADW_ACTION_ROW(adw_action_row_new());
             adw_preferences_row_set_use_markup(ADW_PREFERENCES_ROW(env_row), FALSE);
             adw_preferences_row_set_title(ADW_PREFERENCES_ROW(env_row),
                                           _("The program was started with settings that load other code"));
-            /* Translators: %s is a list of environment variable names, e.g. "LD_PRELOAD, GTK_MODULES". */
-            g_autofree char *sub = g_strdup_printf(
-                _("Removed before the program opened: %s. Code they pointed to may have run all "
-                  "the same, so look into where they came from."), removed);
-            adw_action_row_set_subtitle(env_row, sub);
+            adw_action_row_set_subtitle(env_row, env == GAUDIT_VERDICT_OK
+                ? _("They point only to folders the administrator controls. Removed before it opened.")
+                : _("Some point to places others than the administrator can change. Removed before "
+                    "it opened."));
             adw_action_row_set_subtitle_lines(env_row, 0);
-            adw_action_row_add_prefix(env_row, gaudit_verdict_icon_new(GAUDIT_VERDICT_WARNING));
+            if (env == GAUDIT_VERDICT_OK) {
+                /* Nothing on the account can have put code there: a
+                 * recommendation to know about, not a finding. */
+                GtkWidget *image = gtk_image_new_from_icon_name("gaudit-information-symbolic");
+                gtk_widget_add_css_class(image, "accent");
+                gtk_widget_set_tooltip_text(image, _("Recommendation"));
+                gtk_accessible_update_property(GTK_ACCESSIBLE(image), GTK_ACCESSIBLE_PROPERTY_LABEL,
+                                               _("Recommendation"), -1);
+                adw_action_row_add_prefix(env_row, image);
+            } else {
+                adw_action_row_add_prefix(env_row, gaudit_verdict_icon_new(GAUDIT_VERDICT_WARNING));
+            }
+            adw_action_row_add_suffix(env_row, gtk_image_new_from_icon_name("go-next-symbolic"));
+            gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(env_row), TRUE);
+            g_signal_connect(env_row, "activated", G_CALLBACK(on_environ_row_activated), self);
             adw_preferences_group_add(machine, GTK_WIDGET(env_row));
         }
         /* gAudit checking itself, at Thorough: it needs the password. */
         AdwActionRow *self_row = ADW_ACTION_ROW(adw_action_row_new());
-        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(self_row), _("The program itself"));
+        adw_preferences_row_set_title(ADW_PREFERENCES_ROW(self_row), _("The program's self-check"));
         GtkWidget *self_prefix = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
         adw_action_row_add_prefix(self_row, self_prefix);
         g_object_set_data(G_OBJECT(self_row), "gaudit-prefix", self_prefix);

@@ -49,7 +49,8 @@ char *gaudit_self_title(const GauditRunResult *r)
     if (is(s->manifest, "expired"))
         return g_strdup(_("The list of the program's files has expired"));
     if (gaudit_self_not_applicable(r))
-        return g_strdup(_("Does not apply: the files are not checked in a developer build"));
+        return g_strdup(_("The program runs as it should; its files are not checked in a "
+                          "developer build"));
     if (is(s->manifest, "missing") || is(s->manifest, "no-key"))
         return g_strdup(_("The program's files could not be checked: there is no signed list"));
     return g_strdup(_("No changes found in the program's files or how it runs"));
@@ -171,11 +172,16 @@ AdwNavigationPage *gaudit_self_page_new(const GauditRunResult *r, const char *wh
     gboolean na = gaudit_self_not_applicable(r);
     adw_preferences_group_add(intro, GTK_WIDGET(na ? row_not_applicable(found, NULL)
                                                    : row_new(verdict, found, NULL)));
-    adw_preferences_group_set_description(intro,
-        _("The program compares its own files with the list signed when it was released, and "
-          "checks that it runs its own programs, without settings or code that do not belong to "
-          "it. This is done with administrator rights, by the part of the program the rest of it "
-          "cannot change."));
+    adw_preferences_group_set_description(intro, na
+        ? _("The program checks that it runs its own programs, without settings or code that do "
+            "not belong to it. In a released version it also compares its own files with the "
+            "list signed at the release; a developer build has no such list, so that part is "
+            "left out. This is done with administrator rights, by the part of the program the "
+            "rest of it cannot change.")
+        : _("The program compares its own files with the list signed when it was released, and "
+            "checks that it runs its own programs, without settings or code that do not belong "
+            "to it. This is done with administrator rights, by the part of the program the rest "
+            "of it cannot change."));
     adw_preferences_page_add(page, intro);
 
     /* The signed list. */
@@ -261,5 +267,5 @@ AdwNavigationPage *gaudit_self_page_new(const GauditRunResult *r, const char *wh
     adw_preferences_group_add(meaning, label);
     adw_preferences_page_add(page, meaning);
 
-    return gaudit_page_wrap(GTK_WIDGET(page), _("The Program Itself"), "self");
+    return gaudit_page_wrap(GTK_WIDGET(page), _("The Program's Self-Check"), "self");
 }

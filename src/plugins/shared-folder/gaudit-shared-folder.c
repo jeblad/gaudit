@@ -20,7 +20,8 @@ gboolean gaudit_shared_folder_line(const char *line, gboolean *last)
 {
     int kind = gaudit_shared_parse_line(line, NULL, NULL, NULL, NULL);
     *last = kind == GAUDIT_SHARED_LINE_END;
-    return kind > 0;
+    return kind > 0 || gaudit_shared_parse_secret(line, NULL) == 0
+           || gaudit_shared_parse_secret_scan(line, NULL) == 0;
 }
 
 /* --- After a change: the collection again ---------------------------------- */
@@ -289,8 +290,44 @@ static gboolean within(const char *path, const char *folder)
     return n > 0 && strncmp(path, folder, n) == 0 && (path[n] == '\0' || path[n] == '/');
 }
 
+/* --- A secret in a folder for sharing --------------------------------------
+ *
+ * One page per file. The rule decides whether a service shares it; the
+ * page says what that means and what the user can do. Nothing is moved. */
+
+static AdwNavigationPage *secret_page(const char *fix_id, GPtrArray *lines, guint item)
+{
+    gaudit_shared_secret sec;
+    if (lines == NULL || item >= lines->len
+        || gaudit_shared_parse_secret(g_ptr_array_index(lines, item), &sec) != 0)
+        return NULL;
+    gboolean shared = strcmp(fix_id, "secret-shared") == 0;
+    /* Translators: %s is a file, e.g. "~/Public/id_rsa". */
+    g_autofree char *what = g_strdup_printf(
+        shared ? P_("%s looks like a key, a password or a stored login, and it is in a folder "
+                    "that is shared on the local network: others on the same network may fetch "
+                    "it, at home or on a café's Wi-Fi.")
+               : P_("%s looks like a key, a password or a stored login, and it is in a folder "
+                    "for sharing, the place for what is to be shared with others on the local "
+                    "network. Nothing shares it now, but a sharing service switched on later "
+                    "would."),
+        sec.path);
+    const char *how = P_("Move it into a folder of your own, outside the folders for sharing, in "
+                         "the file manager. The program moves nothing itself.");
+    const char *note =
+        shared ? P_("Whether someone has fetched it already cannot be seen from here. Where the "
+                    "file holds a key or a password, replacing it, with a new key or a changed "
+                    "password, is the way to be sure.")
+               : NULL;
+    return gaudit_fix_page_new(P_("A Secret in a Folder for Sharing"), what, how, NULL, note,
+                               NULL, NULL, NULL, NULL);
+}
+
 AdwNavigationPage *gaudit_shared_folder_fix_page(const char *fix_id, GPtrArray *lines, guint item)
 {
+    if (fix_id != NULL
+        && (strcmp(fix_id, "secret-shared") == 0 || strcmp(fix_id, "secret-public") == 0))
+        return secret_page(fix_id, lines, item);
     gaudit_shared_folder f;
     if (fix_id == NULL || strcmp(fix_id, "tidy") != 0 || lines == NULL || item >= lines->len
         || gaudit_shared_parse_line(g_ptr_array_index(lines, item), NULL, &f, NULL, NULL)

@@ -12,7 +12,8 @@ target_include_directories(gaudit_probe PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/commo
 target_sources(gaudit-orchestrator PRIVATE orchestrator/shared.c)
 target_include_directories(gaudit-orchestrator PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/orchestrator
                                                    ${PROJECT_SOURCE_DIR}/src/probe
-                                                   ${PROJECT_SOURCE_DIR}/src/backend)
+                                                   ${PROJECT_SOURCE_DIR}/src/backend
+                                                   ${PROJECT_SOURCE_DIR}/src/plugins/private-files/backend)
 target_sources(gaudit PRIVATE plugin.c gaudit-shared-folder.c)
 target_include_directories(gaudit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

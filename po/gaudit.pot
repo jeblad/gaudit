@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 23:41+0100\n"
+"POT-Creation-Date: 2026-11-19 23:54+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1277,18 +1277,25 @@ msgstr ""
 msgid ""
 "The report shows the folder in use for sharing, the other folders that look "
 "like it, and what shares folders on this computer. A folder that looks like "
-"it leads to a page that can tidy it."
+"it leads to a page that can tidy it.\n"
+"\n"
+"It also looks in them for files that look like secrets, such as keys and "
+"stored logins, put there by mistake: in a folder shared on the local "
+"network, a warning; in a folder for sharing that nothing shares now, a "
+"recommendation. The full report, and Home at the Thorough level, also search "
+"every other folder a service shares. A folder on another disk, a network "
+"folder or a link is not searched."
 msgstr ""
 
-#: src/plugins/shared-folder/plugin.c:46
+#: src/plugins/shared-folder/plugin.c:54
 msgid "The shared folder"
 msgstr ""
 
-#: src/plugins/shared-folder/plugin.c:47
+#: src/plugins/shared-folder/plugin.c:55
 msgid "See the shared folder and what shares folders"
 msgstr ""
 
-#: src/plugins/shared-folder/plugin.c:51 src/plugins/shared-folder/plugin.c:52
+#: src/plugins/shared-folder/plugin.c:59 src/plugins/shared-folder/plugin.c:60
 msgid "Looking at your folders…"
 msgstr ""
 

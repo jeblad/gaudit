@@ -1,0 +1,8 @@
+(input (system (host "h") (distro "Ubuntu 26.10") (backend "debian"))
+ (level "full")
+ (collection
+  (shared-config (state 1) (standard "~/Public") (exists 1) (locale "en_GB") (default "Public") (names 95))
+  (shared-folder (name "Public") (lang "en") (machine 1) (current 1) (standard 1) (link 0) (target "") (case 0) (entries 1))
+  (shared-secret (path "~/Public/.netrc") (reason "netrc") (by ""))
+  (shared-secret-scan (folders 1) (skipped 0) (found 1) (more 0) (truncated 0))
+  (shared-end (folders 1) (services 0) (more 0) (usershares 0))))

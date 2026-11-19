@@ -91,6 +91,12 @@ int main(void)
     }
     snprintf(p, sizeof p, "%s/Public/note.txt", dir);
     put(p, "x");
+    /* Secrets: one where Samba shares it, one in the folder for sharing
+     * that nothing shares; a note is no secret. */
+    snprintf(p, sizeof p, "%s/Public/.netrc", dir);
+    put(p, "machine example.com login a password b\n");
+    snprintf(p, sizeof p, "%s/Offentlig/vault.kdbx", dir);
+    put(p, "x");
     snprintf(p, sizeof p, "%s/.config/user-dirs.dirs", dir);
     put(p, "XDG_PUBLICSHARE_DIR=\"$HOME/Offentlig\"\n");
     snprintf(us, sizeof us, "%s/usershares", dir);
@@ -109,14 +115,28 @@ int main(void)
     char *out = NULL;
     size_t len = 0;
     FILE *mem = open_memstream(&out, &len);
-    CHECK(gaudit_shared_collect(dir, (unsigned)getuid(), ld, conf, proc, mem) == 0);
+    CHECK(gaudit_shared_collect(dir, (unsigned)getuid(), ld, conf, proc, 0, mem) == 0);
     fclose(mem);
     int config = 0, folders = 0, standard = 0, services = 0, end = 0, bad = 0;
+    int netrc = 0, kdbx = 0, scans = 0;
     for (char *line = strtok(out, "\n"); line != NULL; line = strtok(NULL, "\n")) {
         gaudit_shared_folder ff;
         gaudit_shared_service ss;
         gaudit_shared_end ee;
         gaudit_shared_config cc;
+        gaudit_shared_secret sec;
+        gaudit_shared_secret_scan scan;
+        if (gaudit_shared_parse_secret(line, &sec) == 0) {
+            netrc += strcmp(sec.path, "~/Public/.netrc") == 0 && strcmp(sec.by, "samba-user") == 0
+                     && strcmp(sec.reason, "netrc") == 0;
+            kdbx += strcmp(sec.path, "~/Offentlig/vault.kdbx") == 0 && sec.by[0] == '\0';
+            bad += strstr(line, "password b") != NULL;  /* never content */
+            continue;
+        }
+        if (gaudit_shared_parse_secret_scan(line, &scan) == 0) {
+            scans += scan.folders == 2 && scan.found == 2 && !scan.more;
+            continue;
+        }
         switch (gaudit_shared_parse_line(line, &cc, &ff, &ss, &ee)) {
         case GAUDIT_SHARED_LINE_CONFIG: config += cc.state == 1 && strcmp(cc.standard, "~/Offentlig") == 0; break;
         case GAUDIT_SHARED_LINE_FOLDER: folders++; standard += ff.standard; break;
@@ -128,6 +148,7 @@ int main(void)
     free(out);
     /* Offentlig and Public; the usershare and [media] (not [printers]). */
     CHECK(config == 1 && folders == 2 && standard == 1 && services == 2 && end == 1 && bad == 0);
+    CHECK(netrc == 1 && kdbx == 1 && scans == 1);
 
     snprintf(p, sizeof p, "rm -rf -- '%s'", dir);
     if (system(p) != 0)

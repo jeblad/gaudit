@@ -263,7 +263,8 @@ add_executable(test_shared_folder test_shared_folder.c
 target_include_directories(test_shared_folder PRIVATE
                            ${PROJECT_SOURCE_DIR}/src/plugins/shared-folder/orchestrator
                            ${PROJECT_SOURCE_DIR}/src/plugins/shared-folder/common
-                           ${PROJECT_SOURCE_DIR}/src/backend ${PROJECT_SOURCE_DIR}/src/probe)
+                           ${PROJECT_SOURCE_DIR}/src/backend ${PROJECT_SOURCE_DIR}/src/probe
+                           ${PROJECT_SOURCE_DIR}/src/plugins/private-files/backend)
 target_link_libraries(test_shared_folder PRIVATE gaudit_probe gaudit_backend)
 add_test(NAME shared-folder COMMAND test_shared_folder)
 

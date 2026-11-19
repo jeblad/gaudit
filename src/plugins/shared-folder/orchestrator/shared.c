@@ -1,11 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include "shared-mode.h"
 
 #include "probe-quote.h"
 #include "public-share.h"
+#include "secret-scan.h"
 #include "shared-folder.h"
 
 #include <pwd.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -25,8 +30,99 @@ static void shown_standard(const char *home, const char *standard, char *out, si
         snprintf(out, len, "%s", standard);
 }
 
+/* --- Secrets where the folders for sharing are ------------------------------- */
+
+static const char *const service_kinds[] = { "samba", "samba-user", "gnome" };
+
+typedef struct {
+    FILE *out;
+    const char *home;
+    const char *folder;
+    const gaudit_share_services *sv;
+    unsigned found, sent;
+} secret_ctx;
+
+static void on_secret(const gaudit_secret_hit *hit, void *data)
+{
+    secret_ctx *c = data;
+    c->found++;
+    char abs[2048];
+    snprintf(abs, sizeof abs, "%s/%s", c->folder, hit->rel);
+    gaudit_shared_secret s = { 0 };
+    char shown[2048];
+    shown_standard(c->home, abs, shown, sizeof shown);
+    /* A name cut short would point at another file: left out of the list. */
+    if (c->sent >= GAUDIT_SHARED_SECRETS_MAX || strlen(shown) >= sizeof s.path)
+        return;
+    snprintf(s.path, sizeof s.path, "%.255s", shown);
+    snprintf(s.reason, sizeof s.reason, "%s", hit->reason);
+    for (unsigned i = 0; i < c->sv->n && s.by[0] == '\0'; i++)
+        if (gaudit_path_within(abs, c->sv->s[i].path))
+            snprintf(s.by, sizeof s.by, "%s", service_kinds[c->sv->s[i].kind]);
+    char buf[2048];
+    if (gaudit_shared_format_secret(&s, buf, sizeof buf) == 0 && fputs(buf, c->out) >= 0)
+        c->sent++;
+}
+
+/* One folder, unless it is on another filesystem than the home folder
+ * (a network folder: listing it may fetch it), a link, the home folder or
+ * above it (that is Private Files' search), or inside one searched. */
+static void search_one(secret_ctx *c, const char *folder, dev_t home_dev, char done[][1024],
+                       unsigned *n_done, gaudit_shared_secret_scan *sum)
+{
+    struct stat st;
+    if (lstat(folder, &st) != 0)
+        return;
+    if (!S_ISDIR(st.st_mode) || st.st_dev != home_dev) {
+        sum->skipped++;
+        return;
+    }
+    if (gaudit_path_within(c->home, folder))
+        return;
+    for (unsigned i = 0; i < *n_done; i++)
+        if (gaudit_path_within(folder, done[i]))
+            return;
+    if (*n_done >= 32 || sum->folders >= 100)
+        return;
+    snprintf(done[(*n_done)++], 1024, "%s", folder);
+    c->folder = folder;
+    gaudit_secret_stats stats;
+    if (gaudit_secret_scan_area(folder, getuid(), on_secret, c, &stats) == 0) {
+        sum->folders++;
+        sum->truncated |= stats.truncated;
+    }
+}
+
+static void search_secrets(const char *home, const gaudit_public_share *s,
+                           const gaudit_share_services *sv, int full, FILE *out)
+{
+    struct stat hs;
+    if (stat(home, &hs) != 0)
+        return;
+    secret_ctx c = { .out = out, .home = home, .sv = sv };
+    gaudit_shared_secret_scan sum = { 0 };
+    static char done[32][1024];
+    unsigned n_done = 0;
+    char p[1024];
+    for (unsigned i = 0; i < s->n_found; i++) {
+        if (s->found[i].symlink || s->found[i].entries == -2) {
+            sum.skipped++;
+            continue;
+        }
+        snprintf(p, sizeof p, "%s/%s", home, s->found[i].name);
+        search_one(&c, p, hs.st_dev, done, &n_done, &sum);
+    }
+    for (unsigned i = 0; full && i < sv->n; i++)
+        search_one(&c, sv->s[i].path, hs.st_dev, done, &n_done, &sum);
+    sum.found = c.found;
+    sum.more = c.found > c.sent;
+    char buf[256];
+    if (gaudit_shared_format_secret_scan(&sum, buf, sizeof buf) == 0)
+        fputs(buf, out);
+}
+
 int gaudit_shared_collect(const char *home, unsigned uid, const char *const *locale_dirs,
-                          const char *smb_conf, const char *proc, FILE *out)
+                          const char *smb_conf, const char *proc, int full, FILE *out)
 {
     gaudit_public_where w = { .home = home, .locale_dirs = locale_dirs };
     gaudit_public_share s;
@@ -69,6 +165,7 @@ int gaudit_shared_collect(const char *home, unsigned uid, const char *const *loc
         if (gaudit_shared_format_service(&o, buf, sizeof buf) == 0 && fputs(buf, out) >= 0)
             services++;
     }
+    search_secrets(home, &s, &sv, full, out);
     gaudit_shared_end e = { .folders = folders, .services = services, .more = s.more || sv.more,
                             .usershares = sv.usershares_unreadable };
     if (emit(out, gaudit_shared_format_end(&e, buf, sizeof buf), buf) != 0)
@@ -145,7 +242,8 @@ int gaudit_shared_mode(int argc, char *argv[])
         return 1;
     const char *home = pw->pw_dir;
     if (argc == 3 && (strcmp(argv[2], "quick") == 0 || strcmp(argv[2], "full") == 0))
-        return gaudit_shared_collect(home, (unsigned)getuid(), NULL, NULL, NULL, stdout);
+        return gaudit_shared_collect(home, (unsigned)getuid(), NULL, NULL, NULL,
+                                     strcmp(argv[2], "full") == 0, stdout);
     if (argc == 5 && (strcmp(argv[2], "check") == 0 || strcmp(argv[2], "merge") == 0)) {
         gaudit_public_merge_result r = { 0 };
         if (!allowed(home, (unsigned)getuid(), argv[3], argv[4]))

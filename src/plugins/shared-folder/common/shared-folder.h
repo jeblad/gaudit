@@ -87,6 +87,39 @@ int gaudit_shared_format_end(const gaudit_shared_end *e, char *buf, size_t len);
 int gaudit_shared_parse_line(const char *line, gaudit_shared_config *c, gaudit_shared_folder *f,
                              gaudit_shared_service *s, gaudit_shared_end *e);
 
+/* --- Secrets in folders for sharing (John, 2026-11-19) -----------------------
+ *
+ * Files that look like secrets in the folder for sharing and the folders
+ * that look like it, and, in the full collection, in every folder a service
+ * shares, searched as the private files are; never a folder on another
+ * filesystem than the home folder, never through a link. Never content.
+ *
+ *   (shared-secret (path "...") (reason "...") (by "samba|samba-user|gnome|"))
+ *   (shared-secret-scan (folders N) (skipped N) (found N) (more 0|1) (truncated 0|1))
+ *
+ * path "~/..." in the home folder, else absolute; by: the kind of the
+ * first service that shares the folder it is in, "" for none. skipped:
+ * folders not looked in (on another filesystem, or a link). At most
+ * GAUDIT_SHARED_SECRETS_MAX secrets are sent, found counts them all. */
+#define GAUDIT_SHARED_SECRETS_MAX 100
+
+typedef struct {
+    char path[256];
+    char reason[32];
+    char by[16];
+} gaudit_shared_secret;
+
+typedef struct {
+    unsigned folders, skipped, found;
+    int more, truncated;
+} gaudit_shared_secret_scan;
+
+int gaudit_shared_format_secret(const gaudit_shared_secret *s, char *buf, size_t len);
+int gaudit_shared_format_secret_scan(const gaudit_shared_secret_scan *s, char *buf, size_t len);
+/* 0, or -1 for anything else; s may be NULL. */
+int gaudit_shared_parse_secret(const char *line, gaudit_shared_secret *s);
+int gaudit_shared_parse_secret_scan(const char *line, gaudit_shared_secret_scan *s);
+
 /* The tidying's lines: 1 a clash (name filled in), 2 the moves, 3 removed
  * (result in moves->result); -1 for anything else. */
 int gaudit_shared_parse_tidy(const char *line, char *clash, size_t clash_len,

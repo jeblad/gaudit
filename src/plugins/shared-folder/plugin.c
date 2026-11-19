@@ -36,13 +36,21 @@ const GauditTaskInfo gaudit_plugin_shared_folder = {
                            "mean to use for sharing, and whether the sharing found is meant."),
     .about_report = N_("The report shows the folder in use for sharing, the other folders that "
                        "look like it, and what shares folders on this computer. A folder that "
-                       "looks like it leads to a page that can tidy it."),
+                       "looks like it leads to a page that can tidy it.\n\n"
+                       "It also looks in them for files that look like secrets, such as keys and "
+                       "stored logins, put there by mistake: in a folder shared on the local "
+                       "network, a warning; in a folder for sharing that nothing shares now, a "
+                       "recommendation. The full report, and Home at the Thorough level, also "
+                       "search every other folder a service shares. A folder on another disk, a "
+                       "network folder or a link is not searched."),
     .icon = "folder-publicshare-symbolic",
     .capabilities = NULL,
     .params = NULL,
     .n_params = 0,
     .run_command = "user shared full",
-    .home_commands = { [GAUDIT_LEVEL_QUICK] = "user shared quick" },
+    /* Thorough also searches every folder a service shares for secrets. */
+    .home_commands = { [GAUDIT_LEVEL_QUICK] = "user shared quick",
+                       [GAUDIT_LEVEL_THOROUGH] = "user shared full" },
     .home_title = N_("The shared folder"),
     .home_tooltip = N_("See the shared folder and what shares folders"),
     .collection_line = gaudit_shared_folder_line,

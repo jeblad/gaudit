@@ -197,3 +197,96 @@ int gaudit_shared_parse_tidy(const char *line, char *clash, size_t clash_len,
     }
     return -1;
 }
+
+/* --- Secrets in folders for sharing ------------------------------------------- */
+
+static int plain_word(const char *s, int empty_ok)
+{
+    if (*s == '\0')
+        return empty_ok;
+    for (const char *c = s; *c != '\0'; c++)
+        if (!((*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') || *c == '-'))
+            return 0;
+    return 1;
+}
+
+static int plain_path(const char *p)
+{
+    return p[0] == '/' || strncmp(p, "~/", 2) == 0;
+}
+
+static int copy_line(const char *line, char copy[MAX_LINE])
+{
+    if (line == NULL)
+        return -1;
+    size_t len = strlen(line);
+    if (len > 0 && line[len - 1] == '\n')
+        len--;
+    if (len == 0 || len >= MAX_LINE || memchr(line, '\n', len) != NULL)
+        return -1;
+    memcpy(copy, line, len);
+    copy[len] = '\0';
+    return 0;
+}
+
+int gaudit_shared_format_secret(const gaudit_shared_secret *s, char *buf, size_t len)
+{
+    char path[sizeof s->path * 2 + 3], reason[sizeof s->reason * 2 + 3], by[sizeof s->by * 2 + 3];
+    if (!plain_path(s->path) || !plain_word(s->reason, 0) || !plain_word(s->by, 1)
+        || gaudit_probe_quote(path, sizeof path, s->path) != 0
+        || gaudit_probe_quote(reason, sizeof reason, s->reason) != 0
+        || gaudit_probe_quote(by, sizeof by, s->by) != 0)
+        return -1;
+    return done(snprintf(buf, len, "(shared-secret (path %s) (reason %s) (by %s))\n", path, reason,
+                         by), len);
+}
+
+int gaudit_shared_parse_secret(const char *line, gaudit_shared_secret *s)
+{
+    char copy[MAX_LINE];
+    if (copy_line(line, copy) != 0)
+        return -1;
+    gaudit_shared_secret ss = { 0 };
+    const gaudit_sexpr_field f[] = {
+        { .key = "path", .text = ss.path, .text_len = sizeof ss.path },
+        { .key = "reason", .text = ss.reason, .text_len = sizeof ss.reason },
+        { .key = "by", .text = ss.by, .text_len = sizeof ss.by },
+    };
+    if (gaudit_sexpr_parse(copy, "shared-secret", f, 3) != 0 || !plain_path(ss.path)
+        || !plain_word(ss.reason, 0) || !plain_word(ss.by, 1))
+        return -1;
+    if (s != NULL)
+        *s = ss;
+    return 0;
+}
+
+int gaudit_shared_format_secret_scan(const gaudit_shared_secret_scan *s, char *buf, size_t len)
+{
+    if (s->folders > 100 || s->skipped > 100 || s->found > 1000000)
+        return -1;
+    return done(snprintf(buf, len,
+                         "(shared-secret-scan (folders %u) (skipped %u) (found %u) (more %d) "
+                         "(truncated %d))\n",
+                         s->folders, s->skipped, s->found, s->more ? 1 : 0, s->truncated ? 1 : 0),
+                len);
+}
+
+int gaudit_shared_parse_secret_scan(const char *line, gaudit_shared_secret_scan *s)
+{
+    char copy[MAX_LINE];
+    if (copy_line(line, copy) != 0)
+        return -1;
+    long long fo, sk, fd, mo, tr;
+    const gaudit_sexpr_field f[] = {
+        { .key = "folders", .value = &fo, .max = 100 },
+        { .key = "skipped", .value = &sk, .max = 100 },
+        { .key = "found", .value = &fd, .max = 1000000 },
+        { .key = "more", .value = &mo, .max = 1 },
+        { .key = "truncated", .value = &tr, .max = 1 },
+    };
+    if (gaudit_sexpr_parse(copy, "shared-secret-scan", f, 5) != 0)
+        return -1;
+    if (s != NULL)
+        *s = (gaudit_shared_secret_scan){ (unsigned)fo, (unsigned)sk, (unsigned)fd, (int)mo, (int)tr };
+    return 0;
+}

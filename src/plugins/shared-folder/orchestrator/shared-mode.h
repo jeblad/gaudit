@@ -15,6 +15,8 @@
 int gaudit_shared_mode(int argc, char *argv[]);
 
 /* The collection for home and uid, written to out; for tests, the places
- * to read may be given (NULL for the usual ones). 0 on success. */
+ * to read may be given (NULL for the usual ones). Both levels search the
+ * folder for sharing and the folders that look like it for secrets; full
+ * also every other folder a service shares. 0 on success. */
 int gaudit_shared_collect(const char *home, unsigned uid, const char *const *locale_dirs,
-                          const char *smb_conf, const char *proc, FILE *out);
+                          const char *smb_conf, const char *proc, int full, FILE *out);

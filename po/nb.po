@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 23:41+0100\n"
+"POT-Creation-Date: 2026-11-19 23:54+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -1462,22 +1462,26 @@ msgstr ""
 msgid ""
 "The report shows the folder in use for sharing, the other folders that look "
 "like it, and what shares folders on this computer. A folder that looks like "
-"it leads to a page that can tidy it."
-msgstr ""
-"Rapporten viser mappa som er i bruk for deling, de andre mappene som ligner "
-"på den, og det som deler mapper på denne datamaskinen. En mappe som ligner "
-"på den, leder til en side som kan rydde den."
+"it leads to a page that can tidy it.\n"
+"\n"
+"It also looks in them for files that look like secrets, such as keys and "
+"stored logins, put there by mistake: in a folder shared on the local "
+"network, a warning; in a folder for sharing that nothing shares now, a "
+"recommendation. The full report, and Home at the Thorough level, also search "
+"every other folder a service shares. A folder on another disk, a network "
+"folder or a link is not searched."
+msgstr "Rapporten viser mappa som brukes til deling, de andre mappene som ligner på den, og det som deler mapper på denne datamaskinen. En mappe som ligner på den, leder til en side som kan rydde den.\n\nDen ser også etter filer som ser ut som hemmeligheter, for eksempel nøkler og lagrede innlogginger, lagt der ved en feil: i en mappe som er delt på lokalnettet, en advarsel; i en mappe for deling som ingenting deler nå, en anbefaling. Den fullstendige rapporten, og Hjem på nivået Grundig, gjennomsøker også alle andre mapper en tjeneste deler. En mappe på en annen disk, en nettverksmappe eller en lenke gjennomsøkes ikke."
 
-#: src/plugins/shared-folder/plugin.c:46
+#: src/plugins/shared-folder/plugin.c:54
 msgid "The shared folder"
 msgstr "Den delte mappa"
 
-#: src/plugins/shared-folder/plugin.c:47
+#: src/plugins/shared-folder/plugin.c:55
 msgid "See the shared folder and what shares folders"
 msgstr "Se den delte mappa og det som deler mapper"
 
 #
-#: src/plugins/shared-folder/plugin.c:51 src/plugins/shared-folder/plugin.c:52
+#: src/plugins/shared-folder/plugin.c:59 src/plugins/shared-folder/plugin.c:60
 msgid "Looking at your folders…"
 msgstr "Ser på mappene dine …"
 
@@ -1551,7 +1555,19 @@ msgid ""
 "is one where that is unclear. A file that is encrypted with its own "
 "password, such as a KeePass database, is a recommendation to move it to the "
 "private disk."
-msgstr "Rapporten viser skytjenestene som ble funnet, med mappene deres og det som er kjent om hver. En tjeneste der leverandøren kan lese filene dine, er en advarsel, og det samme er en pålogging som går gjennom noen andres nettjeneste, eller som det ikke er dokumentert hvordan lages. Et program systemet ikke holder oppdatert, er en anbefaling.\n\nDen fullstendige rapporten, og Hjem på nivået Grundig, ser også etter filer som ser ut som hemmeligheter, for eksempel nøkler og lagrede innlogginger, i skymappene som holdes på denne datamaskinen: en som leverandøren kan lese, er en advarsel, og det samme er en der det er uklart. En fil som er kryptert med sitt eget passord, for eksempel en KeePass-database, er en anbefaling om å flytte den til den private disken."
+msgstr ""
+"Rapporten viser skytjenestene som ble funnet, med mappene deres og det som "
+"er kjent om hver. En tjeneste der leverandøren kan lese filene dine, er en "
+"advarsel, og det samme er en pålogging som går gjennom noen andres "
+"nettjeneste, eller som det ikke er dokumentert hvordan lages. Et program "
+"systemet ikke holder oppdatert, er en anbefaling.\n"
+"\n"
+"Den fullstendige rapporten, og Hjem på nivået Grundig, ser også etter filer "
+"som ser ut som hemmeligheter, for eksempel nøkler og lagrede innlogginger, i "
+"skymappene som holdes på denne datamaskinen: en som leverandøren kan lese, "
+"er en advarsel, og det samme er en der det er uklart. En fil som er kryptert "
+"med sitt eget passord, for eksempel en KeePass-database, er en anbefaling om "
+"å flytte den til den private disken."
 
 #
 #: src/plugins/cloud/plugin.c:55
@@ -2320,6 +2336,15 @@ msgid ""
 "Authentication is required to check the security status of this computer"
 msgstr ""
 "Autentisering kreves for å sjekke sikkerhetstilstanden på denne datamaskinen"
+
+#~ msgid ""
+#~ "The report shows the folder in use for sharing, the other folders that "
+#~ "look like it, and what shares folders on this computer. A folder that "
+#~ "looks like it leads to a page that can tidy it."
+#~ msgstr ""
+#~ "Rapporten viser mappa som er i bruk for deling, de andre mappene som "
+#~ "ligner på den, og det som deler mapper på denne datamaskinen. En mappe "
+#~ "som ligner på den, leder til en side som kan rydde den."
 
 #~ msgid "Taken from the system's folders"
 #~ msgstr "Hentes fra systemets mapper"

@@ -1,0 +1,6 @@
+(report (verdict ok) (title (msg "There is one folder for sharing")) (description (msg "What is shared is best kept in one folder, so it is clear what others on the network can read. A folder that looks like the shared folder is a recommendation: it may be kept on purpose.")))
+(home (verdict ok) (title (msg "{folder} is the folder for sharing" (folder "~/Public"))) (subtitle (msg "Nothing needs attention")))
+(section (title (msg "The Folder for Sharing")) (description (msg "The one your desktop uses for what you share with others on the local network.")))
+(row (verdict ok) (title (text "~/Public")) (subtitle (msg "The folder for sharing, set in your user folder settings")))
+(section (title (msg "Secrets in Folders for Sharing")) (description (msg "Files that look like secrets, such as keys and stored logins, put in a folder for sharing, often by mistake. What a service shares, others on the local network can fetch.")))
+(row (verdict advice) (title (text "~/Public/.netrc")) (subtitle (msg "{kind} · {why}" (kind (msg "Stored logins (.netrc)")) (why (msg "in a folder for sharing, which nothing shares now")))) (fix secret-public (item 2)))

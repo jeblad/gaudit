@@ -159,6 +159,8 @@ configure_file(${PROJECT_SOURCE_DIR}/src/plugins/private-files/rules/report.scm
                ${TEST_RULES}/core.private-files/report.scm COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/src/plugins/updates/rules/report.scm
                ${TEST_RULES}/core.updates/report.scm COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/src/plugins/shared-folder/rules/report.scm
+               ${TEST_RULES}/core.shared-folder/report.scm COPYONLY)
 add_executable(test-engine ${PROJECT_SOURCE_DIR}/src/engine/main.c ${PROJECT_SOURCE_DIR}/src/engine/confine.c)
 target_compile_definitions(test-engine PRIVATE _GNU_SOURCE ENGINE_RULES_DIR="${TEST_RULES}")
 target_link_libraries(test-engine PRIVATE PkgConfig::GUILE gaudit_sandbox gaudit_config)
@@ -241,3 +243,24 @@ add_test(NAME manifest COMMAND test_manifest)
 add_executable(test_selfcheck test_selfcheck.c)
 target_link_libraries(test_selfcheck PRIVATE gaudit_sandbox gaudit_probe)
 add_test(NAME selfcheck COMMAND test_selfcheck)
+
+# The names of the public share folder, generated from xdg-user-dirs' history.
+add_executable(test_xdg_names test_xdg_names.c ${PROJECT_SOURCE_DIR}/src/backend/xdg-public-names.c)
+target_include_directories(test_xdg_names PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+add_test(NAME xdg-names COMMAND test_xdg_names)
+
+# The public share folder and the folders with a name it could have had.
+add_executable(test_public_share test_public_share.c ${PROJECT_SOURCE_DIR}/src/backend/public-share.c
+               ${PROJECT_SOURCE_DIR}/src/backend/xdg-public-names.c)
+target_include_directories(test_public_share PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+add_test(NAME public-share COMMAND test_public_share)
+
+# Shared Folder: its line format, and its collection on a home of the test's own.
+add_executable(test_shared_folder test_shared_folder.c
+               ${PROJECT_SOURCE_DIR}/src/plugins/shared-folder/orchestrator/shared.c)
+target_include_directories(test_shared_folder PRIVATE
+                           ${PROJECT_SOURCE_DIR}/src/plugins/shared-folder/orchestrator
+                           ${PROJECT_SOURCE_DIR}/src/plugins/shared-folder/common
+                           ${PROJECT_SOURCE_DIR}/src/backend ${PROJECT_SOURCE_DIR}/src/probe)
+target_link_libraries(test_shared_folder PRIVATE gaudit_probe gaudit_backend)
+add_test(NAME shared-folder COMMAND test_shared_folder)

@@ -14,6 +14,7 @@ static const GauditTaskInfo *const tasks[] = {
     &gaudit_plugin_private_files,  /* first, as on Home */
     &gaudit_plugin_updates,
     &gaudit_plugin_firewall,
+    &gaudit_plugin_shared_folder,
 };
 
 /* A command without its helper part ("user x then run y" -> "user x"). */

@@ -38,6 +38,7 @@
 #include "report.h"
 #include "fix-mode.h"
 #include "secrets-mode.h"
+#include "shared-mode.h"
 #include "updates-mode.h"
 #include "apt-ops.h"
 #include "sandbox.h"
@@ -895,6 +896,8 @@ int main(int argc, char *argv[])
     if (argc >= 3 && strcmp(argv[1], "secrets") == 0)
         return gaudit_private_files_secrets(argv[2], (const char *const *)argv + 3,
                                             (size_t)(argc - 3));
+    if (argc >= 3 && strcmp(argv[1], "shared") == 0)
+        return gaudit_shared_mode(argc, argv);
     if (argc == 2 && strcmp(argv[1], "packages") == 0)
         return list_packages();
     if (argc == 3 && strcmp(argv[1], "updates") == 0)
@@ -912,6 +915,6 @@ int main(int argc, char *argv[])
         return status_refresh();
     }
 #endif
-    fputs("usage: gaudit-orchestrator [session | packages | updates quick | secrets quick|full [folder ...] | report <plugin-id> | fix <id> <root> [path]]\n", stderr);
+    fputs("usage: gaudit-orchestrator [session | packages | updates quick | secrets quick|full [folder ...] | shared quick|full|check|merge|remove ... | report <plugin-id> | fix <id> <root> [path]]\n", stderr);
     return 2;
 }

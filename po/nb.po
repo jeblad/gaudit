@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 05:21+0100\n"
+"POT-Creation-Date: 2026-11-19 09:06+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -45,7 +45,7 @@ msgstr "Generelt"
 
 #: src/gui/gaudit-app.c:359
 msgid "There is nothing to set yet."
-msgstr "Det er ingenting å stille inn ennå."
+msgstr "Det er ingenting å stille inn ennå. Senere blir du spurt om hvilken mappe du mener å bruke til deling, og om delingen som er funnet, er ment."
 
 #: src/gui/gaudit-app.c:369
 msgid "Open Main Menu"
@@ -339,11 +339,11 @@ msgstr "Sjekket kl. %s"
 msgid "%s · checked at %s"
 msgstr "%s · sjekket kl. %s"
 
-#: src/gui/gaudit-window.c:774 src/gui/gaudit-task-page.c:1202
+#: src/gui/gaudit-window.c:774 src/gui/gaudit-task-page.c:1209
 msgid "Not available on this system"
 msgstr "Ikke tilgjengelig på dette systemet"
 
-#: src/gui/gaudit-window.c:775 src/gui/gaudit-task-page.c:1162
+#: src/gui/gaudit-window.c:775 src/gui/gaudit-task-page.c:1169
 msgid "Software is missing"
 msgstr "Programvare mangler"
 
@@ -420,7 +420,7 @@ msgid "The program's self-check"
 msgstr "Programmets egenkontroll"
 
 #: src/gui/gaudit-window.c:997 src/gui/gaudit-window.c:1070
-#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:811
+#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:817
 msgid "Home"
 msgstr "Hjem"
 
@@ -438,7 +438,7 @@ msgid "The parameters are set back"
 msgstr "Parametrene er satt tilbake"
 
 #: src/gui/gaudit-window.c:1070 src/gui/gaudit-window.c:1137
-#: src/gui/gaudit-window.c:1156 src/gui/gaudit-task-page.c:802
+#: src/gui/gaudit-window.c:1156 src/gui/gaudit-task-page.c:808
 msgid "Information"
 msgstr "Informasjon"
 
@@ -530,7 +530,7 @@ msgstr ""
 "En sjekk kjører fortsatt. Lukker du, stopper den, og det den har funnet så "
 "langt, går tapt."
 
-#: src/gui/gaudit-window.c:1670 src/gui/gaudit-task-page.c:358
+#: src/gui/gaudit-window.c:1670 src/gui/gaudit-task-page.c:364
 msgid "_Cancel"
 msgstr "_Avbryt"
 
@@ -538,7 +538,7 @@ msgstr "_Avbryt"
 msgid "_Stop and Close"
 msgstr "_Stopp og lukk"
 
-#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:812
+#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:818
 msgid "Overall status"
 msgstr "Samlet status"
 
@@ -580,32 +580,32 @@ msgid "Unknown"
 msgstr "Ukjent"
 
 #. Translators: "Step 1 of 2".
-#: src/gui/gaudit-task-page.c:153
+#: src/gui/gaudit-task-page.c:159
 #, c-format
 msgid "Step %u of %u"
 msgstr "Trinn %u av %u"
 
 #
-#: src/gui/gaudit-task-page.c:263
+#: src/gui/gaudit-task-page.c:269
 msgid "Done. The program's setting is written; it is checked again now."
 msgstr "Ferdig. Programmets innstilling er skrevet, og den sjekkes nå på nytt."
 
-#: src/gui/gaudit-task-page.c:264
+#: src/gui/gaudit-task-page.c:270
 msgid "It was already set up this way, so nothing was changed."
 msgstr "Det var allerede satt opp slik, så ingenting ble endret."
 
 #
-#: src/gui/gaudit-task-page.c:265
+#: src/gui/gaudit-task-page.c:271
 msgid "Done. The program's setting is removed; it is checked again now."
 msgstr "Ferdig. Programmets innstilling er fjernet, og det sjekkes nå på nytt."
 
 #
-#: src/gui/gaudit-task-page.c:266
+#: src/gui/gaudit-task-page.c:272
 msgid "The program had no setting there to remove."
 msgstr "Programmet hadde ingen innstilling der å fjerne."
 
 #
-#: src/gui/gaudit-task-page.c:267
+#: src/gui/gaudit-task-page.c:273
 msgid ""
 "A file of that name that the program did not write is already there, so "
 "nothing was changed."
@@ -614,7 +614,7 @@ msgstr ""
 "så ingenting ble endret."
 
 #
-#: src/gui/gaudit-task-page.c:268
+#: src/gui/gaudit-task-page.c:274
 msgid ""
 "The program's file has been changed since it was written, so it was left as "
 "it is."
@@ -622,29 +622,29 @@ msgstr ""
 "Programmets fil er endret etter at den ble skrevet, så den fikk være som den "
 "er."
 
-#: src/gui/gaudit-task-page.c:269
+#: src/gui/gaudit-task-page.c:275
 msgid ""
 "Something it needs is missing or not as expected, so nothing was written."
 msgstr ""
 "Noe den trenger, mangler eller er ikke som ventet, så ingenting ble skrevet."
 
-#: src/gui/gaudit-task-page.c:270
+#: src/gui/gaudit-task-page.c:276
 msgid "A folder on the way can be changed by others, so nothing was written."
 msgstr "En mappe på veien kan endres av andre, så ingenting ble skrevet."
 
-#: src/gui/gaudit-task-page.c:275 src/gui/gaudit-task-page.c:309
+#: src/gui/gaudit-task-page.c:281 src/gui/gaudit-task-page.c:315
 msgid "It could not be done, so nothing was changed."
 msgstr "Det kunne ikke gjøres, så ingenting ble endret."
 
-#: src/gui/gaudit-task-page.c:305
+#: src/gui/gaudit-task-page.c:311
 msgid "Cancelled, so nothing was changed."
 msgstr "Avbrutt, så ingenting ble endret."
 
-#: src/gui/gaudit-task-page.c:307
+#: src/gui/gaudit-task-page.c:313
 msgid "The password was not accepted, so nothing was changed."
 msgstr "Passordet ble ikke godtatt, så ingenting ble endret."
 
-#: src/gui/gaudit-task-page.c:338 src/gui/gaudit-task-page.c:1054
+#: src/gui/gaudit-task-page.c:344 src/gui/gaudit-task-page.c:1060
 msgid ""
 "Under way. It needs administrator rights: use the switch beside the title if "
 "asked."
@@ -652,81 +652,81 @@ msgstr ""
 "I gang. Det trengs administratorrettigheter: bruk bryteren ved siden av "
 "tittelen hvis du blir bedt om det."
 
-#: src/gui/gaudit-task-page.c:342 src/gui/gaudit-task-page.c:1059
+#: src/gui/gaudit-task-page.c:348 src/gui/gaudit-task-page.c:1065
 msgid "It is already under way."
 msgstr "Den er allerede i gang."
 
-#: src/gui/gaudit-task-page.c:359 src/gui/gaudit-task-page.c:405
+#: src/gui/gaudit-task-page.c:365 src/gui/gaudit-task-page.c:411
 msgid "Undo"
 msgstr "Angre"
 
-#: src/gui/gaudit-task-page.c:479
+#: src/gui/gaudit-task-page.c:485
 msgid "Opens a new page"
 msgstr "Åpner en ny side"
 
-#: src/gui/gaudit-task-page.c:549
+#: src/gui/gaudit-task-page.c:555
 msgid "No more folders can be added"
 msgstr "Det kan ikke legges til flere mapper"
 
-#: src/gui/gaudit-task-page.c:552
+#: src/gui/gaudit-task-page.c:558
 msgid "Already checked with your home folder"
 msgstr "Sjekkes alt sammen med hjemmemappen"
 
-#: src/gui/gaudit-task-page.c:563 src/gui/gaudit-task-page.c:611
-#: src/gui/gaudit-task-page.c:613
+#: src/gui/gaudit-task-page.c:569 src/gui/gaudit-task-page.c:617
+#: src/gui/gaudit-task-page.c:619
 msgid "Add a Folder to Search"
 msgstr "Legg til en mappe"
 
-#: src/gui/gaudit-task-page.c:585
+#: src/gui/gaudit-task-page.c:591
 msgid "From the file manager"
 msgstr "Fra filbehandleren"
 
-#: src/gui/gaudit-task-page.c:591 src/gui/gaudit-task-page.c:593
+#: src/gui/gaudit-task-page.c:597 src/gui/gaudit-task-page.c:599
 msgid "Remove from the List"
 msgstr "Fjern fra lista"
 
-#: src/gui/gaudit-task-page.c:605
+#: src/gui/gaudit-task-page.c:611
 msgid "Folders to Search"
 msgstr "Mapper som sjekkes"
 
-#: src/gui/gaudit-task-page.c:607
+#: src/gui/gaudit-task-page.c:613
 msgid "Everything under each folder is searched, within its own disk."
 msgstr "Alt under hver mappe søkes gjennom, innenfor dens egen disk."
 
-#: src/gui/gaudit-task-page.c:619
+#: src/gui/gaudit-task-page.c:625
 msgid "Your Home Folder"
 msgstr "Hjemmemappen din"
 
-#: src/gui/gaudit-task-page.c:620
+#: src/gui/gaudit-task-page.c:626
 msgid "Always searched"
 msgstr "Sjekkes alltid"
 
-#: src/gui/gaudit-task-page.c:664
+#: src/gui/gaudit-task-page.c:670
 #, c-format
 msgid "%u MiB"
 msgstr "%u MiB"
 
-#: src/gui/gaudit-task-page.c:665
+#: src/gui/gaudit-task-page.c:671
 #, c-format
 msgid "%u KiB"
 msgstr "%u KiB"
 
-#: src/gui/gaudit-task-page.c:671
+#: src/gui/gaudit-task-page.c:677
 msgid "Read Files Up To"
 msgstr "Les filer opp til"
 
-#: src/gui/gaudit-task-page.c:673
+#: src/gui/gaudit-task-page.c:679
 msgid ""
 "Smaller is faster on large disks. Larger files are recognised by name only."
 msgstr ""
 "Mindre går raskere på store disker. Større filer kjennes bare igjen på "
 "navnet."
 
-#: src/gui/gaudit-task-page.c:681
+#: src/gui/gaudit-task-page.c:687
 msgid "Search Caches Too"
 msgstr "Søk også i cacher"
 
-#: src/gui/gaudit-task-page.c:683
+#: src/gui/gaudit-task-page.c:689
 msgid ""
 "Caches are rebuilt by programs and seldom hold secrets, but take long on "
 "large disks."
@@ -734,19 +734,19 @@ msgstr ""
 "Cacher bygges opp på nytt av programmene og har sjelden hemmeligheter, men "
 "tar lang tid på store disker."
 
-#: src/gui/gaudit-task-page.c:716
+#: src/gui/gaudit-task-page.c:722
 msgid "How: the Parameters"
 msgstr "Hvordan: parametrene"
 
-#: src/gui/gaudit-task-page.c:717
+#: src/gui/gaudit-task-page.c:723
 msgid "How: Home"
 msgstr "Hvordan: Home"
 
-#: src/gui/gaudit-task-page.c:717
+#: src/gui/gaudit-task-page.c:723
 msgid "How: This Report"
 msgstr "Hvordan: denne rapporten"
 
-#: src/gui/gaudit-task-page.c:735
+#: src/gui/gaudit-task-page.c:741
 msgid ""
 "This is the simplified report Home made: it uses none of the parameters, so "
 "it is the same every time. Run on Parameters gives the full report."
@@ -755,23 +755,23 @@ msgstr ""
 "parametrene, så den er lik hver gang. «Kjør» under «Parametere» gir den "
 "fulle rapporten."
 
-#: src/gui/gaudit-task-page.c:738
+#: src/gui/gaudit-task-page.c:744
 msgid ""
 "This is the full report, made with the parameters as they were when it ran."
 msgstr ""
 "Dette er den fulle rapporten, laget med parametrene slik de var da den "
 "kjørte."
 
-#: src/gui/gaudit-task-page.c:784
+#: src/gui/gaudit-task-page.c:790
 msgid "What It Does"
 msgstr "Hva den gjør"
 
-#: src/gui/gaudit-task-page.c:795
+#: src/gui/gaudit-task-page.c:801
 msgid "Why It Matters"
 msgstr "Hvorfor det betyr noe"
 
 #
-#: src/gui/gaudit-task-page.c:814
+#: src/gui/gaudit-task-page.c:820
 msgid ""
 "Home shows the state of this computer at a glance. At the top, which "
 "computer this is and how the program checks it. Below, one group for each "
@@ -785,7 +785,7 @@ msgstr ""
 "når alt er i orden, en advarsel der noe trenger oppmerksomheten din. "
 "Skjoldet øverst samler alt."
 
-#: src/gui/gaudit-task-page.c:819
+#: src/gui/gaudit-task-page.c:825
 msgid ""
 "Security problems are easy to miss when they are spread over many places: an "
 "update that never ran, a firewall that is off, a key others can read. One "
@@ -799,7 +799,7 @@ msgstr ""
 "hvor du skal lete. En hake betyr at ingen tegn til problemer ble funnet, "
 "ikke at datamaskinen er bevist trygg."
 
-#: src/gui/gaudit-task-page.c:824
+#: src/gui/gaudit-task-page.c:830
 msgid ""
 "Report Level decides how thorough Home is: Quick is fast and runs every time "
 "Home opens; higher levels look further and take longer. The reports here are "
@@ -817,58 +817,58 @@ msgstr ""
 "som trenger administratorrettigheter, venter til du bytter til administrator "
 "med knappen øverst i sidepanelet; Home ber aldri om passord når den åpnes."
 
-#: src/gui/gaudit-task-page.c:866
+#: src/gui/gaudit-task-page.c:872
 msgid "What to check"
 msgstr "Hva som skal sjekkes"
 
-#: src/gui/gaudit-task-page.c:887
+#: src/gui/gaudit-task-page.c:893
 msgid "Start"
 msgstr "Start"
 
-#: src/gui/gaudit-task-page.c:892
+#: src/gui/gaudit-task-page.c:898
 msgid "Applies to the full report only, not to Home"
 msgstr "Gjelder bare den fulle rapporten, ikke Home"
 
-#: src/gui/gaudit-task-page.c:923
+#: src/gui/gaudit-task-page.c:929
 msgid "The command shown has changed, so it was not copied"
 msgstr "Kommandoen som vises er endret, så den ble ikke kopiert"
 
-#: src/gui/gaudit-task-page.c:927
+#: src/gui/gaudit-task-page.c:933
 msgid "Command copied"
 msgstr "Kommandoen er kopiert"
 
 #. Translators: %04o is the new permissions, e.g. 0600.
-#: src/gui/gaudit-task-page.c:977
+#: src/gui/gaudit-task-page.c:983
 #, c-format
 msgid "Done: the permissions are now %04o."
 msgstr "Ferdig: rettighetene er nå %04o."
 
-#: src/gui/gaudit-task-page.c:979
+#: src/gui/gaudit-task-page.c:985
 msgid "It could not be changed. Nothing was done."
 msgstr "Det kunne ikke endres. Ingenting ble gjort."
 
-#: src/gui/gaudit-task-page.c:998
+#: src/gui/gaudit-task-page.c:1004
 msgid "Done. It is checked again now."
 msgstr "Ferdig. Det sjekkes nå på nytt."
 
-#: src/gui/gaudit-task-page.c:1000
+#: src/gui/gaudit-task-page.c:1006
 msgid "Cancelled, so nothing was run."
 msgstr "Avbrutt, så ingenting ble kjørt."
 
-#: src/gui/gaudit-task-page.c:1002
+#: src/gui/gaudit-task-page.c:1008
 msgid "The password was not accepted, so nothing was run."
 msgstr "Passordet ble ikke godtatt, så ingenting ble kjørt."
 
 #. Translators: %d is a program's exit code, then the step's
 #. * own explanation of what it most likely means.
-#: src/gui/gaudit-task-page.c:1007
+#: src/gui/gaudit-task-page.c:1013
 #, c-format
 msgid "It stopped with an error (exit code %d). %s"
 msgstr "Den stoppet med en feil (avslutningskode %d). %s"
 
 #. Translators: %d is a program's exit code. Unsigned packages,
 #. * for one, stop apt: it never installs them from here.
-#: src/gui/gaudit-task-page.c:1012
+#: src/gui/gaudit-task-page.c:1018
 #, c-format
 msgid ""
 "It stopped with an error (exit code %d). Run the command in a terminal to "
@@ -879,32 +879,32 @@ msgstr ""
 "for å se hva den sier; apt stopper for eksempel heller enn å installere "
 "pakker som ikke er signert."
 
-#: src/gui/gaudit-task-page.c:1016
+#: src/gui/gaudit-task-page.c:1022
 msgid "It could not be run."
 msgstr "Det kunne ikke kjøres."
 
-#: src/gui/gaudit-task-page.c:1034
+#: src/gui/gaudit-task-page.c:1040
 msgid "The command shown has changed, so it was not run"
 msgstr "Kommandoen som vises, er endret, så den ble ikke kjørt"
 
-#: src/gui/gaudit-task-page.c:1105 src/gui/gaudit-task-page.c:1107
+#: src/gui/gaudit-task-page.c:1111 src/gui/gaudit-task-page.c:1113
 msgid "Copy command"
 msgstr "Kopier kommandoen"
 
-#: src/gui/gaudit-task-page.c:1119 src/gui/gaudit-task-page.c:1121
+#: src/gui/gaudit-task-page.c:1125 src/gui/gaudit-task-page.c:1127
 msgid "Run this command"
 msgstr "Kjør denne kommandoen"
 
-#: src/gui/gaudit-task-page.c:1150
+#: src/gui/gaudit-task-page.c:1157
 msgid "Installing is not implemented yet."
 msgstr "Installering er ikke implementert ennå."
 
-#: src/gui/gaudit-task-page.c:1165
+#: src/gui/gaudit-task-page.c:1172
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr "Denne sjekken trenger programvare som ikke er installert: %s."
 
-#: src/gui/gaudit-task-page.c:1171
+#: src/gui/gaudit-task-page.c:1178
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
@@ -912,17 +912,17 @@ msgstr ""
 "Du kan installere den med knappen nedenfor, eller kopiere denne kommandoen "
 "og kjøre den i en terminal selv:"
 
-#: src/gui/gaudit-task-page.c:1176
+#: src/gui/gaudit-task-page.c:1183
 msgid "Install"
 msgstr "Installer"
 
-#: src/gui/gaudit-task-page.c:1184
+#: src/gui/gaudit-task-page.c:1191
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 "Installeringen bruker systemets programvaretjeneste og ber om passordet ditt."
 
-#: src/gui/gaudit-task-page.c:1204
+#: src/gui/gaudit-task-page.c:1211
 msgid "This check is not supported on this operating system yet."
 msgstr "Denne sjekken støttes ikke på dette operativsystemet ennå."
 
@@ -1378,6 +1378,70 @@ msgstr "Søker gjennom hjemmemappen …"
 msgid "Searching… Large folders can take a long time."
 msgstr "Søker … Store mapper kan ta lang tid."
 
+#: src/plugins/shared-folder/plugin.c:15
+#
+msgid "Shared Folder"
+msgstr "Delt mappe"
+
+#: src/plugins/shared-folder/plugin.c:16
+msgid ""
+"Finds the folder meant for sharing on the local network, and other folders "
+"that look like it."
+msgstr "Finner mappa som er ment for deling på lokalnettet, og andre mapper som ligner på den."
+
+#: src/plugins/shared-folder/plugin.c:18
+msgid ""
+"A desktop that follows the usual standard has one folder for what you share "
+"with others on the local network, called Public in English. Its name follows "
+"the language you had when you first logged in, so after a change of language "
+"there can be two, such as Offentlig and Public, and it becomes unclear which "
+"one is shared.\n"
+"\n"
+"Shared Folder finds the folder in use and every other folder in your home "
+"folder with a name it could have had, in any language and from older "
+"versions. It also looks for what shares folders: Samba, including the "
+"sharing you do from the file manager, and GNOME Sharing. It needs no "
+"password.\n"
+"\n"
+"It can tidy a duplicate: move what is in it into the folder in use, never "
+"replacing anything, and remove it once it is empty. It never deletes files, "
+"and changes nothing while something shares one of the folders."
+msgstr "Et skrivebord som følger den vanlige standarden, har én mappe for det du deler med andre på lokalnettet, på engelsk kalt Public. Navnet følger språket du hadde da du logget inn første gang, så etter et bytte av språk kan det bli to, som Offentlig og Public, og da blir det uklart hvilken som deles.\n\nDelt mappe finner mappa som er i bruk, og alle andre mapper i hjemmemappa med et navn den kunne hatt, på alle språk og fra eldre versjoner. Den ser også etter det som deler mapper: Samba, også delingen du gjør fra filbehandleren, og GNOME Deling. Den trenger ikke passord.\n\nDen kan rydde en dublett: flytte det som ligger i den over til mappa som er i bruk, uten å erstatte noe, og fjerne den når den er tom. Den sletter aldri filer, og endrer ingenting så lenge noe deler en av mappene."
+
+#: src/plugins/shared-folder/plugin.c:31
+msgid ""
+"What is in a shared folder can be read by others on the same network, at "
+"home or on a café's Wi-Fi. With two folders for the same thing, it is easy "
+"to put a file in the one that is shared when you meant the other, or the "
+"other way round. Sharing is often switched on without people knowing it."
+msgstr "Det som ligger i en delt mappe, kan leses av andre på samme nett, hjemme eller på kaféens trådløse nett. Med to mapper for det samme er det lett å legge en fil i den som deles når du mente den andre, eller omvendt. Deling er ofte slått på uten at folk vet om det."
+
+#: src/plugins/shared-folder/plugin.c:35
+msgid ""
+"There is nothing to set yet. Later you will be asked which folder you mean "
+"to use for sharing, and whether the sharing found is meant."
+msgstr "Det er ingenting å stille inn ennå. Senere blir du spurt om hvilken mappe du mener å bruke til deling, og om delingen som er funnet, er ment."
+
+#: src/plugins/shared-folder/plugin.c:37
+msgid ""
+"The report shows the folder in use for sharing, the other folders that look "
+"like it, and what shares folders on this computer. A folder that looks like "
+"it leads to a page that can tidy it."
+msgstr "Rapporten viser mappa som er i bruk for deling, de andre mappene som ligner på den, og det som deler mapper på denne datamaskinen. En mappe som ligner på den, leder til en side som kan rydde den."
+
+#: src/plugins/shared-folder/plugin.c:46
+msgid "The shared folder"
+msgstr "Den delte mappa"
+
+#: src/plugins/shared-folder/plugin.c:47
+msgid "See the shared folder and what shares folders"
+msgstr "Se den delte mappa og det som deler mapper"
+
+#: src/plugins/shared-folder/plugin.c:51 src/plugins/shared-folder/plugin.c:52
+#
+msgid "Looking at your folders…"
+msgstr "Ser på mappene dine …"
+
 #: src/gui/gaudit-category.c:10
 msgid "ufw (Uncomplicated Firewall)"
 msgstr "ufw (Uncomplicated Firewall)"
@@ -1478,14 +1542,18 @@ msgstr ""
 "Programmer som bruker GTK, GIO, GStreamer eller GObject, leter etter moduler "
 "eller data her før systemets egne."
 
-#: src/gui/gaudit-environ-page.c:101
 #
+#: src/gui/gaudit-environ-page.c:101
 msgid ""
 "GTK 3 loads these modules into every window of the programs that use it. A "
 "module named without a folder is taken from GTK's own folders. The program "
 "itself uses GTK 4, which does not read this; every GTK 3 program you start "
 "still does."
-msgstr "GTK 3 laster inn disse modulene i hvert vindu i programmene som bruker det. En modul som er oppgitt uten mappe, hentes fra GTKs egne mapper. Programmet selv bruker GTK 4, som ikke leser dette, men alle GTK 3-programmer du starter gjør det fortsatt."
+msgstr ""
+"GTK 3 laster inn disse modulene i hvert vindu i programmene som bruker det. "
+"En modul som er oppgitt uten mappe, hentes fra GTKs egne mapper. Programmet "
+"selv bruker GTK 4, som ikke leser dette, men alle GTK 3-programmer du "
+"starter gjør det fortsatt."
 
 #: src/gui/gaudit-environ-page.c:106
 msgid "Changes how programs are loaded or run, but loads no code of its own."
@@ -1556,8 +1624,8 @@ msgstr "(tom)"
 msgid "Loads no code of its own"
 msgstr "Laster ikke inn kode selv"
 
-#: src/gui/gaudit-environ-page.c:226
 #
+#: src/gui/gaudit-environ-page.c:226
 msgid "Not found in GTK's own folders, so nothing is loaded"
 msgstr "Finnes ikke i GTKs egne mapper, så ingenting lastes inn"
 
@@ -1565,14 +1633,18 @@ msgstr "Finnes ikke i GTKs egne mapper, så ingenting lastes inn"
 msgid "What You Can Do"
 msgstr "Hva du kan gjøre"
 
-#: src/gui/gaudit-environ-page.c:244
 #
+#: src/gui/gaudit-environ-page.c:244
 msgid ""
 "Such settings are usually made in a file that is read when you log in or "
 "open a terminal: your own, or the system's for every account. Started from a "
 "terminal, the program gets the terminal's settings; started from the menu, "
 "only those of the login. This shows the lines that set them:"
-msgstr "Slike innstillinger settes vanligvis i en fil som leses når du logger inn eller åpner en terminal: din egen, eller systemets for alle kontoer. Startet fra en terminal får programmet terminalens innstillinger, startet fra menyen bare innloggingens. Dette viser linjene som setter dem:"
+msgstr ""
+"Slike innstillinger settes vanligvis i en fil som leses når du logger inn "
+"eller åpner en terminal: din egen, eller systemets for alle kontoer. Startet "
+"fra en terminal får programmet terminalens innstillinger, startet fra menyen "
+"bare innloggingens. Dette viser linjene som setter dem:"
 
 #: src/gui/gaudit-environ-page.c:262
 msgid ""

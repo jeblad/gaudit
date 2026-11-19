@@ -9,6 +9,8 @@ add_library(gaudit_backend STATIC
   collector.c
   flatpak-runner.c
   snap-runner.c
+  xdg-public-names.c
+  public-share.c
   debian/pkg-debian.c
   debian/apt-conf.c
   debian/apt-sources.c

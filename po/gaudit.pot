@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-17 05:24+0100\n"
+"POT-Creation-Date: 2026-11-19 09:06+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -332,11 +332,11 @@ msgstr ""
 msgid "%s · checked at %s"
 msgstr ""
 
-#: src/gui/gaudit-window.c:774 src/gui/gaudit-task-page.c:1202
+#: src/gui/gaudit-window.c:774 src/gui/gaudit-task-page.c:1209
 msgid "Not available on this system"
 msgstr ""
 
-#: src/gui/gaudit-window.c:775 src/gui/gaudit-task-page.c:1162
+#: src/gui/gaudit-window.c:775 src/gui/gaudit-task-page.c:1169
 msgid "Software is missing"
 msgstr ""
 
@@ -406,7 +406,7 @@ msgid "The program's self-check"
 msgstr ""
 
 #: src/gui/gaudit-window.c:997 src/gui/gaudit-window.c:1070
-#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:811
+#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:817
 msgid "Home"
 msgstr ""
 
@@ -424,7 +424,7 @@ msgid "The parameters are set back"
 msgstr ""
 
 #: src/gui/gaudit-window.c:1070 src/gui/gaudit-window.c:1137
-#: src/gui/gaudit-window.c:1156 src/gui/gaudit-task-page.c:802
+#: src/gui/gaudit-window.c:1156 src/gui/gaudit-task-page.c:808
 msgid "Information"
 msgstr ""
 
@@ -511,7 +511,7 @@ msgid ""
 "lost."
 msgstr ""
 
-#: src/gui/gaudit-window.c:1670 src/gui/gaudit-task-page.c:358
+#: src/gui/gaudit-window.c:1670 src/gui/gaudit-task-page.c:364
 msgid "_Cancel"
 msgstr ""
 
@@ -519,7 +519,7 @@ msgstr ""
 msgid "_Stop and Close"
 msgstr ""
 
-#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:812
+#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:818
 msgid "Overall status"
 msgstr ""
 
@@ -561,176 +561,176 @@ msgid "Unknown"
 msgstr ""
 
 #. Translators: "Step 1 of 2".
-#: src/gui/gaudit-task-page.c:153
+#: src/gui/gaudit-task-page.c:159
 #, c-format
 msgid "Step %u of %u"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:263
+#: src/gui/gaudit-task-page.c:269
 msgid "Done. The program's setting is written; it is checked again now."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:264
+#: src/gui/gaudit-task-page.c:270
 msgid "It was already set up this way, so nothing was changed."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:265
+#: src/gui/gaudit-task-page.c:271
 msgid "Done. The program's setting is removed; it is checked again now."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:266
+#: src/gui/gaudit-task-page.c:272
 msgid "The program had no setting there to remove."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:267
+#: src/gui/gaudit-task-page.c:273
 msgid ""
 "A file of that name that the program did not write is already there, so "
 "nothing was changed."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:268
+#: src/gui/gaudit-task-page.c:274
 msgid ""
 "The program's file has been changed since it was written, so it was left as "
 "it is."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:269
+#: src/gui/gaudit-task-page.c:275
 msgid ""
 "Something it needs is missing or not as expected, so nothing was written."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:270
+#: src/gui/gaudit-task-page.c:276
 msgid "A folder on the way can be changed by others, so nothing was written."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:275 src/gui/gaudit-task-page.c:309
+#: src/gui/gaudit-task-page.c:281 src/gui/gaudit-task-page.c:315
 msgid "It could not be done, so nothing was changed."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:305
+#: src/gui/gaudit-task-page.c:311
 msgid "Cancelled, so nothing was changed."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:307
+#: src/gui/gaudit-task-page.c:313
 msgid "The password was not accepted, so nothing was changed."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:338 src/gui/gaudit-task-page.c:1054
+#: src/gui/gaudit-task-page.c:344 src/gui/gaudit-task-page.c:1060
 msgid ""
 "Under way. It needs administrator rights: use the switch beside the title if "
 "asked."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:342 src/gui/gaudit-task-page.c:1059
+#: src/gui/gaudit-task-page.c:348 src/gui/gaudit-task-page.c:1065
 msgid "It is already under way."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:359 src/gui/gaudit-task-page.c:405
+#: src/gui/gaudit-task-page.c:365 src/gui/gaudit-task-page.c:411
 msgid "Undo"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:479
+#: src/gui/gaudit-task-page.c:485
 msgid "Opens a new page"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:549
+#: src/gui/gaudit-task-page.c:555
 msgid "No more folders can be added"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:552
+#: src/gui/gaudit-task-page.c:558
 msgid "Already checked with your home folder"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:563 src/gui/gaudit-task-page.c:611
-#: src/gui/gaudit-task-page.c:613
+#: src/gui/gaudit-task-page.c:569 src/gui/gaudit-task-page.c:617
+#: src/gui/gaudit-task-page.c:619
 msgid "Add a Folder to Search"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:585
+#: src/gui/gaudit-task-page.c:591
 msgid "From the file manager"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:591 src/gui/gaudit-task-page.c:593
+#: src/gui/gaudit-task-page.c:597 src/gui/gaudit-task-page.c:599
 msgid "Remove from the List"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:605
+#: src/gui/gaudit-task-page.c:611
 msgid "Folders to Search"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:607
+#: src/gui/gaudit-task-page.c:613
 msgid "Everything under each folder is searched, within its own disk."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:619
+#: src/gui/gaudit-task-page.c:625
 msgid "Your Home Folder"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:620
+#: src/gui/gaudit-task-page.c:626
 msgid "Always searched"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:664
+#: src/gui/gaudit-task-page.c:670
 #, c-format
 msgid "%u MiB"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:665
+#: src/gui/gaudit-task-page.c:671
 #, c-format
 msgid "%u KiB"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:671
+#: src/gui/gaudit-task-page.c:677
 msgid "Read Files Up To"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:673
+#: src/gui/gaudit-task-page.c:679
 msgid ""
 "Smaller is faster on large disks. Larger files are recognised by name only."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:681
+#: src/gui/gaudit-task-page.c:687
 msgid "Search Caches Too"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:683
+#: src/gui/gaudit-task-page.c:689
 msgid ""
 "Caches are rebuilt by programs and seldom hold secrets, but take long on "
 "large disks."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:716
+#: src/gui/gaudit-task-page.c:722
 msgid "How: the Parameters"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:717
+#: src/gui/gaudit-task-page.c:723
 msgid "How: Home"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:717
+#: src/gui/gaudit-task-page.c:723
 msgid "How: This Report"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:735
+#: src/gui/gaudit-task-page.c:741
 msgid ""
 "This is the simplified report Home made: it uses none of the parameters, so "
 "it is the same every time. Run on Parameters gives the full report."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:738
+#: src/gui/gaudit-task-page.c:744
 msgid ""
 "This is the full report, made with the parameters as they were when it ran."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:784
+#: src/gui/gaudit-task-page.c:790
 msgid "What It Does"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:795
+#: src/gui/gaudit-task-page.c:801
 msgid "Why It Matters"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:814
+#: src/gui/gaudit-task-page.c:820
 msgid ""
 "Home shows the state of this computer at a glance. At the top, which "
 "computer this is and how the program checks it. Below, one group for each "
@@ -739,7 +739,7 @@ msgid ""
 "them all up."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:819
+#: src/gui/gaudit-task-page.c:825
 msgid ""
 "Security problems are easy to miss when they are spread over many places: an "
 "update that never ran, a firewall that is off, a key others can read. One "
@@ -748,7 +748,7 @@ msgid ""
 "computer is proven safe."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:824
+#: src/gui/gaudit-task-page.c:830
 msgid ""
 "Report Level decides how thorough Home is: Quick is fast and runs every time "
 "Home opens; higher levels look further and take longer. The reports here are "
@@ -759,58 +759,58 @@ msgid ""
 "at the top of the sidebar; Home never asks for the password when it opens."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:866
+#: src/gui/gaudit-task-page.c:872
 msgid "What to check"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:887
+#: src/gui/gaudit-task-page.c:893
 msgid "Start"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:892
+#: src/gui/gaudit-task-page.c:898
 msgid "Applies to the full report only, not to Home"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:923
+#: src/gui/gaudit-task-page.c:929
 msgid "The command shown has changed, so it was not copied"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:927
+#: src/gui/gaudit-task-page.c:933
 msgid "Command copied"
 msgstr ""
 
 #. Translators: %04o is the new permissions, e.g. 0600.
-#: src/gui/gaudit-task-page.c:977
+#: src/gui/gaudit-task-page.c:983
 #, c-format
 msgid "Done: the permissions are now %04o."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:979
+#: src/gui/gaudit-task-page.c:985
 msgid "It could not be changed. Nothing was done."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:998
+#: src/gui/gaudit-task-page.c:1004
 msgid "Done. It is checked again now."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1000
+#: src/gui/gaudit-task-page.c:1006
 msgid "Cancelled, so nothing was run."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1002
+#: src/gui/gaudit-task-page.c:1008
 msgid "The password was not accepted, so nothing was run."
 msgstr ""
 
 #. Translators: %d is a program's exit code, then the step's
 #. * own explanation of what it most likely means.
-#: src/gui/gaudit-task-page.c:1007
+#: src/gui/gaudit-task-page.c:1013
 #, c-format
 msgid "It stopped with an error (exit code %d). %s"
 msgstr ""
 
 #. Translators: %d is a program's exit code. Unsigned packages,
 #. * for one, stop apt: it never installs them from here.
-#: src/gui/gaudit-task-page.c:1012
+#: src/gui/gaudit-task-page.c:1018
 #, c-format
 msgid ""
 "It stopped with an error (exit code %d). Run the command in a terminal to "
@@ -818,47 +818,47 @@ msgid ""
 "not signed."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1016
+#: src/gui/gaudit-task-page.c:1022
 msgid "It could not be run."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1034
+#: src/gui/gaudit-task-page.c:1040
 msgid "The command shown has changed, so it was not run"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1105 src/gui/gaudit-task-page.c:1107
+#: src/gui/gaudit-task-page.c:1111 src/gui/gaudit-task-page.c:1113
 msgid "Copy command"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1119 src/gui/gaudit-task-page.c:1121
+#: src/gui/gaudit-task-page.c:1125 src/gui/gaudit-task-page.c:1127
 msgid "Run this command"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1150
+#: src/gui/gaudit-task-page.c:1157
 msgid "Installing is not implemented yet."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1165
+#: src/gui/gaudit-task-page.c:1172
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1171
+#: src/gui/gaudit-task-page.c:1178
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1176
+#: src/gui/gaudit-task-page.c:1183
 msgid "Install"
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1184
+#: src/gui/gaudit-task-page.c:1191
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 
-#: src/gui/gaudit-task-page.c:1204
+#: src/gui/gaudit-task-page.c:1211
 msgid "This check is not supported on this operating system yet."
 msgstr ""
 
@@ -1216,6 +1216,68 @@ msgstr ""
 
 #: src/plugins/private-files/plugin.c:68
 msgid "Searching… Large folders can take a long time."
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:15
+msgid "Shared Folder"
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:16
+msgid ""
+"Finds the folder meant for sharing on the local network, and other folders "
+"that look like it."
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:18
+msgid ""
+"A desktop that follows the usual standard has one folder for what you share "
+"with others on the local network, called Public in English. Its name follows "
+"the language you had when you first logged in, so after a change of language "
+"there can be two, such as Offentlig and Public, and it becomes unclear which "
+"one is shared.\n"
+"\n"
+"Shared Folder finds the folder in use and every other folder in your home "
+"folder with a name it could have had, in any language and from older "
+"versions. It also looks for what shares folders: Samba, including the "
+"sharing you do from the file manager, and GNOME Sharing. It needs no "
+"password.\n"
+"\n"
+"It can tidy a duplicate: move what is in it into the folder in use, never "
+"replacing anything, and remove it once it is empty. It never deletes files, "
+"and changes nothing while something shares one of the folders."
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:31
+msgid ""
+"What is in a shared folder can be read by others on the same network, at "
+"home or on a café's Wi-Fi. With two folders for the same thing, it is easy "
+"to put a file in the one that is shared when you meant the other, or the "
+"other way round. Sharing is often switched on without people knowing it."
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:35
+msgid ""
+"There is nothing to set yet. Later you will be asked which folder you mean "
+"to use for sharing, and whether the sharing found is meant."
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:37
+msgid ""
+"The report shows the folder in use for sharing, the other folders that look "
+"like it, and what shares folders on this computer. A folder that looks like "
+"it leads to a page that can tidy it."
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:46
+msgid "The shared folder"
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:47
+msgid "See the shared folder and what shares folders"
+msgstr ""
+
+#: src/plugins/shared-folder/plugin.c:51 src/plugins/shared-folder/plugin.c:52
+msgid "Looking at your folders…"
 msgstr ""
 
 #: src/gui/gaudit-category.c:10

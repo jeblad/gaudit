@@ -1,0 +1,7 @@
+(report (verdict ok) (title (msgn "{n} more folder looks like the shared folder" "{n} more folders look like the shared folder" 2 (n 2))) (description (msg "What is shared is best kept in one folder, so it is clear what others on the network can read. A folder that looks like the shared folder is a recommendation: it may be kept on purpose.")))
+(home (verdict ok) (title (msg "{folder} is the folder for sharing" (folder "~/Offentlig"))) (subtitle (msg "Nothing needs attention")))
+(section (title (msg "The Folder for Sharing")) (description (msg "The one your desktop uses for what you share with others on the local network.")))
+(row (verdict ok) (title (text "~/Offentlig")) (subtitle (msg "The folder for sharing, set in your user folder settings")))
+(section (title (msg "Folders That Look Like It")) (description (msg "Their names are ones the folder for sharing has had, in another language or an older version. Two such folders make it unclear which one is shared.")))
+(row (verdict advice) (title (text "~/Public")) (subtitle (msg "The {lang} name · {contents}" (lang (msg "English")) (contents (msg "empty")))) (fix tidy (item 2)))
+(row (verdict advice) (title (text "~/Delat")) (subtitle (msg "An older {lang} name · {contents}" (lang (msg "Swedish")) (contents (msgn "{n} item" "{n} items" 3 (n 3))))) (fix tidy (item 3)))

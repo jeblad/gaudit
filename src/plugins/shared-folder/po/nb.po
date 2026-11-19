@@ -1,0 +1,395 @@
+# Norwegian Bokmål translation for gaudit-shared-folder.
+# This file is distributed under the same license as the gaudit package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gaudit-shared-folder\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 09:08+0100\n"
+"PO-Revision-Date: 2026-11-19 12:00+0100\n"
+"Last-Translator: \n"
+"Language-Team: Norwegian Bokmål\n"
+"Language: nb\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:159
+msgid "It could not be done."
+msgstr "Det kunne ikke gjøres."
+
+#. Translators: %s is a folder, e.g. "~/Public".
+#: src/plugins/shared-folder/gaudit-shared-folder.c:162
+#, c-format
+msgid "Done: ~/%s is gone, and ~/%s is the one folder for what you share."
+msgstr "Ferdig: ~/%s er borte, og ~/%s er den ene mappa for det du deler."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:167
+msgid ""
+"It is not empty, so it was left as it is. Look in it yourself; the program "
+"never deletes files."
+msgstr "Den er ikke tom, så den fikk være som den er. Se i den selv; programmet sletter aldri filer."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:170
+msgid ""
+"It was not removed: it is not one of the folders the program tidies, or "
+"something now shares it."
+msgstr "Den ble ikke fjernet: den er ikke en av mappene programmet rydder, eller noe deler den nå."
+
+#. Translators: %s is a folder, e.g. "Public".
+#: src/plugins/shared-folder/gaudit-shared-folder.c:179
+#, c-format
+msgid ""
+"~/%s is empty now. Removing it leaves one folder for what you share. Only an "
+"empty folder can be removed this way."
+msgstr "~/%s er tom nå. Fjernes den, er det én mappe igjen for det du deler. Bare en tom mappe kan fjernes slik."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:183
+msgid "Remove the Empty Folder"
+msgstr "Fjern den tomme mappa"
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:199
+msgid ""
+"Nothing was moved: it is not one of the folders the program tidies, or "
+"something now shares one of them."
+msgstr "Ingenting ble flyttet: den er ikke en av mappene programmet rydder, eller noe deler en av dem nå."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:204
+#, c-format
+msgid "Moved %u item into ~/%s."
+msgid_plural "Moved %u items into ~/%s."
+msgstr[0] "Flyttet %u ting til ~/%s."
+msgstr[1] "Flyttet %u ting til ~/%s."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:209
+msgid ""
+"Something came in the way after the check, so it stopped. What was moved is "
+"in the folder in use; open this page again to see what is left."
+msgstr "Noe kom i veien etter sjekken, så den stoppet. Det som ble flyttet, ligger i mappa som er i bruk; åpne denne siden igjen for å se hva som er igjen."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:229
+msgid ""
+"It could not be checked: it is not one of the folders the program tidies, or "
+"something now shares one of them."
+msgstr "Det kunne ikke sjekkes: den er ikke en av mappene programmet rydder, eller noe deler en av dem nå."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:234
+#, c-format
+msgid ""
+"%u item can be moved from ~/%s into ~/%s. Nothing there has the same name, "
+"so nothing is replaced."
+msgid_plural ""
+"%u items can be moved from ~/%s into ~/%s. Nothing there has the same name, "
+"so nothing is replaced."
+msgstr[0] "%u ting kan flyttes fra ~/%s til ~/%s. Ingenting der har samme navn, så ingenting erstattes."
+msgstr[1] "%u ting kan flyttes fra ~/%s til ~/%s. Ingenting der har samme navn, så ingenting erstattes."
+
+#. Translators: %s is a folder, e.g. "Offentlig".
+#: src/plugins/shared-folder/gaudit-shared-folder.c:241
+#, c-format
+msgid "Move Into ~/%s"
+msgstr "Flytt til ~/%s"
+
+#. Translators: two folders, then a list of names.
+#: src/plugins/shared-folder/gaudit-shared-folder.c:251
+#, c-format
+msgid ""
+"These have the same name in ~/%s and ~/%s: %s. Rename one of each yourself, "
+"or move it elsewhere, then open this page again."
+msgstr "Disse har samme navn i ~/%s og ~/%s: %s. Gi den ene av hvert par nytt navn selv, eller flytt den et annet sted, og åpne så denne siden igjen."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:259
+msgid ""
+"Some of it is on another disk, so it would have to be copied; the program "
+"only moves."
+msgstr "Noe av det ligger på en annen disk og måtte i så fall kopieres; programmet bare flytter."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:265
+msgid "Some of it could not be looked at."
+msgstr "Noe av det kunne ikke ses på."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:269
+msgid "Nothing has been moved."
+msgstr "Ingenting er flyttet."
+
+#. Translators: two folders, e.g. "~/Public" and "~/Offentlig".
+#: src/plugins/shared-folder/gaudit-shared-folder.c:326
+#, c-format
+msgid "~/%s looks like the shared folder, but the one in use is ~/%s."
+msgstr "~/%s ligner på den delte mappa, men den som er i bruk, er ~/%s."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:328
+#, c-format
+msgid "~/%s looks like the shared folder."
+msgstr "~/%s ligner på den delte mappa."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:332
+msgid ""
+"It is a link, not a folder of its own, so there is nothing to tidy here. "
+"Whether to keep it is up to you."
+msgstr "Det er en lenke, ikke en egen mappe, så det er ingenting å rydde her. Om den skal beholdes, er opp til deg."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:335
+msgid ""
+"Something shares one of the two folders, so nothing is moved or removed "
+"here: that would change what is shared without you seeing it. Decide first "
+"whether the sharing is meant."
+msgstr "Noe deler en av de to mappene, så ingenting flyttes eller fjernes her: det ville endre hva som deles uten at du ser det. Avgjør først om delingen er ment."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:339
+msgid ""
+"No folder for sharing is set up in your user folder settings, so there is "
+"nothing to tidy it into."
+msgstr "Ingen mappe for deling er satt opp i innstillingene for brukermappene dine, så det er ingenting å rydde den inn i."
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:342
+msgid ""
+"Two folders for the same thing make it unclear which one is shared. The "
+"program can move what is in it into the folder in use, never replacing "
+"anything, and then remove it once it is empty. It never deletes files."
+msgstr "To mapper for det samme gjør det uklart hvilken som deles. Programmet kan flytte det som ligger i den, over til mappa som er i bruk, uten å erstatte noe, og så fjerne den når den er tom. Det sletter aldri filer."
+
+#. Translators: %s is a list of shares or programs.
+#: src/plugins/shared-folder/gaudit-shared-folder.c:349
+#, c-format
+msgid "Shared by: %s"
+msgstr "Delt av: %s"
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:352
+msgid "Tidy the Shared Folder"
+msgstr "Rydd den delte mappa"
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:370
+msgid "Check What Can Be Moved"
+msgstr "Sjekk hva som kan flyttes"
+
+#: src/plugins/shared-folder/rules/report.scm:63
+msgid "English"
+msgstr "engelsk"
+
+#: src/plugins/shared-folder/rules/report.scm:64
+msgid "Norwegian Bokmål"
+msgstr "bokmål"
+
+#: src/plugins/shared-folder/rules/report.scm:65
+msgid "Norwegian Nynorsk"
+msgstr "nynorsk"
+
+#: src/plugins/shared-folder/rules/report.scm:66
+msgid "Danish"
+msgstr "dansk"
+
+#: src/plugins/shared-folder/rules/report.scm:67
+msgid "Swedish"
+msgstr "svensk"
+
+#: src/plugins/shared-folder/rules/report.scm:68
+msgid "Finnish"
+msgstr "finsk"
+
+#: src/plugins/shared-folder/rules/report.scm:69
+msgid "Icelandic"
+msgstr "islandsk"
+
+#: src/plugins/shared-folder/rules/report.scm:70
+msgid "German"
+msgstr "tysk"
+
+#: src/plugins/shared-folder/rules/report.scm:71
+msgid "Dutch"
+msgstr "nederlandsk"
+
+#: src/plugins/shared-folder/rules/report.scm:72
+msgid "French"
+msgstr "fransk"
+
+#: src/plugins/shared-folder/rules/report.scm:73
+msgid "Spanish"
+msgstr "spansk"
+
+#: src/plugins/shared-folder/rules/report.scm:74
+msgid "Italian"
+msgstr "italiensk"
+
+#: src/plugins/shared-folder/rules/report.scm:75
+msgid "Portuguese"
+msgstr "portugisisk"
+
+#: src/plugins/shared-folder/rules/report.scm:76
+msgid "Polish"
+msgstr "polsk"
+
+#: src/plugins/shared-folder/rules/report.scm:77
+msgid "Ukrainian"
+msgstr "ukrainsk"
+
+#: src/plugins/shared-folder/rules/report.scm:78
+msgid "Russian"
+msgstr "russisk"
+
+#: src/plugins/shared-folder/rules/report.scm:103
+msgid "The folder for sharing, set in your user folder settings"
+msgstr "Mappa for deling, satt i innstillingene for brukermappene dine"
+
+#: src/plugins/shared-folder/rules/report.scm:105
+msgid "Set as the folder for sharing, but it is not there"
+msgstr "Satt som mappa for deling, men den finnes ikke"
+
+#: src/plugins/shared-folder/rules/report.scm:106
+msgid "The folder for sharing is switched off"
+msgstr "Mappa for deling er slått av"
+
+#: src/plugins/shared-folder/rules/report.scm:107
+msgid "Your user folder settings point it at the home folder itself"
+msgstr "Innstillingene for brukermappene dine peker den til selve hjemmemappa"
+
+#: src/plugins/shared-folder/rules/report.scm:108
+msgid "No folder for sharing is set up"
+msgstr "Ingen mappe for deling er satt opp"
+
+#: src/plugins/shared-folder/rules/report.scm:109
+msgid "Programs that share then choose a folder of their own"
+msgstr "Programmer som deler, velger da en mappe selv"
+
+#: src/plugins/shared-folder/rules/report.scm:110
+msgid "Your user folder settings could not be read"
+msgstr "Innstillingene for brukermappene dine kunne ikke leses"
+
+#: src/plugins/shared-folder/rules/report.scm:111
+msgid "They are not written the way the system writes them"
+msgstr "De er ikke skrevet slik systemet skriver dem"
+
+#: src/plugins/shared-folder/rules/report.scm:115
+msgid "could not be looked in"
+msgstr "kunne ikke ses i"
+
+#: src/plugins/shared-folder/rules/report.scm:116
+msgid "empty"
+msgstr "tom"
+
+#: src/plugins/shared-folder/rules/report.scm:117
+msgid "1000 items or more"
+msgstr "1000 ting eller flere"
+
+#: src/plugins/shared-folder/rules/report.scm:118
+msgid "{n} item"
+msgid_plural "{n} items"
+msgstr[0] "{n} ting"
+msgstr[1] "{n} ting"
+
+#: src/plugins/shared-folder/rules/report.scm:123
+msgid "A link to {target}"
+msgstr "En lenke til {target}"
+
+#: src/plugins/shared-folder/rules/report.scm:125
+msgid "The {lang} name in other letters · {contents}"
+msgstr "Navnet på {lang} med andre bokstaver · {contents}"
+
+#: src/plugins/shared-folder/rules/report.scm:128
+msgid "An older {lang} name · {contents}"
+msgstr "Et eldre navn på {lang} · {contents}"
+
+#: src/plugins/shared-folder/rules/report.scm:129
+msgid "The {lang} name · {contents}"
+msgstr "Navnet på {lang} · {contents}"
+
+#: src/plugins/shared-folder/rules/report.scm:139
+msgid "Shared from the file manager (Samba) as {name}"
+msgstr "Delt fra filbehandleren (Samba) som {name}"
+
+#: src/plugins/shared-folder/rules/report.scm:140
+msgid "Shared by GNOME Sharing, which is running"
+msgstr "Delt av GNOME Deling, som kjører"
+
+#: src/plugins/shared-folder/rules/report.scm:141
+msgid "Shared by Samba as {name}"
+msgstr "Delt av Samba som {name}"
+
+#: src/plugins/shared-folder/rules/report.scm:160
+msgid "Your folders could not be looked at"
+msgstr "Mappene dine kunne ikke ses på"
+
+#: src/plugins/shared-folder/rules/report.scm:161
+msgid "Nothing is known about the shared folder."
+msgstr "Ingenting er kjent om den delte mappa."
+
+#: src/plugins/shared-folder/rules/report.scm:169
+#: src/plugins/shared-folder/rules/report.scm:183
+msgid "{n} folder is shared on the local network"
+msgid_plural "{n} folders are shared on the local network"
+msgstr[0] "{n} mappe deles på lokalnettet"
+msgstr[1] "{n} mapper deles på lokalnettet"
+
+#: src/plugins/shared-folder/rules/report.scm:173
+msgid "{n} more folder looks like the shared folder"
+msgid_plural "{n} more folders look like the shared folder"
+msgstr[0] "{n} mappe til ligner på den delte mappa"
+msgstr[1] "{n} mapper til ligner på den delte mappa"
+
+#: src/plugins/shared-folder/rules/report.scm:176
+msgid "There is one folder for sharing"
+msgstr "Det er én mappe for deling"
+
+#: src/plugins/shared-folder/rules/report.scm:178
+msgid ""
+"What is shared is best kept in one folder, so it is clear what others on the "
+"network can read. A folder that looks like the shared folder is a "
+"recommendation: it may be kept on purpose."
+msgstr "Det som deles, holdes best i én mappe, så det er klart hva andre på nettet kan lese. En mappe som ligner på den delte mappa, er en anbefaling: den kan være beholdt med vilje."
+
+#: src/plugins/shared-folder/rules/report.scm:186
+msgid "Check that the sharing is meant"
+msgstr "Sjekk at delingen er ment"
+
+#: src/plugins/shared-folder/rules/report.scm:189
+msgid "{folder} is the folder for sharing"
+msgstr "{folder} er mappa for deling"
+
+#: src/plugins/shared-folder/rules/report.scm:191
+msgid "No folder is shared"
+msgstr "Ingen mappe deles"
+
+#: src/plugins/shared-folder/rules/report.scm:192
+msgid "Nothing needs attention"
+msgstr "Ingenting trenger oppmerksomhet"
+
+#: src/plugins/shared-folder/rules/report.scm:193
+msgid "The Folder for Sharing"
+msgstr "Mappa for deling"
+
+#: src/plugins/shared-folder/rules/report.scm:194
+msgid ""
+"The one your desktop uses for what you share with others on the local "
+"network."
+msgstr "Den skrivebordet ditt bruker for det du deler med andre på lokalnettet."
+
+#: src/plugins/shared-folder/rules/report.scm:197
+msgid "Folders That Look Like It"
+msgstr "Mapper som ligner på den"
+
+#: src/plugins/shared-folder/rules/report.scm:198
+msgid ""
+"Their names are ones the folder for sharing has had, in another language or "
+"an older version. Two such folders make it unclear which one is shared."
+msgstr "Navnene deres er navn mappa for deling har hatt, på et annet språk eller i en eldre versjon. To slike mapper gjør det uklart hvilken som deles."
+
+#: src/plugins/shared-folder/rules/report.scm:202
+msgid "Shared on the Local Network"
+msgstr "Delt på lokalnettet"
+
+#: src/plugins/shared-folder/rules/report.scm:203
+msgid ""
+"Others on the same network can read what is in these folders, at home or on "
+"a café's Wi-Fi."
+msgstr "Andre på samme nett kan lese det som ligger i disse mappene, hjemme eller på kaféens trådløse nett."
+
+#: src/plugins/shared-folder/rules/report.scm:207
+msgid ""
+"Folders shared from the file manager could not be read: your account may not "
+"read where Samba keeps them."
+msgstr "Mapper delt fra filbehandleren kunne ikke leses: kontoen din får ikke lese der Samba holder dem."
+
+#: src/plugins/shared-folder/rules/report.scm:210
+msgid "There were more than could be listed."
+msgstr "Det var flere enn det var plass til å vise."

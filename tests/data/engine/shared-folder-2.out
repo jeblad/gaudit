@@ -1,0 +1,8 @@
+(report (verdict warning) (title (msgn "{n} folder is shared on the local network" "{n} folders are shared on the local network" 2 (n 2))) (description (msg "What is shared is best kept in one folder, so it is clear what others on the network can read. A folder that looks like the shared folder is a recommendation: it may be kept on purpose.")))
+(home (verdict warning) (title (msgn "{n} folder is shared on the local network" "{n} folders are shared on the local network" 2 (n 2))) (subtitle (msg "Check that the sharing is meant")))
+(section (title (msg "The Folder for Sharing")) (description (msg "The one your desktop uses for what you share with others on the local network.")))
+(row (verdict ok) (title (text "~/Offentlig")) (subtitle (msg "The folder for sharing, set in your user folder settings")))
+(section (title (msg "Shared on the Local Network")) (description (msg "Others on the same network can read what is in these folders, at home or on a café's Wi-Fi.")))
+(row (verdict warning) (title (text "/home/u/Offentlig")) (subtitle (msg "Shared by GNOME Sharing, which is running")))
+(row (verdict warning) (title (text "/home/u/Bilder")) (subtitle (msg "Shared from the file manager (Samba) as {name}" (name "Bilder"))))
+(note (msg "Folders shared from the file manager could not be read: your account may not read where Samba keeps them."))

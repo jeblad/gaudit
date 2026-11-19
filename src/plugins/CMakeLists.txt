@@ -11,3 +11,4 @@
 add_subdirectory(firewall)
 add_subdirectory(updates)
 add_subdirectory(private-files)
+add_subdirectory(shared-folder)

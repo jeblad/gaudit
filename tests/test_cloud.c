@@ -46,7 +46,7 @@ int main(void)
     char dir[] = "/tmp/gaudit-cloudc-XXXXXX";
     if (mkdtemp(dir) == NULL)
         return 1;
-    char p[2048], text[2048];
+    char p[4096], text[2048];
     snprintf(p, sizeof p, "mkdir -p -- '%s/home/.dropbox' '%s/home/Dropbox' '%s/root'", dir, dir, dir);
     CHECK(system(p) == 0);
     snprintf(p, sizeof p, "%s/home/.dropbox/info.json", dir);
@@ -80,18 +80,61 @@ int main(void)
     }
     CHECK(folders == 1 && ends == 1 && bad == 0);
     /* The unit: written once, the same again is fine, another file of that
-     * name is left alone, a remote name that may not go into a file is refused. */
+     * name is left alone; a remote name that may not go into a file, a
+     * gathering folder or a language not in the table, a disk not known,
+     * are refused. */
     char result[16];
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "jotta-crypt", result, sizeof result) == 0
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "1", "jotta-crypt",
+                                  "Skytjenester", "nb", result, sizeof result) == 0
           && strcmp(result, "written") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "jotta-crypt", result, sizeof result) == 0
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "1", "jotta-crypt",
+                                  "Skytjenester", "nb", result, sizeof result) == 0
           && strcmp(result, "unchanged") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "jotta", result, sizeof result) == 1
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "1", "jotta", "Skytjenester", "nb",
+                                  result, sizeof result) == 1
           && strcmp(result, "foreign") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "a b; rm", result, sizeof result) == 2
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "shared", "1", "jotta", "Skytjenester", "nb",
+                                  result, sizeof result) == 0
+          && strcmp(result, "written") == 0);
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "0", "a b; rm", "Cloud", "en", result,
+                                  sizeof result) == 2
           && strcmp(result, "refused") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "nowhere", "jotta", result, sizeof result) == 2);
-    /* The collection then reports it, not mounted. */
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "0", "jotta", "../../tmp", "en", result,
+                                  sizeof result) == 2);
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "0", "jotta", "Cloud", "xx", result,
+                                  sizeof result) == 2);
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "both", "0", "jotta", "Cloud", "en", result,
+                                  sizeof result) == 2);
+    CHECK(gaudit_cloud_write_unit(home, "nowhere", "private", "0", "jotta", "Cloud", "en", result,
+                                  sizeof result) == 2);
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "2", "jotta", "Cloud", "en", result,
+                                  sizeof result) == 2);
+    /* The texts: quoted where the name has spaces, the shareable one
+     * without the encrypted folder. */
+    {
+        const gaudit_cloud_setup_service *sv = gaudit_cloud_setup_find("dropbox");
+        char folder[128], unit[4096], uname[96];
+        gaudit_cloud_folder_name(sv, GAUDIT_CLOUD_DISK_SHARED, 1, "privat", "delt mappe", folder,
+                                 sizeof folder);
+        CHECK(strcmp(folder, "Dropbox (delt mappe)") == 0);
+        CHECK(gaudit_cloud_unit_text(sv, GAUDIT_CLOUD_DISK_SHARED, "dropbox", "Skytjenester",
+                                     folder, unit, sizeof unit) == 0
+              && strstr(unit, "rclone mount dropbox: \"%h/Skytjenester/Dropbox (delt mappe)\" "
+                              "--umask 077") != NULL
+              && strstr(unit, "--exclude /Encrypted/**") != NULL);
+        gaudit_cloud_folder_name(sv, GAUDIT_CLOUD_DISK_PRIVATE, 0, "privat", "delt mappe", folder,
+                                 sizeof folder);
+        CHECK(strcmp(folder, "Dropbox") == 0);   /* alone: no words */
+        CHECK(gaudit_cloud_unit_text(sv, GAUDIT_CLOUD_DISK_PRIVATE, "dropbox-crypt", "Cloud", folder,
+                                     unit, sizeof unit) == 0
+              && strstr(unit, "--exclude") == NULL
+              && strstr(unit, "rclone mount dropbox-crypt: \"%h/Cloud/Dropbox\"") != NULL);
+        CHECK(gaudit_cloud_unit_text(sv, GAUDIT_CLOUD_DISK_PRIVATE, "dropbox", "Cloud", "a\"b", unit,
+                                     sizeof unit) == -1);
+        gaudit_cloud_unit_name(sv, GAUDIT_CLOUD_DISK_PRIVATE, uname, sizeof uname);
+        CHECK(strcmp(uname, "rclone-dropbox-private.service") == 0);
+    }
+    /* The collection then reports them, not mounted, at the folder with spaces. */
     out = NULL;
     len = 0;
     mem = open_memstream(&out, &len);
@@ -101,10 +144,66 @@ int main(void)
     int units = 0;
     for (char *line = strtok(out, "\n"); line != NULL; line = strtok(NULL, "\n"))
         if (gaudit_cloud_parse_unit(line, &ul) == 3)
-            units += strcmp(ul.file, "rclone-jottacloud.service") == 0 && !ul.mounted
-                     && strcmp(ul.path, "~/Cloud/Jottacloud") == 0;
+            units += (strcmp(ul.file, "rclone-jottacloud-private.service") == 0 && !ul.mounted
+                      && strcmp(ul.path, "~/Skytjenester/Jottacloud (privat)") == 0)
+                     + (strcmp(ul.file, "rclone-jottacloud-shared.service") == 0
+                        && strcmp(ul.path, "~/Skytjenester/Jottacloud (delt mappe)") == 0);
     free(out);
-    CHECK(units == 1);
+    CHECK(units == 2);
+
+    /* Files outside the encrypted folder: counted by a stand-in for rclone
+     * that checks what it is asked and lists names; the encrypted folder's
+     * own entry is not counted, no name comes out, and a remote the
+     * collection does not find, or one without encryption, is refused. */
+    snprintf(p, sizeof p, "mkdir -p -- '%s/home/.config/rclone'", dir);
+    CHECK(system(p) == 0);
+    snprintf(p, sizeof p, "%s/home/.config/rclone/rclone.conf", dir);
+    if ((fp = fopen(p, "w")) != NULL) {
+        fputs("[box]\ntype = dropbox\ntoken = SECRET\n\n[box-crypt]\ntype = crypt\n"
+              "remote = box:Encrypted\npassword = XXX\n\n[plain]\ntype = dropbox\n", fp);
+        fclose(fp);
+    }
+    char fake[1100], fail[1100];
+    snprintf(fake, sizeof fake, "%s/rclone", dir);
+    snprintf(fail, sizeof fail, "%s/rclone-fails", dir);
+    if ((fp = fopen(fake, "w")) != NULL) {
+        fputs("#!/bin/sh\n"
+              "[ \"$1 $2 $3 $4 $5 $6\" = 'lsf --max-depth 1 --exclude /Encrypted/** box:' ] || exit 3\n"
+              "[ -n \"$HOME\" ] || exit 4\n"
+              "printf 'secret-name.txt\\nEncrypted/\\nPhotos/\\n'\n", fp);
+        fclose(fp);
+    }
+    if ((fp = fopen(fail, "w")) != NULL) {
+        fputs("#!/bin/sh\nexit 1\n", fp);
+        fclose(fp);
+    }
+    snprintf(p, sizeof p, "chmod 0755 -- '%s' '%s'", fake, fail);
+    CHECK(system(p) == 0);
+    {
+        gaudit_cloud_plain_line pl;
+        char *pout = NULL;
+        size_t plen = 0;
+        FILE *pm = open_memstream(&pout, &plen);
+        CHECK(gaudit_cloud_plain(home, mounts, "box", fake, pm) == 0);
+        CHECK(gaudit_cloud_plain(home, mounts, "box", fail, pm) == 0);
+        CHECK(gaudit_cloud_plain(home, mounts, "plain", fake, pm) == 1);   /* not encrypted */
+        CHECK(gaudit_cloud_plain(home, mounts, "nowhere", fake, pm) == 1);
+        CHECK(gaudit_cloud_plain(home, mounts, "-x", fake, pm) == 1);
+        fclose(pm);
+        CHECK(pout != NULL && strstr(pout, "secret-name") == NULL && strstr(pout, "SECRET") == NULL);
+        char *second = pout != NULL ? strchr(pout, '\n') : NULL;
+        if (second != NULL)
+            *second++ = '\0';
+        CHECK(pout != NULL && gaudit_cloud_parse_plain(pout, &pl) == 0 && pl.status == 0
+              && pl.count == 2 && !pl.more && strcmp(pl.remote, "box") == 0);
+        CHECK(second != NULL && gaudit_cloud_parse_plain(second, &pl) == 0 && pl.status == 1
+              && pl.count == 0);
+        free(pout);
+        CHECK(gaudit_cloud_parse_plain("(cloud-plain (remote \"a b\") (status 0) (count 1) (more 0))",
+                                       NULL) == -1);
+        CHECK(gaudit_cloud_parse_plain("(cloud-plain (remote \"box\") (status 3) (count 1) (more 0))",
+                                       NULL) == -1);
+    }
 
     snprintf(p, sizeof p, "rm -rf -- '%s'", dir);
     if (system(p) != 0)

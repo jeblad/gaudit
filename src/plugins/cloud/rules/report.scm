@@ -9,6 +9,7 @@
 ;;          (collection (cloud-folder (client "...") (service "...") (how N) (path "...")
 ;;                                    (name "...") (encrypted 0|1) (gathered 0|1)) ...
 ;;                      (cloud-unit (file "...") (path "...") (enabled 0|1) (mounted 0|1)) ...
+;;                      (cloud-plain (remote "...") (status 0|1|2) (count N) (more 0|1)) ...
 ;;                      (cloud-end (count N) (more 0|1) (gathering "...") (gatherings N)
 ;;                                 (rclone-unreadable 0|1))))
 ;;
@@ -16,6 +17,13 @@
 ;; login (rclone-*.service). One whose folder is not mounted is a warning:
 ;; until it is, the folder is an ordinary empty one, and what is put there
 ;; stays on the computer, unencrypted.
+;;
+;; A cloud-plain is what a click on the service's page found (never the
+;; collection itself, since it asks the service): how many files and
+;; folders the remote has at its top level outside the encrypted folder.
+;; Status 0 counted, 1 could not be found out, 2 the encryption covers the
+;; whole remote. Any is a warning: the provider can read them (John,
+;; 2026-11-19).
 ;;
 ;; how: 0 the client's settings name the folder, 1 its default folder is
 ;; there, 2 installed only, 3 mounted, 4 set up without a folder of its own.
@@ -165,17 +173,20 @@
 ;; The services Set Up With rclone knows; the same as
 ;; gaudit_cloud_setup_services in common/cloud-io.c (tests/test_cloud.c
 ;; holds them equal).
-(define setup-services '("jottacloud"))
+(define setup-services '("jottacloud" "dropbox"))
 
-;; The services rclone reaches that nothing mounts at login: no unit by the
-;; name the setup page gives it (rclone-<service>.service), and none that
-;; mounts where rclone has it mounted now. A unit there but switched off is
-;; its own row, so it counts as there.
+;; The services rclone reaches that nothing mounts at login: no unit by a
+;; name the setup page gives it (rclone-<service>.service, or -private and
+;; -shared for an encrypted service's two disks), and none that mounts
+;; where rclone has it mounted now. A unit there but switched off is its
+;; own row, so it counts as there.
 (define (unit-for? units f)
-  (let ((file (string-append "rclone-" (field f 'service) ".service")))
+  (let* ((base (string-append "rclone-" (field f 'service)))
+         (files (list (string-append base ".service") (string-append base "-private.service")
+                      (string-append base "-shared.service"))))
     (let loop ((us units))
       (cond ((null? us) #f)
-            ((or (equal? (field (car us) 'file) file)
+            ((or (member (field (car us) 'file) files)
                  (and (not (equal? (field f 'path) ""))
                       (equal? (field (car us) 'path) (field f 'path))))
              #t)
@@ -203,6 +214,87 @@
 (define (home verdict title subtitle)
   (list 'home (list 'verdict verdict) (list 'title title) (list 'subtitle subtitle)))
 
+;; --- Files outside the encrypted folder ---------------------------------------
+
+;; Each item with its position in the collection, which a fix names.
+(define (numbered items)
+  (let loop ((items items) (n 0) (acc '()))
+    (if (null? items)
+        (reverse acc)
+        (loop (cdr items) (+ n 1) (cons (cons n (car items)) acc)))))
+
+(define (plain-for items remote)
+  (cond ((null? items) #f)
+        ((and (eq? (car (car items)) 'cloud-plain) (equal? (field (car items) 'remote) remote))
+         (car items))
+        (else (plain-for (cdr items) remote))))
+
+(define (has-unit? units file)
+  (cond ((null? units) #f)
+        ((equal? (field (car units) 'file) file) #t)
+        (else (has-unit? (cdr units) file))))
+
+;; The shareable disk set up: the plain remote reachable from here too.
+(define (shareable? units f)
+  (has-unit? units (string-append "rclone-" (field f 'service) "-shared.service")))
+
+(define (service-name f) (list 'text (list-ref (service-of (field f 'service)) 1)))
+
+(define (plain-title f p)
+  (let ((sv (list 'service (service-name f))))
+    (cond ((not p) (msg (G_ "Unencrypted files at {service} are not looked for") sv))
+          ((= (field p 'status) 2) (msg (G_ "Everything at {service} is under the encryption") sv))
+          ((= (field p 'status) 1)
+           (msg (G_ "Whether {service} has unencrypted files could not be found out") sv))
+          ((= (field p 'more) 1)
+           (msg (G_ "More than {n} files and folders at {service} are not encrypted")
+                (list 'n (field p 'count)) sv))
+          ((> (field p 'count) 0)
+           (msgn (N_ "{n} file or folder at {service} is not encrypted"
+                     "{n} files and folders at {service} are not encrypted")
+                 (field p 'count) (list 'n (field p 'count)) sv))
+          (else (msg (G_ "Everything at {service} is in the encrypted folder") sv)))))
+
+(define (plain-verdict p)
+  (cond ((not p) 'advice)
+        ((= (field p 'status) 1) 'unknown)
+        ((and (= (field p 'status) 0) (> (field p 'count) 0)) 'warning)
+        (else 'ok)))
+
+(define (plain-subtitle f p units)
+  (cond ((not p)
+         (msg (G_ "Only the private disk is set up here · looking asks the service, so it is done only when you ask")))
+        ((= (field p 'status) 2)
+         (msg (G_ "Files that are not encrypted cannot be told apart from here")))
+        ((= (field p 'status) 1)
+         (msg (G_ "The service did not answer, or rclone could not reach it")))
+        ((= (field p 'count) 0) (msg (G_ "The provider sees only that encrypted files are there")))
+        ((shareable? units f)
+         (msg (G_ "The provider can read them · move what is to be private to the private disk")))
+        (else
+         (msg (G_ "The provider can read them · set up the shareable disk, to share them or to move them to the private one")))))
+
+;; Every encrypted rclone finding, numbered, with what a click found.
+(define (plain-rows items units)
+  (let loop ((ns (numbered items)) (out '()))
+    (if (null? ns)
+        (reverse out)
+        (let* ((n (car (car ns))) (f (cdr (car ns))))
+          (if (and (eq? (car f) 'cloud-folder) (equal? (field f 'client) "rclone")
+                   (= (field f 'encrypted) 1))
+              (let ((p (plain-for items (field f 'name))))
+                ;; Not looked for, with the shareable disk there: the files
+                ;; are in sight already.
+                (if (and (not p) (shareable? units f))
+                    (loop (cdr ns) out)
+                    (loop (cdr ns)
+                          (cons (list 'row (list 'verdict (plain-verdict p))
+                                      (list 'title (plain-title f p))
+                                      (list 'subtitle (plain-subtitle f p units))
+                                      (list 'fix 'plain (list 'item n)))
+                                out))))
+              (loop (cdr ns) out))))))
+
 ;; --- The report -----------------------------------------------------------------
 
 (define (report input)
@@ -213,6 +305,8 @@
          (units (keep (lambda (i) (eq? (car i) 'cloud-unit)) items))
          (unmounted (keep (lambda (u) (= (field u 'mounted) 0)) units))
          (no-login (not-at-login found units))
+         (plain (plain-rows items units))
+         (plain-warned (keep (lambda (r) (eq? (cadr (assq 'verdict (cdr r))) 'warning)) plain))
          (login-warned (keep (lambda (f) (not (eq? (list-ref (client-of (field f 'client)) 5) 'local)))
                              found))
          (with-folder (keep (lambda (f) (and (not (equal? (field f 'path) ""))
@@ -227,7 +321,7 @@
                     (list 'description (msg (G_ "Nothing is known about the cloud services on this computer.")))))
         (append
          (list (list 'report
-                     (list 'verdict (if (> (+ nw (length unmounted)) 0) 'warning 'ok))
+                     (list 'verdict (if (> (+ nw (length unmounted) (length plain-warned)) 0) 'warning 'ok))
                      (list 'title
                            (cond ((> (length login-warned) 0)
                                   (msgn (N_ "{n} cloud program logs in in a way that is not documented"
@@ -249,6 +343,10 @@
                       (msg (G_ "{path} is not mounted") (list 'path (field u 'path)))
                       (msg (G_ "What is put there now stays on this computer, unencrypted"))))
               unmounted)
+         (map (lambda (r)
+                (home 'warning (cadr (assq 'title (cdr r)))
+                      (msg (G_ "The provider can read them"))))
+              plain-warned)
          (if (> nw 0)
              (map (lambda (f)
                     (home 'warning (title-of f)
@@ -256,7 +354,7 @@
                               (msg (G_ "The provider can read what is sent there"))
                               (msg (G_ "Where its login is made, and who keeps it, is not documented")))))
                   warned)
-             (if (> (length unmounted) 0)
+             (if (> (+ (length unmounted) (length plain-warned)) 0)
                  '()
                  (list (home 'ok
                          (if (= n 0)
@@ -301,6 +399,12 @@
                                           (msg (G_ "rclone reaches it as {name}. Mounted by hand, the folder is empty after each login until it is mounted again, and what is put there meanwhile stays on this computer.")
                                                (list 'name (field f 'name)))))))
                         no-login)))
+             '())
+         ;; Files outside the encrypted folder, looked for on a click.
+         (if (> (length plain) 0)
+             (cons (list 'section (list 'title (msg (G_ "Files Not Encrypted")))
+                         (list 'description (msg (G_ "Files at a service outside its encrypted folder, which the provider can read. Looking for them asks the service, so it is done only when you ask, on its page."))))
+                   plain)
              '())
          ;; Gathering them: one place to see what leaves the computer.
          (if (or (> (length scattered) 0) (> (field end 'gatherings) 1))

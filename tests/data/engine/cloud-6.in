@@ -1,0 +1,10 @@
+(input (system (host "h") (distro "Ubuntu 26.10") (backend "debian"))
+ (level "quick")
+ (collection
+  (cloud-folder (client "rclone") (service "dropbox") (how 3) (path "~/Cloud/Dropbox") (name "dropbox") (encrypted 1) (via "dropbox-crypt") (gathered 1))
+  (cloud-folder (client "rclone") (service "jottacloud") (how 3) (path "~/Cloud/Jottacloud") (name "jotta") (encrypted 1) (via "jotta-crypt") (gathered 1))
+  (cloud-unit (file "rclone-dropbox-private.service") (path "~/Cloud/Dropbox") (enabled 1) (mounted 1))
+  (cloud-unit (file "rclone-jottacloud.service") (path "~/Cloud/Jottacloud") (enabled 1) (mounted 1))
+  (cloud-plain (remote "dropbox") (status 0) (count 3) (more 0))
+  (cloud-plain (remote "jotta") (status 0) (count 0) (more 0))
+  (cloud-end (count 2) (more 0) (gathering "~/Cloud") (gatherings 1) (rclone-unreadable 0))))

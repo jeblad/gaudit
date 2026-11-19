@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* Cloud Services in the GUI: checking its collection's lines, and the page
- * that helps set up a cloud service with rclone. It has no fix that moves
+ * that helps set up a cloud service with rclone. No page of it moves
  * anything: a cloud folder is moved in its own program's settings. */
 #pragma once
 
@@ -16,5 +16,9 @@ gboolean gaudit_cloud_line_ok(const char *line, gboolean *last);
 /* Setting a cloud service up with rclone: the plugin's own page in its
  * folder, after the report. */
 AdwNavigationPage *gaudit_cloud_setup_page(void);
+
+/* A report row's page: "plain", files outside the encrypted folder, with
+ * the button that asks the service; built from collection line item. */
+AdwNavigationPage *gaudit_cloud_fix_page(const char *fix_id, GPtrArray *lines, guint item);
 
 G_END_DECLS

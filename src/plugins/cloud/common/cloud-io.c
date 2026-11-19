@@ -122,6 +122,48 @@ int gaudit_cloud_format_unit(const gaudit_cloud_unit_line *u, char *buf, size_t 
     return n > 0 && (size_t)n < len ? 0 : -1;
 }
 
+int gaudit_cloud_format_plain(const gaudit_cloud_plain_line *p, char *buf, size_t len)
+{
+    char remote[sizeof p->remote * 2 + 3];
+    if (!gaudit_cloud_plain_remote(p->remote) || p->status < 0 || p->status > 2
+        || p->count > GAUDIT_CLOUD_PLAIN_MAX
+        || gaudit_probe_quote(remote, sizeof remote, p->remote) != 0)
+        return -1;
+    int n = snprintf(buf, len, "(cloud-plain (remote %s) (status %d) (count %u) (more %d))\n",
+                     remote, p->status, p->count, p->more ? 1 : 0);
+    return n > 0 && (size_t)n < len ? 0 : -1;
+}
+
+int gaudit_cloud_parse_plain(const char *line, gaudit_cloud_plain_line *p)
+{
+    if (line == NULL)
+        return -1;
+    size_t len = strlen(line);
+    if (len > 0 && line[len - 1] == '\n')
+        len--;
+    if (len == 0 || len >= MAX_LINE || memchr(line, '\n', len) != NULL)
+        return -1;
+    char copy[MAX_LINE];
+    memcpy(copy, line, len);
+    copy[len] = '\0';
+    long long st, co, mo;
+    gaudit_cloud_plain_line pp = { 0 };
+    const gaudit_sexpr_field f[] = {
+        { .key = "remote", .text = pp.remote, .text_len = sizeof pp.remote },
+        { .key = "status", .value = &st, .max = 2 },
+        { .key = "count", .value = &co, .max = GAUDIT_CLOUD_PLAIN_MAX },
+        { .key = "more", .value = &mo, .max = 1 },
+    };
+    if (gaudit_sexpr_parse(copy, "cloud-plain", f, 4) != 0 || !gaudit_cloud_plain_remote(pp.remote))
+        return -1;
+    pp.status = (int)st;
+    pp.count = (unsigned)co;
+    pp.more = (int)mo;
+    if (p != NULL)
+        *p = pp;
+    return 0;
+}
+
 int gaudit_cloud_parse_unit(const char *line, gaudit_cloud_unit_line *u)
 {
     if (line == NULL)
@@ -158,6 +200,10 @@ const gaudit_cloud_setup_service gaudit_cloud_setup_services[] = {
     /* rclone.org/jottacloud (2026-11-19): a single-use personal login token,
      * traded by rclone config; rclone authorize is not supported. */
     { "jottacloud", "Jottacloud", "jottacloud", "https://www.jottacloud.com/web/secure", "jotta" },
+    /* rclone.org/dropbox (2026-11-19): logs in through the browser, Dropbox
+     * sending the answer back to rclone at 127.0.0.1:53682; rclone's own
+     * app key, shared by everyone who uses rclone. */
+    { "dropbox", "Dropbox", "dropbox", NULL, "dropbox" },
 };
 const unsigned gaudit_cloud_setup_services_count =
     sizeof gaudit_cloud_setup_services / sizeof gaudit_cloud_setup_services[0];
@@ -182,39 +228,88 @@ int gaudit_cloud_plain_remote(const char *name)
     return 1;
 }
 
-void gaudit_cloud_unit_name(const gaudit_cloud_setup_service *s, char *out, size_t len)
+const char *gaudit_cloud_disk_word(gaudit_cloud_disk disk)
 {
-    snprintf(out, len, "rclone-%s.service", s->id);
+    return disk == GAUDIT_CLOUD_DISK_SHARED ? "shared" : "private";
 }
 
-int gaudit_cloud_unit_text(const gaudit_cloud_setup_service *s, const char *remote, char *out,
-                           size_t len)
+int gaudit_cloud_disk_parse(const char *word)
 {
-    if (s == NULL || !gaudit_cloud_plain_remote(remote))
+    for (int d = GAUDIT_CLOUD_DISK_PRIVATE; word != NULL && d <= GAUDIT_CLOUD_DISK_SHARED; d++)
+        if (strcmp(word, gaudit_cloud_disk_word((gaudit_cloud_disk)d)) == 0)
+            return d;
+    return -1;
+}
+
+void gaudit_cloud_unit_name(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
+                            char *out, size_t len)
+{
+    snprintf(out, len, "rclone-%s-%s.service", s->id, gaudit_cloud_disk_word(disk));
+}
+
+void gaudit_cloud_folder_name(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
+                              int paired, const char *private_word, const char *shared_word,
+                              char *out, size_t len)
+{
+    if (!paired)
+        snprintf(out, len, "%s", s->name);
+    else
+        snprintf(out, len, "%s (%s)", s->name,
+                 disk == GAUDIT_CLOUD_DISK_PRIVATE ? private_word : shared_word);
+}
+
+int gaudit_cloud_plain_folder(const char *name)
+{
+    size_t n = name != NULL ? strlen(name) : 0;
+    if (n == 0 || n > 64 || strcmp(name, ".") == 0 || strcmp(name, "..") == 0)
+        return 0;
+    for (const unsigned char *c = (const unsigned char *)name; *c != '\0'; c++)
+        if (*c < 0x20 || *c == 0x7f || *c == '/' || *c == '"' || *c == '\\' || *c == '%'
+            || *c == '\'')
+            return 0;
+    return 1;
+}
+
+int gaudit_cloud_unit_text(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
+                           const char *remote, const char *gathering, const char *folder,
+                           char *out, size_t len)
+{
+    if (s == NULL || !gaudit_cloud_plain_remote(remote) || !gaudit_cloud_plain_folder(gathering)
+        || !gaudit_cloud_plain_folder(folder))
         return -1;
     const char *fusermount = access("/usr/bin/fusermount3", X_OK) == 0 ? "/usr/bin/fusermount3"
                                                                         : "/usr/bin/fusermount";
+    char unit[96], at[160];
+    gaudit_cloud_unit_name(s, disk, unit, sizeof unit);
+    /* Quoted, for a name with spaces; systemd takes the quotes away. */
+    snprintf(at, sizeof at, "\"%%h/%s/%s\"", gathering, folder);
+    const char *what = disk == GAUDIT_CLOUD_DISK_PRIVATE
+                           ? "# The private disk: encrypted before anything leaves the computer.\n"
+                           : "# The shareable disk: the account as it is, without the encrypted\n"
+                             "# folder, which the private disk shows.\n";
     int n = snprintf(out, len,
                      "# Made by gAudit: mounts %s at each login. Remove it with\n"
-                     "# systemctl --user disable --now rclone-%s.service, then delete this file.\n"
+                     "# systemctl --user disable --now %s, then delete this file.\n"
+                     "%s"
                      "[Unit]\n"
-                     "Description=rclone mount of %s at ~/Cloud/%s\n"
+                     "Description=rclone mount of %s at ~/%s/%s\n"
                      "\n"
                      "[Service]\n"
                      "Type=notify\n"
-                     "ExecStartPre=/usr/bin/mkdir -p %%h/Cloud/%s\n"
-                     "ExecStartPre=/usr/bin/chmod 0700 %%h/Cloud/%s\n"
-                     "ExecStart=/usr/bin/rclone mount %s: %%h/Cloud/%s --volname %s --umask 077 "
-                     "--vfs-cache-mode full --dir-cache-time 1h\n"
-                     "ExecStop=%s -u %%h/Cloud/%s\n"
+                     "ExecStartPre=/usr/bin/mkdir -p %s\n"
+                     "ExecStartPre=/usr/bin/chmod 0700 %s\n"
+                     "ExecStart=/usr/bin/rclone mount %s: %s --umask 077 "
+                     "--vfs-cache-mode full --dir-cache-time 1h%s\n"
+                     "ExecStop=%s -u %s\n"
                      "# Read-only whenever nothing is mounted, so nothing is saved there by mistake.\n"
-                     "ExecStopPost=-/usr/bin/chmod 0500 %%h/Cloud/%s\n"
+                     "ExecStopPost=-/usr/bin/chmod 0500 %s\n"
                      "Restart=on-failure\n"
                      "RestartSec=30\n"
                      "\n"
                      "[Install]\n"
                      "WantedBy=default.target\n",
-                     s->name, s->id, s->name, s->name, s->name, s->name, remote, s->name, s->name,
-                     fusermount, s->name, s->name);
+                     folder, unit, what, folder, gathering, folder, at, at, remote, at,
+                     disk == GAUDIT_CLOUD_DISK_SHARED ? " --exclude /Encrypted/**" : "", fusermount,
+                     at, at);
     return n > 0 && (size_t)n < len ? 0 : -1;
 }

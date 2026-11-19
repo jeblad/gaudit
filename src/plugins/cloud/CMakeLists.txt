@@ -14,7 +14,7 @@ target_include_directories(gaudit-orchestrator PRIVATE ${CMAKE_CURRENT_SOURCE_DI
                                                    ${PROJECT_SOURCE_DIR}/src/probe
                                                    ${PROJECT_SOURCE_DIR}/src/backend)
 target_sources(gaudit PRIVATE plugin.c gaudit-cloud.c)
-target_include_directories(gaudit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(gaudit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${PROJECT_SOURCE_DIR}/src/backend)
 
 # Its own text domain: the report.
 gaudit_plugin_domain(gaudit-cloud ${CMAKE_CURRENT_SOURCE_DIR}/po)

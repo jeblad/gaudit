@@ -1,0 +1,7 @@
+(input (system (host "h") (distro "Ubuntu 26.10") (backend "debian"))
+ (level "quick")
+ (collection
+  (cloud-folder (client "rclone") (service "dropbox") (how 3) (path "~/Skytjenester/Dropbox (privat)") (name "dropbox") (encrypted 1) (via "dropbox-crypt") (gathered 1))
+  (cloud-unit (file "rclone-dropbox-private.service") (path "~/Skytjenester/Dropbox (privat)") (enabled 1) (mounted 1))
+  (cloud-unit (file "rclone-dropbox-shared.service") (path "~/Skytjenester/Dropbox (delt mappe)") (enabled 1) (mounted 0))
+  (cloud-end (count 1) (more 0) (gathering "~/Skytjenester") (gatherings 1) (rclone-unreadable 0))))

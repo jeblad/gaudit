@@ -68,7 +68,7 @@ int main(void)
 
     if (mkdtemp(dir) == NULL)
         return 1;
-    char home[1024], root[1024], mounts[1024], text[4096];
+    char home[1024], root[1024], mounts[1024], text[8192];
     snprintf(home, sizeof home, "%s/home", dir);
     snprintf(root, sizeof root, "%s/root", dir);
     snprintf(mounts, sizeof mounts, "%s/mounts", dir);
@@ -96,7 +96,9 @@ int main(void)
              "/dev/sda1 / ext4 rw 0 0\n"
              "pCloud.fs %s/pCloudDrive fuse.pCloud.fs rw 0 0\n"
              "jotta: %s/Cloud/Jotta fuse.rclone rw 0 0\n"
-             "secret: %s/Cloud/Google fuse.rclone rw 0 0\n", home, home, home);
+             "secret: %s/Cloud/Google\\040(privat) fuse.rclone rw 0 0\n"
+             "gdrive: %s/Cloud/Google\\040(delt\\040mappe) fuse.rclone rw 0 0\n",
+             home, home, home, home);
     put("mounts", text);
     mk("root/usr/bin");
     put("root/usr/bin/jotta-cli", "");
@@ -117,12 +119,13 @@ int main(void)
     CHECK((f = find(&s, "megasync", "mega")) != NULL && f->how == GAUDIT_CLOUD_DEFAULT);
     CHECK((f = find(&s, "tresorit", "tresorit")) != NULL && f->how == GAUDIT_CLOUD_INSTALLED);
     CHECK((f = find(&s, "pcloud", "pcloud")) != NULL && f->how == GAUDIT_CLOUD_MOUNT);
-    /* rclone: drive covered by the crypt, and mounted through it; s3 left
-     * out; jottacloud mounted itself. */
-    snprintf(want, sizeof want, "%s/Cloud/Google", home);
+    /* rclone: drive covered by the crypt, and mounted through it (both
+     * mounted: the private one, the encrypted, counts; the mount list's
+     * \040 is a space); s3 left out; jottacloud mounted itself. */
+    snprintf(want, sizeof want, "%s/Cloud/Google (privat)", home);
     CHECK((f = find(&s, "rclone", "google-drive")) != NULL && f->how == GAUDIT_CLOUD_MOUNT
           && strcmp(f->path, want) == 0 && f->encrypted && strcmp(f->name, "gdrive") == 0
-          && strcmp(f->via, "secret") == 0);
+          && strcmp(f->via, "secret") == 0 && strcmp(f->under, "vault") == 0);
     CHECK((f = find(&s, "rclone", "jottacloud")) != NULL && f->how == GAUDIT_CLOUD_MOUNT && f->gathered
           && !f->encrypted && f->via[0] == '\0');
     for (unsigned i = 0; i < s.n; i++)
@@ -141,7 +144,28 @@ int main(void)
     CHECK(gaudit_cloud_find(&w, &s) == 0 && s.rclone_unreadable && s.gathering_count == 2
           && find(&s, "rclone", "google-drive") == NULL);
 
+    /* Where new cloud folders go: the language of user-dirs.locale, unless
+     * there is exactly one gathering folder already. */
+    const gaudit_cloud_language *lang;
+    char g[64];
+    CHECK(strcmp(gaudit_cloud_language_for("no_NO")->lang, "nb") == 0);
+    CHECK(strcmp(gaudit_cloud_language_for("sv_SE.UTF-8")->gathering, "Molntjänster") == 0);
+    CHECK(strcmp(gaudit_cloud_language_for("de_DE")->lang, "en") == 0);
+    CHECK(strcmp(gaudit_cloud_language_for(NULL)->lang, "en") == 0);
+    CHECK(gaudit_cloud_gathering_known("SkyTjenester") && gaudit_cloud_gathering_known("Skytenester")
+          && !gaudit_cloud_gathering_known("Sky") && !gaudit_cloud_gathering_known(".."));
+    gaudit_cloud_choose(home, g, sizeof g, &lang);   /* two there, no locale file */
+    CHECK(strcmp(g, "Cloud") == 0 && strcmp(lang->lang, "en") == 0);
+    put("home/.config/user-dirs.locale", "nb_NO\n");
+    gaudit_cloud_choose(home, g, sizeof g, &lang);
+    CHECK(strcmp(g, "Skytjenester") == 0 && strcmp(lang->lang, "nb") == 0);
     char cmd[1200];
+    snprintf(cmd, sizeof cmd, "rmdir -- '%s/home/SkyTjenester'", dir);
+    if (system(cmd) != 0)
+        failures++;
+    gaudit_cloud_choose(home, g, sizeof g, &lang);   /* one there: that one */
+    CHECK(strcmp(g, "Cloud") == 0 && strcmp(lang->lang, "nb") == 0);
+
     snprintf(cmd, sizeof cmd, "rm -rf -- '%s'", dir);
     if (system(cmd) != 0)
         failures++;

@@ -7,9 +7,11 @@
  * jotta-cli and rclone. Of rclone only each remote's name and type are
  * read (and a crypt remote's "remote"), never anything else in its
  * section, which holds tokens and passwords. Also the gathering folder
- * (~/Cloud, ~/SkyTjenester), and whether each folder is under it.
+ * (~/Cloud, ~/Skytjenester, ...), and whether each folder is under it.
  * Plain C, for the collection. */
 #pragma once
+
+#include <stddef.h>
 
 #define GAUDIT_CLOUD_MAX 48
 
@@ -32,6 +34,8 @@ typedef struct {
     char name[128];     /* an rclone remote's name, an Insync account; "" for none */
     int encrypted;      /* an rclone crypt remote over it: encrypted before it leaves */
     char via[128];      /* ... that crypt remote's name, "" for none */
+    char under[128];    /* ... and the folder on this remote it keeps its files in
+                           ("Encrypted"), "" when it is the remote's whole root */
     int gathered;       /* the folder is under the gathering folder */
 } gaudit_cloud_finding;
 
@@ -69,3 +73,38 @@ int gaudit_cloud_find(const gaudit_cloud_where *where, gaudit_cloud_findings *ou
  * how many, at most max, each copied into out[i] (absolute, plain). For
  * tests. */
 unsigned gaudit_cloud_dropbox_paths(const char *json, char out[][512], unsigned max);
+
+/* --- The gathering folder's name, and the words for the two disks -------------
+ *
+ * Named in the language the user's folders were named in at the first
+ * login (~/.config/user-dirs.locale, which stays when the language changes
+ * later), so they sit with the other folders (John, 2026-11-19). English
+ * for any language not in the table. The words name an encrypted service's
+ * two mounts: "Dropbox (privat)" and "Dropbox (delt mappe)", the service
+ * first so both sort together. */
+typedef struct {
+    const char *lang;        /* "en", "nb", ... */
+    const char *gathering;   /* "Cloud", "Skytjenester", ... */
+    const char *private_word;
+    const char *shared_word;
+} gaudit_cloud_language;
+
+extern const gaudit_cloud_language gaudit_cloud_languages[];
+extern const unsigned gaudit_cloud_languages_count;
+
+/* The language for a locale as user-dirs.locale gives it ("nb_NO"); the
+ * first entry, English, for NULL or one not in the table. */
+const gaudit_cloud_language *gaudit_cloud_language_for(const char *locale);
+/* The language by its code ("nb"), NULL for one not in the table. */
+const gaudit_cloud_language *gaudit_cloud_language_by_code(const char *lang);
+
+/* 1 when name is a gathering folder's name the program knows: every
+ * language's, and those seen before (SkyTjenester). */
+int gaudit_cloud_gathering_known(const char *name);
+
+/* Where new cloud folders go in this home: the gathering folder there is,
+ * when there is exactly one, else the one named in the language of
+ * user-dirs.locale; and that language, for the disks' words. gathering
+ * gets the name alone ("Skytjenester"). */
+void gaudit_cloud_choose(const char *home, char *gathering, size_t len,
+                         const gaudit_cloud_language **lang);

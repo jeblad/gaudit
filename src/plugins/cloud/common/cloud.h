@@ -50,9 +50,11 @@ int gaudit_cloud_parse_unit(const char *line, gaudit_cloud_unit_line *u);
 
 typedef struct {
     const char *id;          /* the collection's service id */
-    const char *name;        /* shown, never translated; also the folder under ~/Cloud */
+    const char *name;        /* shown, never translated; also its folder's name */
     const char *type;        /* rclone's storage type */
-    const char *token_page;  /* where the login token is made */
+    const char *token_page;  /* where the login token is made; NULL: rclone logs in
+                                through the browser, the answer coming back to it on
+                                this computer (127.0.0.1) */
     const char *remote;      /* the name suggested for the remote */
 } gaudit_cloud_setup_service;
 
@@ -68,14 +70,46 @@ int gaudit_cloud_plain_remote(const char *name);
  *
  * The text shown on the page and the file written come from this one
  * function, so they cannot drift apart. ~/.config/systemd/user/
- * rclone-<id>.service, mounting <remote>: at ~/Cloud/<name>. */
+ * rclone-<id>-private.service or rclone-<id>-shared.service, mounting a
+ * remote under the gathering folder (John, 2026-11-19). The user chooses
+ * the private disk, the crypt remote; the shareable one, the plain remote
+ * without the encrypted folder; or both. Alone, a disk is named as the
+ * service ("Dropbox"); side by side, with the words of the language
+ * ("Dropbox (privat)", "Dropbox (delt mappe)"). Units made before, named
+ * rclone-<id>.service, are still recognised. */
 
-/* The unit's file name ("rclone-jottacloud.service"). */
-void gaudit_cloud_unit_name(const gaudit_cloud_setup_service *s, char *out, size_t len);
+typedef enum {
+    GAUDIT_CLOUD_DISK_PRIVATE = 0,
+    GAUDIT_CLOUD_DISK_SHARED,
+} gaudit_cloud_disk;
 
-/* The unit's text; 0, or -1 when the remote is not plain or it does not fit. */
-int gaudit_cloud_unit_text(const gaudit_cloud_setup_service *s, const char *remote, char *out,
-                           size_t len);
+/* "private", "shared" and back; -1 for anything else. */
+const char *gaudit_cloud_disk_word(gaudit_cloud_disk disk);
+int gaudit_cloud_disk_parse(const char *word);
+
+/* The unit's file name ("rclone-dropbox-private.service"). */
+void gaudit_cloud_unit_name(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
+                            char *out, size_t len);
+
+/* The mount point's name under the gathering folder: the service's name
+ * alone, or paired (both disks there) with the words of the language given
+ * ("Dropbox (privat)"); the words are passed so this file needs nothing of
+ * the backend's. */
+void gaudit_cloud_folder_name(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
+                              int paired, const char *private_word, const char *shared_word,
+                              char *out, size_t len);
+
+/* A name that may go into a unit between double quotes and a path: not
+ * empty, not "." or "..", no '/', '"', '\\', '%', '\'' or control
+ * characters, at most 64 bytes. */
+int gaudit_cloud_plain_folder(const char *name);
+
+/* The unit's text: remote (the crypt remote for the private disk), mounted
+ * at ~/<gathering>/<folder>; 0, or -1 when a name is not plain or it does
+ * not fit. */
+int gaudit_cloud_unit_text(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
+                           const char *remote, const char *gathering, const char *folder,
+                           char *out, size_t len);
 
 /* What the collection says of a unit of gAudit's kind (rclone-*.service):
  *
@@ -90,6 +124,31 @@ struct gaudit_cloud_unit_line {
     int enabled, mounted;
 };
 int gaudit_cloud_format_unit(const gaudit_cloud_unit_line *u, char *buf, size_t len);
+
+/* --- Files outside the encrypted folder, looked for on a click ------------------
+ *
+ * Asked of the service itself, so only when the user presses the button on
+ * its page, never in the collection (John, 2026-11-19): "gaudit-orchestrator
+ * cloud plain <remote>" lists the remote's top level without the encrypted
+ * folder, with rclone, and counts; no name leaves it. The GUI puts the line
+ * into the cached collection, so the report and Home follow.
+ *
+ *   (cloud-plain (remote "...") (status 0|1|2) (count N) (more 0|1))
+ *
+ * status 0 counted; 1 could not be found out (no connection, the service
+ * did not answer, rclone failed); 2 cannot be told apart, the encryption
+ * covering the whole remote. count: files and folders at the top level,
+ * at most GAUDIT_CLOUD_PLAIN_MAX; more: there were more than that. */
+#define GAUDIT_CLOUD_PLAIN_MAX 1000
+typedef struct {
+    char remote[128];
+    int status;
+    unsigned count;
+    int more;
+} gaudit_cloud_plain_line;
+int gaudit_cloud_format_plain(const gaudit_cloud_plain_line *p, char *buf, size_t len);
+/* 0, or -1 for anything else. */
+int gaudit_cloud_parse_plain(const char *line, gaudit_cloud_plain_line *p);
 
 #ifdef __cplusplus
 }

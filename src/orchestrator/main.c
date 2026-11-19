@@ -884,8 +884,12 @@ int main(int argc, char *argv[])
      * mode is confined, and what it starts inherits the filter. */
     if (argc == 2 && strcmp(argv[1], "session") == 0)
         return run_session();
-    int network = argc >= 3 && strcmp(argv[1], "updates") == 0
-                  && (strcmp(argv[2], "latest") == 0 || strcmp(argv[2], "download") == 0);
+    /* The network only where a click asked the service or a vendor
+     * (John, 2026-11-16 and 2026-11-19). */
+    int network = argc >= 3
+                  && ((strcmp(argv[1], "updates") == 0
+                       && (strcmp(argv[2], "latest") == 0 || strcmp(argv[2], "download") == 0))
+                      || (strcmp(argv[1], "cloud") == 0 && strcmp(argv[2], "plain") == 0));
     if (gaudit_sandbox_restrict_net(network) != 0)
         return 1;
     if (argc == 1)

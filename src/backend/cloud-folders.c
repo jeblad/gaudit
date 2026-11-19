@@ -16,8 +16,63 @@
 
 #define MAX_FILE (1 << 20)
 
-/* The names a gathering folder has been seen with (John, 2026-11-19). */
-static const char *const gathering_names[] = { "Cloud", "SkyTjenester" };
+/* The gathering folder by language (John, 2026-11-19), and the words for an
+ * encrypted service's two mounts. nb and nn reviewed by John; da and sv
+ * from him too, to be checked by a native speaker before they ship. */
+const gaudit_cloud_language gaudit_cloud_languages[] = {
+    { "en", "Cloud", "private", "shared folder" },
+    { "nb", "Skytjenester", "privat", "delt mappe" },
+    { "nn", "Skytenester", "privat", "delt mappe" },
+    { "da", "Cloudtjenester", "privat", "delt mappe" },
+    { "sv", "Molntjänster", "privat", "delad mapp" },
+};
+const unsigned gaudit_cloud_languages_count =
+    sizeof gaudit_cloud_languages / sizeof gaudit_cloud_languages[0];
+
+/* Names a gathering folder has been seen with besides the table's. */
+static const char *const gathering_seen[] = { "SkyTjenester" };
+
+const gaudit_cloud_language *gaudit_cloud_language_by_code(const char *lang)
+{
+    for (unsigned i = 0; lang != NULL && i < gaudit_cloud_languages_count; i++)
+        if (strcmp(gaudit_cloud_languages[i].lang, lang) == 0)
+            return &gaudit_cloud_languages[i];
+    return NULL;
+}
+
+const gaudit_cloud_language *gaudit_cloud_language_for(const char *locale)
+{
+    char code[8] = "";
+    if (locale != NULL) {
+        size_t n = strcspn(locale, "_.@\n");
+        if (n > 0 && n < sizeof code)
+            memcpy(code, locale, n), code[n] = '\0';
+    }
+    if (strcmp(code, "no") == 0)   /* the old code for Norwegian, as Bokmål */
+        snprintf(code, sizeof code, "nb");
+    const gaudit_cloud_language *l = gaudit_cloud_language_by_code(code);
+    return l != NULL ? l : &gaudit_cloud_languages[0];
+}
+
+int gaudit_cloud_gathering_known(const char *name)
+{
+    for (unsigned i = 0; name != NULL && i < gaudit_cloud_languages_count; i++)
+        if (strcmp(gaudit_cloud_languages[i].gathering, name) == 0)
+            return 1;
+    for (size_t i = 0; name != NULL && i < sizeof gathering_seen / sizeof gathering_seen[0]; i++)
+        if (strcmp(gathering_seen[i], name) == 0)
+            return 1;
+    return 0;
+}
+
+/* Every known name, the table's then those seen: i from 0 until NULL. */
+static const char *gathering_name(size_t i)
+{
+    if (i < gaudit_cloud_languages_count)
+        return gaudit_cloud_languages[i].gathering;
+    i -= gaudit_cloud_languages_count;
+    return i < sizeof gathering_seen / sizeof gathering_seen[0] ? gathering_seen[i] : NULL;
+}
 
 static char *read_text(const char *path)
 {
@@ -55,6 +110,37 @@ static int exists(const char *path)
 {
     struct stat st;
     return lstat(path, &st) == 0;
+}
+
+/* One field of a /proc/self/mounts line, its octal escapes (\040 for a
+ * space) undone; the rest of the line after it. NULL when it does not fit. */
+static const char *mount_field(const char *at, char *out, size_t len)
+{
+    while (*at == ' ' || *at == '\t')
+        at++;
+    size_t n = 0;
+    while (*at != '\0' && *at != ' ' && *at != '\t' && *at != '\n') {
+        char c = *at++;
+        if (c == '\\' && at[0] >= '0' && at[0] <= '3' && at[1] >= '0' && at[1] <= '7'
+            && at[2] >= '0' && at[2] <= '7') {
+            c = (char)((at[0] - '0') * 64 + (at[1] - '0') * 8 + (at[2] - '0'));
+            at += 3;
+        }
+        if (n + 1 >= len)
+            return NULL;
+        out[n++] = c;
+    }
+    out[n] = '\0';
+    return n > 0 ? at : NULL;
+}
+
+/* A mounts line's source, mount point and type; 1 when all three are there. */
+static int mount_line(const char *line, char src[256], char dst[512], char fs[64])
+{
+    const char *at = mount_field(line, src, 256);
+    at = at != NULL ? mount_field(at, dst, 512) : NULL;
+    at = at != NULL ? mount_field(at, fs, 64) : NULL;
+    return at != NULL;
 }
 
 /* An absolute path without control characters. */
@@ -332,14 +418,19 @@ static void rclone(gaudit_cloud_findings *out, const char *home, const char *mou
             continue;
         const char *names[2] = { rs[i].name, covered[i] ? rs[by[i]].name : NULL };
         char mount[512] = "";
+        int crypt_mounted = 0;
         const char *line = mounts;
         while (line != NULL && *line != '\0') {
             char src[256], dst[512], fs[64];
-            if (sscanf(line, "%255s %511s %63s", src, dst, fs) == 3 && strcmp(fs, "fuse.rclone") == 0)
+            if (mount_line(line, src, dst, fs) && strcmp(fs, "fuse.rclone") == 0)
                 for (int k = 0; k < 2; k++)
                     if (names[k] != NULL && strncmp(src, names[k], strlen(names[k])) == 0
-                        && src[strlen(names[k])] == ':')
+                        && src[strlen(names[k])] == ':' && (k == 1 || !crypt_mounted)) {
+                        /* Both mounted (a private and a shareable disk): the
+                         * encrypted one is where the files are meant to go. */
                         snprintf(mount, sizeof mount, "%s", dst);
+                        crypt_mounted = k == 1;
+                    }
             line = strchr(line, '\n');
             if (line != NULL)
                 line++;
@@ -349,8 +440,20 @@ static void rclone(gaudit_cloud_findings *out, const char *home, const char *mou
             mount, rs[i].name);
         if (out->n > before) {
             out->f[out->n - 1].encrypted = covered[i];
-            if (covered[i])
-                snprintf(out->f[out->n - 1].via, sizeof out->f[0].via, "%s", rs[by[i]].name);
+            if (covered[i]) {
+                gaudit_cloud_finding *f = &out->f[out->n - 1];
+                snprintf(f->via, sizeof f->via, "%s", rs[by[i]].name);
+                /* "gdrive:vault/" -> "vault": where on the remote the
+                 * encrypted files are, slashes at either end left out. */
+                const char *u = strchr(rs[by[i]].remote, ':');
+                u = u != NULL ? u + 1 : "";
+                while (*u == '/')
+                    u++;
+                snprintf(f->under, sizeof f->under, "%s", u);
+                size_t ul = strlen(f->under);
+                while (ul > 0 && f->under[ul - 1] == '/')
+                    f->under[--ul] = '\0';
+            }
         }
     }
     free(mounts);
@@ -368,7 +471,7 @@ static void pcloud(gaudit_cloud_findings *out, const char *home, const char *mou
     const char *line = mounts;
     while (line != NULL && *line != '\0') {
         char src[256], dst[512], fs[64];
-        if (sscanf(line, "%255s %511s %63s", src, dst, fs) == 3 && strncmp(fs, "fuse", 4) == 0
+        if (mount_line(line, src, dst, fs) && strncmp(fs, "fuse", 4) == 0
             && strcmp(dst, want) == 0)
             mounted = 1;
         line = strchr(line, '\n');
@@ -390,8 +493,8 @@ static int mounted_at(const char *mounts_path, const char *path)
     int found = 0;
     const char *line = mounts;
     while (!found && line != NULL && *line != '\0') {
-        char src[256], dst[512];
-        if (sscanf(line, "%255s %511s", src, dst) == 2 && strcmp(dst, path) == 0)
+        char src[256], dst[512], fs[64];
+        if (mount_line(line, src, dst, fs) && strcmp(dst, path) == 0)
             found = 1;
         line = strchr(line, '\n');
         if (line != NULL)
@@ -399,6 +502,34 @@ static int mounted_at(const char *mounts_path, const char *path)
     }
     free(mounts);
     return found;
+}
+
+/* The remote and the mount point after "rclone mount " in a unit's
+ * ExecStart=: each a bare word or in double quotes (the program writes
+ * quotes around a name with spaces; systemd takes either). No escapes. */
+static int unit_args(const char *at, char rem[256], char target[512])
+{
+    char *outs[2] = { rem, target };
+    size_t lens[2] = { 256, 512 };
+    for (int k = 0; k < 2; k++) {
+        while (*at == ' ')
+            at++;
+        char end = ' ';
+        if (*at == '"')
+            end = '"', at++;
+        size_t n = 0;
+        while (*at != '\0' && *at != end) {
+            if (*at == '\\' || n + 1 >= lens[k])
+                return 0;
+            outs[k][n++] = *at++;
+        }
+        if (end == '"' && *at++ != '"')
+            return 0;
+        outs[k][n] = '\0';
+        if (n == 0)
+            return 0;
+    }
+    return 1;
 }
 
 static void units(gaudit_cloud_findings *out, const char *home, const char *mounts_path)
@@ -426,7 +557,7 @@ static void units(gaudit_cloud_findings *out, const char *home, const char *moun
                 continue;
             char *m = strstr(line, " mount ");
             char rem[256], target[512];
-            if (m != NULL && sscanf(m + 7, "%255s %511s", rem, target) == 2) {
+            if (m != NULL && unit_args(m + 7, rem, target)) {
                 if (strncmp(target, "%h/", 3) == 0)
                     snprintf(where, sizeof where, "%s%.*s", home, (int)(sizeof where - strlen(home) - 1), target + 2);
                 else
@@ -444,6 +575,30 @@ static void units(gaudit_cloud_findings *out, const char *home, const char *moun
         u->mounted = mounted_at(mounts_path, where);
     }
     closedir(d);
+}
+
+/* --- Where new cloud folders go ---------------------------------------------------- */
+
+void gaudit_cloud_choose(const char *home, char *gathering, size_t len,
+                         const gaudit_cloud_language **lang)
+{
+    char p[1024], locale[64] = "";
+    snprintf(p, sizeof p, "%s/.config/user-dirs.locale", home != NULL ? home : "");
+    char *text = home != NULL ? read_text(p) : NULL;
+    if (text != NULL)
+        snprintf(locale, sizeof locale, "%.*s", (int)strcspn(text, "\n"), text);
+    free(text);
+    const gaudit_cloud_language *l = gaudit_cloud_language_for(locale);
+    if (lang != NULL)
+        *lang = l;
+    const char *found = NULL;
+    unsigned count = 0;
+    for (size_t i = 0; home != NULL && gathering_name(i) != NULL; i++) {
+        snprintf(p, sizeof p, "%s/%s", home, gathering_name(i));
+        if (is_dir(p))
+            found = gathering_name(i), count++;
+    }
+    snprintf(gathering, len, "%s", count == 1 ? found : l->gathering);
 }
 
 /* --- The search ------------------------------------------------------------------- */
@@ -527,8 +682,8 @@ int gaudit_cloud_find(const gaudit_cloud_where *where, gaudit_cloud_findings *ou
     units(out, home, mounts);
 
     /* The gathering folder, and what is under it. */
-    for (size_t i = 0; i < sizeof gathering_names / sizeof gathering_names[0]; i++) {
-        snprintf(p, sizeof p, "%s/%s", home, gathering_names[i]);
+    for (size_t i = 0; gathering_name(i) != NULL; i++) {
+        snprintf(p, sizeof p, "%s/%s", home, gathering_name(i));
         if (is_dir(p)) {
             out->gathering_count++;
             if (out->gathering[0] == '\0')
@@ -536,8 +691,8 @@ int gaudit_cloud_find(const gaudit_cloud_where *where, gaudit_cloud_findings *ou
         }
     }
     for (unsigned i = 0; i < out->n; i++) {
-        for (size_t g = 0; g < sizeof gathering_names / sizeof gathering_names[0]; g++) {
-            snprintf(p, sizeof p, "%s/%s", home, gathering_names[g]);
+        for (size_t g = 0; gathering_name(g) != NULL; g++) {
+            snprintf(p, sizeof p, "%s/%s", home, gathering_name(g));
             if (out->f[i].path[0] != '\0' && within(out->f[i].path, p))
                 out->f[i].gathered = 1;
         }

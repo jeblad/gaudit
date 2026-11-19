@@ -5,10 +5,9 @@
  *   cloud plain <remote>          on a click only: how many files and folders
  *                                 the remote has outside its encrypted folder,
  *                                 asked of the service with rclone (network)
- *   cloud unit <service> <disk> <paired> <remote> <gathering> <lang>
+ *   cloud unit <service> <disk> <remote> <gathering> <lang>
  *                                 writes the systemd user unit that mounts it:
- *                                 disk private|shared, paired 1 when both
- *                                 disks are there, gathering a known
+ *                                 disk private|shared, gathering a known
  *                                 gathering folder's name, lang the language
  *                                 of the disks' words (cloud-folders.h)
  *
@@ -28,7 +27,7 @@ int gaudit_cloud_collect(const char *home, const char *mounts, const char *root,
  * unchanged, foreign (another file of that name), refused, error. 0 when
  * in place. */
 int gaudit_cloud_write_unit(const char *home, const char *service, const char *disk,
-                            const char *paired, const char *remote, const char *gathering, const char *lang,
+                            const char *remote, const char *gathering, const char *lang,
                             char *result, size_t len);
 
 /* Looks at remote's top level outside its encrypted folder, with the

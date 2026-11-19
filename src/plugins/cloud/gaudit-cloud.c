@@ -395,15 +395,9 @@ static int disks_of(Setup *s, gaudit_cloud_disk disks[2])
     return n;
 }
 
-/* Side by side: both chosen, or the shareable one added beside the private. */
-static gboolean paired(Setup *s)
-{
-    return s->model == MODEL_BOTH || s->adding;
-}
-
 static void folder_of(Setup *s, gaudit_cloud_disk disk, char *buf, size_t len)
 {
-    gaudit_cloud_folder_name(&services[s->service], disk, paired(s), s->lang->private_word,
+    gaudit_cloud_folder_name(&services[s->service], disk, s->lang->private_word,
                              s->lang->shared_word, buf, len);
 }
 
@@ -610,7 +604,7 @@ static void write_unit(Written *w)
     disks_of(s, disks);
     char remote[160];
     const char *args[] = { "cloud", "unit", services[s->service].id,
-                           gaudit_cloud_disk_word(disks[w->index]), paired(s) ? "1" : "0",
+                           gaudit_cloud_disk_word(disks[w->index]),
                            remote_of(s, disks[w->index], remote, sizeof remote), s->gathering,
                            s->lang->lang, NULL };
     gaudit_orchestrator_start(args, 30, FALSE, on_unit_line, on_unit_written, w);

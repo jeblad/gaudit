@@ -73,10 +73,12 @@ int gaudit_cloud_plain_remote(const char *name);
  * rclone-<id>-private.service or rclone-<id>-shared.service, mounting a
  * remote under the gathering folder (John, 2026-11-19). The user chooses
  * the private disk, the crypt remote; the shareable one, the plain remote
- * without the encrypted folder; or both. Alone, a disk is named as the
- * service ("Dropbox"); side by side, with the words of the language
- * ("Dropbox (privat)", "Dropbox (delt mappe)"). Units made before, named
- * rclone-<id>.service, are still recognised. */
+ * without the encrypted folder; or both. A disk is always named with its
+ * kind, in the words of the language ("Dropbox (privat)", "Dropbox (delt
+ * mappe)"), also when it is the only one, so the name says what it is
+ * wherever a file is saved, and adding the other never renames it (John,
+ * 2026-11-19). Units made before, named rclone-<id>.service, are still
+ * recognised. */
 
 typedef enum {
     GAUDIT_CLOUD_DISK_PRIVATE = 0,
@@ -91,13 +93,12 @@ int gaudit_cloud_disk_parse(const char *word);
 void gaudit_cloud_unit_name(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
                             char *out, size_t len);
 
-/* The mount point's name under the gathering folder: the service's name
- * alone, or paired (both disks there) with the words of the language given
- * ("Dropbox (privat)"); the words are passed so this file needs nothing of
- * the backend's. */
+/* The mount point's name under the gathering folder, with the words of the
+ * language given ("Dropbox (privat)"); the words are passed so this file
+ * needs nothing of the backend's. */
 void gaudit_cloud_folder_name(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
-                              int paired, const char *private_word, const char *shared_word,
-                              char *out, size_t len);
+                              const char *private_word, const char *shared_word, char *out,
+                              size_t len);
 
 /* A name that may go into a unit between double quotes and a path: not
  * empty, not "." or "..", no '/', '"', '\\', '%', '\'' or control

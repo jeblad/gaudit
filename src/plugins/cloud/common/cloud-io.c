@@ -248,14 +248,11 @@ void gaudit_cloud_unit_name(const gaudit_cloud_setup_service *s, gaudit_cloud_di
 }
 
 void gaudit_cloud_folder_name(const gaudit_cloud_setup_service *s, gaudit_cloud_disk disk,
-                              int paired, const char *private_word, const char *shared_word,
-                              char *out, size_t len)
+                              const char *private_word, const char *shared_word, char *out,
+                              size_t len)
 {
-    if (!paired)
-        snprintf(out, len, "%s", s->name);
-    else
-        snprintf(out, len, "%s (%s)", s->name,
-                 disk == GAUDIT_CLOUD_DISK_PRIVATE ? private_word : shared_word);
+    snprintf(out, len, "%s (%s)", s->name,
+             disk == GAUDIT_CLOUD_DISK_PRIVATE ? private_word : shared_word);
 }
 
 int gaudit_cloud_plain_folder(const char *name)

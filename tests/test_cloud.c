@@ -84,37 +84,35 @@ int main(void)
      * gathering folder or a language not in the table, a disk not known,
      * are refused. */
     char result[16];
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "1", "jotta-crypt",
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "jotta-crypt",
                                   "Skytjenester", "nb", result, sizeof result) == 0
           && strcmp(result, "written") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "1", "jotta-crypt",
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "jotta-crypt",
                                   "Skytjenester", "nb", result, sizeof result) == 0
           && strcmp(result, "unchanged") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "1", "jotta", "Skytjenester", "nb",
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "jotta", "Skytjenester", "nb",
                                   result, sizeof result) == 1
           && strcmp(result, "foreign") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "shared", "1", "jotta", "Skytjenester", "nb",
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "shared", "jotta", "Skytjenester", "nb",
                                   result, sizeof result) == 0
           && strcmp(result, "written") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "0", "a b; rm", "Cloud", "en", result,
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "a b; rm", "Cloud", "en", result,
                                   sizeof result) == 2
           && strcmp(result, "refused") == 0);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "0", "jotta", "../../tmp", "en", result,
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "jotta", "../../tmp", "en", result,
                                   sizeof result) == 2);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "0", "jotta", "Cloud", "xx", result,
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "jotta", "Cloud", "xx", result,
                                   sizeof result) == 2);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "both", "0", "jotta", "Cloud", "en", result,
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "both", "jotta", "Cloud", "en", result,
                                   sizeof result) == 2);
-    CHECK(gaudit_cloud_write_unit(home, "nowhere", "private", "0", "jotta", "Cloud", "en", result,
-                                  sizeof result) == 2);
-    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "private", "2", "jotta", "Cloud", "en", result,
+    CHECK(gaudit_cloud_write_unit(home, "nowhere", "private", "jotta", "Cloud", "en", result,
                                   sizeof result) == 2);
     /* The texts: quoted where the name has spaces, the shareable one
      * without the encrypted folder. */
     {
         const gaudit_cloud_setup_service *sv = gaudit_cloud_setup_find("dropbox");
         char folder[128], unit[4096], uname[96];
-        gaudit_cloud_folder_name(sv, GAUDIT_CLOUD_DISK_SHARED, 1, "privat", "delt mappe", folder,
+        gaudit_cloud_folder_name(sv, GAUDIT_CLOUD_DISK_SHARED, "privat", "delt mappe", folder,
                                  sizeof folder);
         CHECK(strcmp(folder, "Dropbox (delt mappe)") == 0);
         CHECK(gaudit_cloud_unit_text(sv, GAUDIT_CLOUD_DISK_SHARED, "dropbox", "Skytjenester",
@@ -122,13 +120,13 @@ int main(void)
               && strstr(unit, "rclone mount dropbox: \"%h/Skytjenester/Dropbox (delt mappe)\" "
                               "--umask 077") != NULL
               && strstr(unit, "--exclude /Encrypted/**") != NULL);
-        gaudit_cloud_folder_name(sv, GAUDIT_CLOUD_DISK_PRIVATE, 0, "privat", "delt mappe", folder,
+        gaudit_cloud_folder_name(sv, GAUDIT_CLOUD_DISK_PRIVATE, "privat", "delt mappe", folder,
                                  sizeof folder);
-        CHECK(strcmp(folder, "Dropbox") == 0);   /* alone: no words */
+        CHECK(strcmp(folder, "Dropbox (privat)") == 0);   /* always with its kind */
         CHECK(gaudit_cloud_unit_text(sv, GAUDIT_CLOUD_DISK_PRIVATE, "dropbox-crypt", "Cloud", folder,
                                      unit, sizeof unit) == 0
               && strstr(unit, "--exclude") == NULL
-              && strstr(unit, "rclone mount dropbox-crypt: \"%h/Cloud/Dropbox\"") != NULL);
+              && strstr(unit, "rclone mount dropbox-crypt: \"%h/Cloud/Dropbox (privat)\"") != NULL);
         CHECK(gaudit_cloud_unit_text(sv, GAUDIT_CLOUD_DISK_PRIVATE, "dropbox", "Cloud", "a\"b", unit,
                                      sizeof unit) == -1);
         gaudit_cloud_unit_name(sv, GAUDIT_CLOUD_DISK_PRIVATE, uname, sizeof uname);

@@ -69,20 +69,18 @@ int gaudit_cloud_collect(const char *home, const char *mounts, const char *root,
  * informed choice (the page showed the very text and asked): a new file,
  * or the same text again; never over another file, never through a link. */
 int gaudit_cloud_write_unit(const char *home, const char *service, const char *disk,
-                            const char *paired, const char *remote, const char *gathering, const char *lang,
+                            const char *remote, const char *gathering, const char *lang,
                             char *result, size_t len)
 {
     const gaudit_cloud_setup_service *s = gaudit_cloud_setup_find(service);
     const gaudit_cloud_language *l = gaudit_cloud_language_by_code(lang);
     int d = gaudit_cloud_disk_parse(disk);
-    int pair = paired != NULL && strcmp(paired, "1") == 0 ? 1
-               : paired != NULL && strcmp(paired, "0") == 0 ? 0 : -1;
     char text[4096], name[96], path[1024], folder[128];
     /* Only a gathering folder and words from the program's own table. */
-    if (s != NULL && l != NULL && d >= 0 && pair >= 0)
-        gaudit_cloud_folder_name(s, (gaudit_cloud_disk)d, pair, l->private_word, l->shared_word,
-                                 folder, sizeof folder);
-    if (s == NULL || l == NULL || d < 0 || pair < 0 || !gaudit_cloud_gathering_known(gathering)
+    if (s != NULL && l != NULL && d >= 0)
+        gaudit_cloud_folder_name(s, (gaudit_cloud_disk)d, l->private_word, l->shared_word, folder,
+                                 sizeof folder);
+    if (s == NULL || l == NULL || d < 0 || !gaudit_cloud_gathering_known(gathering)
         || gaudit_cloud_unit_text(s, (gaudit_cloud_disk)d, remote, gathering, folder, text,
                                   sizeof text) != 0) {
         snprintf(result, len, "refused");
@@ -286,10 +284,10 @@ int gaudit_cloud_mode(int argc, char *argv[])
         return gaudit_cloud_collect(pw->pw_dir, NULL, NULL, stdout);
     if (argc == 4 && strcmp(argv[2], "plain") == 0)
         return gaudit_cloud_plain(pw->pw_dir, NULL, argv[3], NULL, stdout);
-    if (argc == 9 && strcmp(argv[2], "unit") == 0) {
+    if (argc == 8 && strcmp(argv[2], "unit") == 0) {
         char result[16];
-        gaudit_cloud_write_unit(pw->pw_dir, argv[3], argv[4], argv[5], argv[6], argv[7], argv[8],
-                                result, sizeof result);
+        gaudit_cloud_write_unit(pw->pw_dir, argv[3], argv[4], argv[5], argv[6], argv[7], result,
+                                sizeof result);
         printf("(cloud-unit-written (result \"%s\"))\n", result);
         return fflush(stdout) == 0 ? 0 : 1;
     }

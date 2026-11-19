@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 23:18+0100\n"
+"POT-Creation-Date: 2026-11-19 23:27+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,21 +86,21 @@ msgid ""
 "terminal, then open this page again."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:450
+#: src/plugins/cloud/gaudit-cloud.c:444
 #, c-format
 msgid ""
 "Last, make a folder for it under ~/%s, where the cloud folders are gathered, "
 "and mount it there. Run these in a terminal:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:452
+#: src/plugins/cloud/gaudit-cloud.c:446
 #, c-format
 msgid ""
 "Last, make two folders for it under ~/%s, where the cloud folders are "
 "gathered, and mount one disk in each. Run these in a terminal:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:471
+#: src/plugins/cloud/gaudit-cloud.c:465
 msgid ""
 "--vfs-cache-mode full keeps a copy of what is used on this computer, and --"
 "dir-cache-time remembers the lists of files for an hour: without them, Files "
@@ -110,7 +110,7 @@ msgid ""
 "To mount it each time you log in, rclone's own documentation shows how."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:485
+#: src/plugins/cloud/gaudit-cloud.c:479
 #, c-format
 msgid ""
 "The account is then two disks. %s is private: what you put there is "
@@ -120,7 +120,7 @@ msgid ""
 "with you shows there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:495
+#: src/plugins/cloud/gaudit-cloud.c:489
 #, c-format
 msgid ""
 "%s is shareable: the account as it is, without the encrypted folder. The "
@@ -128,14 +128,14 @@ msgid ""
 "others share with you shows there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:501
+#: src/plugins/cloud/gaudit-cloud.c:495
 msgid ""
 "Only the private disk is mounted. Files at the service from before, outside "
 "the encrypted folder, are not shown here, and the provider can read them. "
 "The report can look for them, when you ask."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:506
+#: src/plugins/cloud/gaudit-cloud.c:500
 msgid ""
 "To make a file private, move it from the shareable disk to the private one "
 "in the file manager. It is then encrypted, and deleted from the shareable "
@@ -144,76 +144,76 @@ msgid ""
 "use, stays where it is until you move it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:512
+#: src/plugins/cloud/gaudit-cloud.c:506
 msgid ""
 "--exclude leaves the encrypted folder out of the shareable disk, so what is "
 "there is not shown twice, once as unreadable names."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:565
+#: src/plugins/cloud/gaudit-cloud.c:559
 #, c-format
 msgid ""
 "A file named %s is there already, and it is not this one, so it was left as "
 "it is."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:567
+#: src/plugins/cloud/gaudit-cloud.c:561
 #, c-format
 msgid "%s could not be written."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:580
+#: src/plugins/cloud/gaudit-cloud.c:574
 msgid "Written."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:580
+#: src/plugins/cloud/gaudit-cloud.c:574
 msgid "Both written."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:581
+#: src/plugins/cloud/gaudit-cloud.c:575
 msgid "It was there already, the same."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:582
+#: src/plugins/cloud/gaudit-cloud.c:576
 msgid "They were there already, the same."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:583
+#: src/plugins/cloud/gaudit-cloud.c:577
 msgid ""
 "Now stop the mount started by hand, if it runs, and switch the service on. "
 "Run these in a terminal:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:585
+#: src/plugins/cloud/gaudit-cloud.c:579
 msgid ""
 "Now stop the mounts started by hand, if they run, and switch the services "
 "on. Run these in a terminal:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:598
+#: src/plugins/cloud/gaudit-cloud.c:592
 msgid ""
 "It then mounts the folder at each login, and starts it again if it stops."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:599
+#: src/plugins/cloud/gaudit-cloud.c:593
 msgid ""
 "They then mount the folders at each login, and start them again if they stop."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:601 src/plugins/cloud/gaudit-cloud.c:715
-#: src/plugins/cloud/gaudit-cloud.c:812 src/plugins/cloud/gaudit-cloud.c:842
-#: src/plugins/cloud/gaudit-cloud.c:919
+#: src/plugins/cloud/gaudit-cloud.c:595 src/plugins/cloud/gaudit-cloud.c:709
+#: src/plugins/cloud/gaudit-cloud.c:806 src/plugins/cloud/gaudit-cloud.c:836
+#: src/plugins/cloud/gaudit-cloud.c:913
 msgid "Check"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:632
+#: src/plugins/cloud/gaudit-cloud.c:626
 msgid ""
 "Then mount it by hand after each login, with the command above. Until it is "
 "mounted, the folder is an ordinary empty folder on this computer: what is "
 "put there stays here, and is not encrypted."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:651
+#: src/plugins/cloud/gaudit-cloud.c:645
 msgid ""
 "Optional: mount it at each login. A mount started by hand ends when you log "
 "out, and until it is mounted again, the folder is an ordinary empty folder: "
@@ -221,7 +221,7 @@ msgid ""
 "service file makes it mount by itself. This is the file, and where it goes:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:656
+#: src/plugins/cloud/gaudit-cloud.c:650
 msgid ""
 "Optional: mount them at each login. A mount started by hand ends when you "
 "log out, and until it is mounted again, the folder is an ordinary empty "
@@ -230,86 +230,86 @@ msgid ""
 "the files, and where they go:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:666
+#: src/plugins/cloud/gaudit-cloud.c:660
 msgid ""
 "The file also makes the folder read-only whenever nothing is mounted there, "
 "so nothing can be saved in it by mistake and stay on this computer "
 "unencrypted. While it is mounted, you can use it as any other folder."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:669
+#: src/plugins/cloud/gaudit-cloud.c:663
 msgid ""
 "The program writes this file and nothing else, only when you press the "
 "button. It never writes over another file of that name."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:671
+#: src/plugins/cloud/gaudit-cloud.c:665
 msgid ""
 "The program writes these files and nothing else, only when you press the "
 "button. It never writes over another file of the same name."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:673
+#: src/plugins/cloud/gaudit-cloud.c:667
 msgid "Skip"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:674
+#: src/plugins/cloud/gaudit-cloud.c:668
 msgid "Write the File"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:674
+#: src/plugins/cloud/gaudit-cloud.c:668
 msgid "Write the Files"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:690
+#: src/plugins/cloud/gaudit-cloud.c:684
 msgid "Run rclone config again, and answer like this:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:697
+#: src/plugins/cloud/gaudit-cloud.c:691
 msgid "The folder Encrypted on the remote you just made; rclone makes it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:700
+#: src/plugins/cloud/gaudit-cloud.c:694
 msgid "The password: let rclone make one."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:701
+#: src/plugins/cloud/gaudit-cloud.c:695
 msgid "128 is secure; more is fine too."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:702
+#: src/plugins/cloud/gaudit-cloud.c:696
 msgid "Use the password rclone made."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:703
+#: src/plugins/cloud/gaudit-cloud.c:697
 msgid "The second password, the salt: let rclone make it too."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:710
+#: src/plugins/cloud/gaudit-cloud.c:704
 msgid ""
 "If something goes wrong half way, remove the half-made setup with rclone "
 "config delete and its name, and start again: rclone saves as it goes."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:712
+#: src/plugins/cloud/gaudit-cloud.c:706
 msgid ""
 "Write both passwords down and keep them somewhere safe, apart from this "
 "computer, such as a password manager. Without them the encrypted files "
 "cannot be read by anyone, you included, and nobody can recover them."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:751
+#: src/plugins/cloud/gaudit-cloud.c:745
 msgid "How will you use it? It is your choice:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:752
+#: src/plugins/cloud/gaudit-cloud.c:746
 msgid ""
 "Private: what you put there is encrypted before it leaves the computer, so "
 "the provider cannot read it. rclone does it with a second setup over the "
 "first, and you keep the passwords. Recommended."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:755
+#: src/plugins/cloud/gaudit-cloud.c:749
 msgid ""
 "It encrypts what is in the files and what they are called. The service still "
 "sees how large each file is, when it was changed and uploaded, and how many "
@@ -317,59 +317,59 @@ msgid ""
 "files private, but does not hide that they are there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:759
+#: src/plugins/cloud/gaudit-cloud.c:753
 msgid ""
 "Shareable: the account as it is. The provider can read what is there, it can "
 "be shared with others, and what others share with you shows there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:761
+#: src/plugins/cloud/gaudit-cloud.c:755
 msgid ""
 "Both: two folders side by side, one of each. Choose it when the account has "
 "files already, or you share with others: you then move what is to be private "
 "yourself."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:764
+#: src/plugins/cloud/gaudit-cloud.c:758
 msgid "Shareable"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:764
+#: src/plugins/cloud/gaudit-cloud.c:758
 msgid "Both"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:765
+#: src/plugins/cloud/gaudit-cloud.c:759
 msgid "Private"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:779 src/plugins/cloud/gaudit-cloud.c:815
+#: src/plugins/cloud/gaudit-cloud.c:773 src/plugins/cloud/gaudit-cloud.c:809
 msgid ""
 "Run rclone config in a terminal. It asks one thing at a time; answer like "
 "this:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:786 src/plugins/cloud/gaudit-cloud.c:821
+#: src/plugins/cloud/gaudit-cloud.c:780 src/plugins/cloud/gaudit-cloud.c:815
 msgid "Or another name, if that one is taken."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:788 src/plugins/cloud/gaudit-cloud.c:823
+#: src/plugins/cloud/gaudit-cloud.c:782 src/plugins/cloud/gaudit-cloud.c:817
 msgid ""
 "Type the name, not the number: the numbers in the list change between "
 "versions of rclone."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:790 src/plugins/cloud/gaudit-cloud.c:825
+#: src/plugins/cloud/gaudit-cloud.c:784 src/plugins/cloud/gaudit-cloud.c:819
 msgid "Press Enter, to leave it empty."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:795
+#: src/plugins/cloud/gaudit-cloud.c:789
 msgid ""
 "The browser opens at the service: log in there and allow rclone. rclone "
 "waits until it is done."
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Dropbox".
-#: src/plugins/cloud/gaudit-cloud.c:802
+#: src/plugins/cloud/gaudit-cloud.c:796
 #, c-format
 msgid ""
 "The login is made between %s and rclone on this computer: the browser hands "
@@ -379,47 +379,47 @@ msgid ""
 "it down at busy times."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:809 src/plugins/cloud/gaudit-cloud.c:839
+#: src/plugins/cloud/gaudit-cloud.c:803 src/plugins/cloud/gaudit-cloud.c:833
 msgid ""
 "rclone saves as it goes, also when stopped half way. If something went "
 "wrong, remove the half-made setup with rclone config delete and its name, "
 "and start again."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:828
+#: src/plugins/cloud/gaudit-cloud.c:822
 msgid "The kind of authentication"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:829
+#: src/plugins/cloud/gaudit-cloud.c:823
 msgid "Standard, the default."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:830
+#: src/plugins/cloud/gaudit-cloud.c:824
 msgid "The login token"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:830
+#: src/plugins/cloud/gaudit-cloud.c:824
 msgid "Paste the one you made"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:831
+#: src/plugins/cloud/gaudit-cloud.c:825
 msgid "Whether to use a non-standard device or mountpoint"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:832
+#: src/plugins/cloud/gaudit-cloud.c:826
 msgid ""
 "The Archive section. y only to reach the Sync or Backup section of the "
 "service's own app."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:837
+#: src/plugins/cloud/gaudit-cloud.c:831
 msgid ""
 "rclone trades the login token for a lasting one and keeps it in its own "
 "settings, ~/.config/rclone/rclone.conf. The program never sees either."
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Jottacloud".
-#: src/plugins/cloud/gaudit-cloud.c:866
+#: src/plugins/cloud/gaudit-cloud.c:860
 #, c-format
 msgid ""
 "Make a login token at %s: log in on its web site, open Settings, then "
@@ -428,55 +428,55 @@ msgid ""
 "logged in devices there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:873
+#: src/plugins/cloud/gaudit-cloud.c:867
 msgid "Open the Security Page"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:881
+#: src/plugins/cloud/gaudit-cloud.c:875
 msgid "I Have the Token"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:901
+#: src/plugins/cloud/gaudit-cloud.c:895
 msgid "rclone is installed."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:904
+#: src/plugins/cloud/gaudit-cloud.c:898
 msgid "rclone is still not installed. Install it, then open this page again."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:911
+#: src/plugins/cloud/gaudit-cloud.c:905
 msgid ""
 "rclone is installed, from the system's packages, so it gets updates with "
 "everything else."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:916
+#: src/plugins/cloud/gaudit-cloud.c:910
 msgid ""
 "rclone is not installed. Install it from the system's packages, so it gets "
 "updates with everything else:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:941
+#: src/plugins/cloud/gaudit-cloud.c:935
 msgid ""
 "The private disk is mounted at each login already. What is left is the "
 "shareable disk beside it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:953
+#: src/plugins/cloud/gaudit-cloud.c:947
 #, c-format
 msgid ""
 "rclone reaches it already, as %s, encrypted. What is left is choosing how to "
 "use it, and mounting it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:955
+#: src/plugins/cloud/gaudit-cloud.c:949
 #, c-format
 msgid ""
 "rclone reaches it already, as %s. What is left is choosing how to use it, "
 "and mounting it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:971
+#: src/plugins/cloud/gaudit-cloud.c:965
 #, c-format
 msgid ""
 "%s is set up on this computer already, with another program. Two programs "
@@ -485,18 +485,18 @@ msgid ""
 "under ~/%s, rclone cannot mount there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:985
+#: src/plugins/cloud/gaudit-cloud.c:979
 msgid "Set Up a Cloud Service With rclone"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:986
+#: src/plugins/cloud/gaudit-cloud.c:980
 msgid ""
 "rclone is a program that keeps a folder in step with a cloud service. Its "
 "source code is open, the system keeps it up to date, it logs in on this "
 "computer only, and it can encrypt your files before they leave."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:989
+#: src/plugins/cloud/gaudit-cloud.c:983
 msgid ""
 "This page goes through it step by step. You run the commands yourself, in a "
 "terminal: rclone asks its own questions and writes its own settings. The "
@@ -504,58 +504,58 @@ msgid ""
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Jottacloud".
-#: src/plugins/cloud/gaudit-cloud.c:1058
+#: src/plugins/cloud/gaudit-cloud.c:1052
 #, c-format
 msgid "%s: add the shareable disk"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1059
+#: src/plugins/cloud/gaudit-cloud.c:1053
 #, c-format
 msgid "%s: mount at each login"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1066
+#: src/plugins/cloud/gaudit-cloud.c:1060
 msgid ""
 "Every service this page knows how to set up is reached through rclone "
 "already, and mounted at each login. They are in the report."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1070
+#: src/plugins/cloud/gaudit-cloud.c:1064
 msgid "Which cloud service?"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1078
+#: src/plugins/cloud/gaudit-cloud.c:1072
 msgid "Next"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1167
+#: src/plugins/cloud/gaudit-cloud.c:1161
 msgid ""
 "It could not be found out. The service may not answer, this computer may "
 "have no connection, or rclone's login may need to be renewed: rclone config "
 "reconnect and the setup's name does that."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1171
+#: src/plugins/cloud/gaudit-cloud.c:1165
 msgid ""
 "The encryption covers all of the service, so files that are not encrypted "
 "cannot be told apart from here."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1174
+#: src/plugins/cloud/gaudit-cloud.c:1168
 msgid ""
 "Everything there is in the encrypted folder. The provider sees only that "
 "encrypted files are there."
 msgstr ""
 
 #. Translators: %u is a number, at most 1000.
-#: src/plugins/cloud/gaudit-cloud.c:1179
+#: src/plugins/cloud/gaudit-cloud.c:1173
 #, c-format
 msgid ""
 "More than %u files and folders there are not encrypted, so the provider can "
 "read them."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1181
+#: src/plugins/cloud/gaudit-cloud.c:1175
 #, c-format
 msgid "%u file or folder there is not encrypted, so the provider can read it."
 msgid_plural ""
@@ -563,7 +563,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1187
+#: src/plugins/cloud/gaudit-cloud.c:1181
 msgid ""
 "Move what is to be private from the shareable disk to the private one, in "
 "the file manager. It is then encrypted, and deleted from the shareable disk, "
@@ -571,7 +571,7 @@ msgid ""
 "shared stays where it is."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1191
+#: src/plugins/cloud/gaudit-cloud.c:1185
 msgid ""
 "To share them, or to make them private, set up the shareable disk: Set Up "
 "With rclone offers it. Then move what is to be private to the private disk, "
@@ -579,23 +579,23 @@ msgid ""
 "disk, though the provider may keep the deleted version for a while."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1196
+#: src/plugins/cloud/gaudit-cloud.c:1190
 msgid ""
 "The program moves nothing itself: what was shared with you, or what others "
 "use, stays where it is until you move it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1221
+#: src/plugins/cloud/gaudit-cloud.c:1215
 msgid "Asking the service…"
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Dropbox".
-#: src/plugins/cloud/gaudit-cloud.c:1250
+#: src/plugins/cloud/gaudit-cloud.c:1244
 #, c-format
 msgid "Unencrypted Files at %s"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1252
+#: src/plugins/cloud/gaudit-cloud.c:1246
 #, c-format
 msgid ""
 "rclone encrypts what goes through the private disk, and keeps it in one "
@@ -603,7 +603,7 @@ msgid ""
 "provider can read."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1256
+#: src/plugins/cloud/gaudit-cloud.c:1250
 #, c-format
 msgid ""
 "The program can ask %s how many files and folders lie outside the encrypted "
@@ -613,7 +613,7 @@ msgid ""
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Dropbox".
-#: src/plugins/cloud/gaudit-cloud.c:1273
+#: src/plugins/cloud/gaudit-cloud.c:1267
 #, c-format
 msgid "Look at %s"
 msgstr ""

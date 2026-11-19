@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 11:03+0100\n"
+"POT-Creation-Date: 2026-11-19 11:15+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -129,24 +129,30 @@ msgstr ""
 
 #: src/plugins/shared-folder/gaudit-shared-folder.c:332
 msgid ""
+"It is on another disk or a network folder, so it is not looked in here, and "
+"nothing is moved into or out of it. Whether to keep it is up to you."
+msgstr ""
+
+#: src/plugins/shared-folder/gaudit-shared-folder.c:335
+msgid ""
 "It is a link, not a folder of its own, so there is nothing to tidy here. "
 "Whether to keep it is up to you."
 msgstr ""
 
-#: src/plugins/shared-folder/gaudit-shared-folder.c:335
+#: src/plugins/shared-folder/gaudit-shared-folder.c:338
 msgid ""
 "Something shares one of the two folders, so nothing is moved or removed "
 "here: that would change what is shared without you seeing it. Decide first "
 "whether the sharing is meant."
 msgstr ""
 
-#: src/plugins/shared-folder/gaudit-shared-folder.c:339
+#: src/plugins/shared-folder/gaudit-shared-folder.c:342
 msgid ""
 "No folder for sharing is set up in your user folder settings, so there is "
 "nothing to tidy it into."
 msgstr ""
 
-#: src/plugins/shared-folder/gaudit-shared-folder.c:342
+#: src/plugins/shared-folder/gaudit-shared-folder.c:345
 msgid ""
 "Two folders for the same thing make it unclear which one is shared. The "
 "program can move what is in it into the folder in use, never replacing "
@@ -154,245 +160,249 @@ msgid ""
 msgstr ""
 
 #. Translators: %s is a list of shares or programs.
-#: src/plugins/shared-folder/gaudit-shared-folder.c:349
+#: src/plugins/shared-folder/gaudit-shared-folder.c:352
 #, c-format
 msgid "Shared by: %s"
 msgstr ""
 
-#: src/plugins/shared-folder/gaudit-shared-folder.c:352
+#: src/plugins/shared-folder/gaudit-shared-folder.c:355
 msgid "Tidy the Shared Folder"
 msgstr ""
 
-#: src/plugins/shared-folder/gaudit-shared-folder.c:370
+#: src/plugins/shared-folder/gaudit-shared-folder.c:373
 msgid "Check What Can Be Moved"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:63
+#: src/plugins/shared-folder/rules/report.scm:65
 msgid "English"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:64
+#: src/plugins/shared-folder/rules/report.scm:66
 msgid "Norwegian Bokmål"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:65
+#: src/plugins/shared-folder/rules/report.scm:67
 msgid "Norwegian Nynorsk"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:66
+#: src/plugins/shared-folder/rules/report.scm:68
 msgid "Danish"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:67
+#: src/plugins/shared-folder/rules/report.scm:69
 msgid "Swedish"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:68
+#: src/plugins/shared-folder/rules/report.scm:70
 msgid "Finnish"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:69
+#: src/plugins/shared-folder/rules/report.scm:71
 msgid "Icelandic"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:70
+#: src/plugins/shared-folder/rules/report.scm:72
 msgid "German"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:71
+#: src/plugins/shared-folder/rules/report.scm:73
 msgid "Dutch"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:72
+#: src/plugins/shared-folder/rules/report.scm:74
 msgid "French"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:73
+#: src/plugins/shared-folder/rules/report.scm:75
 msgid "Spanish"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:74
+#: src/plugins/shared-folder/rules/report.scm:76
 msgid "Italian"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:75
+#: src/plugins/shared-folder/rules/report.scm:77
 msgid "Portuguese"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:76
+#: src/plugins/shared-folder/rules/report.scm:78
 msgid "Polish"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:77
+#: src/plugins/shared-folder/rules/report.scm:79
 msgid "Ukrainian"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:78
+#: src/plugins/shared-folder/rules/report.scm:80
 msgid "Russian"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:103
+#: src/plugins/shared-folder/rules/report.scm:105
 msgid "The folder for sharing, set in your user folder settings"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:105
+#: src/plugins/shared-folder/rules/report.scm:107
 msgid "Set as the folder for sharing, but it is not there"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:106
+#: src/plugins/shared-folder/rules/report.scm:108
 msgid "The folder for sharing is switched off"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:107
+#: src/plugins/shared-folder/rules/report.scm:109
 msgid "Your user folder settings point it at the home folder itself"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:108
+#: src/plugins/shared-folder/rules/report.scm:110
 msgid "No folder for sharing is set up"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:109
+#: src/plugins/shared-folder/rules/report.scm:111
 msgid "Programs that share then choose a folder of their own"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:110
+#: src/plugins/shared-folder/rules/report.scm:112
 msgid "Your user folder settings could not be read"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:111
+#: src/plugins/shared-folder/rules/report.scm:113
 msgid "They are not written the way the system writes them"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:115
-msgid "could not be looked in"
-msgstr ""
-
-#: src/plugins/shared-folder/rules/report.scm:116
-msgid "empty"
-msgstr ""
-
 #: src/plugins/shared-folder/rules/report.scm:117
-msgid "1000 items or more"
+msgid "on another disk or a network folder, not looked in"
 msgstr ""
 
 #: src/plugins/shared-folder/rules/report.scm:118
+msgid "could not be looked in"
+msgstr ""
+
+#: src/plugins/shared-folder/rules/report.scm:119
+msgid "empty"
+msgstr ""
+
+#: src/plugins/shared-folder/rules/report.scm:120
+msgid "1000 items or more"
+msgstr ""
+
+#: src/plugins/shared-folder/rules/report.scm:121
 msgid "{n} item"
 msgid_plural "{n} items"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/shared-folder/rules/report.scm:123
+#: src/plugins/shared-folder/rules/report.scm:126
 msgid "A link to {target}"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:125
+#: src/plugins/shared-folder/rules/report.scm:128
 msgid "The {lang} name in other letters · {contents}"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:128
+#: src/plugins/shared-folder/rules/report.scm:131
 msgid "An older {lang} name · {contents}"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:129
+#: src/plugins/shared-folder/rules/report.scm:132
 msgid "The {lang} name · {contents}"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:139
+#: src/plugins/shared-folder/rules/report.scm:142
 msgid "Shared from the file manager (Samba) as {name}"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:140
+#: src/plugins/shared-folder/rules/report.scm:143
 msgid "Shared by GNOME Sharing, which is running"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:141
+#: src/plugins/shared-folder/rules/report.scm:144
 msgid "Shared by Samba as {name}"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:160
+#: src/plugins/shared-folder/rules/report.scm:163
 msgid "Your folders could not be looked at"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:161
+#: src/plugins/shared-folder/rules/report.scm:164
 msgid "Nothing is known about the shared folder."
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:169
-#: src/plugins/shared-folder/rules/report.scm:183
+#: src/plugins/shared-folder/rules/report.scm:172
+#: src/plugins/shared-folder/rules/report.scm:186
 msgid "{n} folder is shared on the local network"
 msgid_plural "{n} folders are shared on the local network"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/shared-folder/rules/report.scm:173
+#: src/plugins/shared-folder/rules/report.scm:176
 msgid "{n} more folder looks like the shared folder"
 msgid_plural "{n} more folders look like the shared folder"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/shared-folder/rules/report.scm:176
+#: src/plugins/shared-folder/rules/report.scm:179
 msgid "There is one folder for sharing"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:178
+#: src/plugins/shared-folder/rules/report.scm:181
 msgid ""
 "What is shared is best kept in one folder, so it is clear what others on the "
 "network can read. A folder that looks like the shared folder is a "
 "recommendation: it may be kept on purpose."
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:186
+#: src/plugins/shared-folder/rules/report.scm:189
 msgid "Check that the sharing is meant"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:189
+#: src/plugins/shared-folder/rules/report.scm:192
 msgid "{folder} is the folder for sharing"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:191
+#: src/plugins/shared-folder/rules/report.scm:194
 msgid "No folder is shared"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:192
+#: src/plugins/shared-folder/rules/report.scm:195
 msgid "Nothing needs attention"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:193
+#: src/plugins/shared-folder/rules/report.scm:196
 msgid "The Folder for Sharing"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:194
+#: src/plugins/shared-folder/rules/report.scm:197
 msgid ""
 "The one your desktop uses for what you share with others on the local "
 "network."
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:197
+#: src/plugins/shared-folder/rules/report.scm:200
 msgid "Folders That Look Like It"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:198
+#: src/plugins/shared-folder/rules/report.scm:201
 msgid ""
 "Their names are ones the folder for sharing has had, in another language or "
 "an older version. Two such folders make it unclear which one is shared."
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:202
+#: src/plugins/shared-folder/rules/report.scm:205
 msgid "Shared on the Local Network"
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:203
+#: src/plugins/shared-folder/rules/report.scm:206
 msgid ""
 "Others on the same network can read what is in these folders, at home or on "
 "a café's Wi-Fi."
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:207
+#: src/plugins/shared-folder/rules/report.scm:210
 msgid ""
 "Folders shared from the file manager could not be read: your account may not "
 "read where Samba keeps them."
 msgstr ""
 
-#: src/plugins/shared-folder/rules/report.scm:210
+#: src/plugins/shared-folder/rules/report.scm:213
 msgid "There were more than could be listed."
 msgstr ""

@@ -64,6 +64,13 @@ int main(void)
                                    NULL, NULL, NULL, NULL) == -1);
     CHECK(gaudit_shared_parse_line("(shared-config (state 1) (standard \"Public\") (exists 1) (locale \"\")"
                                    " (default \"\") (names 1))", NULL, NULL, NULL, NULL) == -1);
+    /* A mount is marked, not counted: -2 is taken, nothing lower. */
+    CHECK(gaudit_shared_parse_line("(shared-folder (name \"Public\") (lang \"\") (machine 0) (current 1)"
+                                   " (standard 0) (link 0) (target \"\") (case 0) (entries -2))",
+                                   NULL, NULL, NULL, NULL) == GAUDIT_SHARED_LINE_FOLDER);
+    CHECK(gaudit_shared_parse_line("(shared-folder (name \"Public\") (lang \"\") (machine 0) (current 1)"
+                                   " (standard 0) (link 0) (target \"\") (case 0) (entries -3))",
+                                   NULL, NULL, NULL, NULL) == -1);
     char clash[256];
     gaudit_shared_moves m;
     CHECK(gaudit_shared_parse_tidy("(shared-clash (name \"a.txt\"))", clash, sizeof clash, &m) == 1

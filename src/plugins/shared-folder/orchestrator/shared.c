@@ -101,8 +101,8 @@ static int allowed(const char *home, unsigned uid, const char *from, const char 
     int from_ok = 0, to_ok = to == NULL;
     for (unsigned i = 0; i < s.n_found; i++) {
         const gaudit_public_folder *f = &s.found[i];
-        if (f->symlink)
-            continue;
+        if (f->symlink || f->entries == -2)
+            continue;  /* a link, or a mount: never tidied */
         if (!f->is_standard && strcmp(f->name, from) == 0)
             from_ok = 1;
         if (to != NULL && f->is_standard && strcmp(f->name, to) == 0)

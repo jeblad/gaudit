@@ -31,7 +31,7 @@ int gaudit_shared_format_config(const gaudit_shared_config *c, char *buf, size_t
 int gaudit_shared_format_folder(const gaudit_shared_folder *f, char *buf, size_t len)
 {
     char name[sizeof f->name * 2 + 3], lang[sizeof f->lang * 2 + 3], target[sizeof f->target * 2 + 3];
-    if (f->name[0] == '\0' || strchr(f->name, '/') != NULL || f->entries < -1 || f->entries > 1000
+    if (f->name[0] == '\0' || strchr(f->name, '/') != NULL || f->entries < -2 || f->entries > 1000
         || gaudit_probe_quote(name, sizeof name, f->name) != 0
         || gaudit_probe_quote(lang, sizeof lang, f->lang) != 0
         || gaudit_probe_quote(target, sizeof target, f->target) != 0)
@@ -115,7 +115,7 @@ int gaudit_shared_parse_line(const char *line, gaudit_shared_config *c, gaudit_s
         { .key = "link", .value = &g, .max = 1 },
         { .key = "target", .text = ff.target, .text_len = sizeof ff.target },
         { .key = "case", .value = &h, .max = 1 },
-        { .key = "entries", .value = &i, .min = -1, .max = 1000 },
+        { .key = "entries", .value = &i, .min = -2, .max = 1000 },
     };
     if (gaudit_sexpr_parse(copy, "shared-folder", folder, 9) == 0) {
         if (ff.name[0] == '\0' || strchr(ff.name, '/') != NULL || strcmp(ff.name, ".") == 0

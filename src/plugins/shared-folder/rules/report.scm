@@ -15,7 +15,9 @@
 ;;                      (shared-end (folders N) (services N) (more 0|1) (usershares 0|1))))
 ;;
 ;; state: 0 none set up, 1 set, 2 switched off, 3 could not be read.
-;; entries: counted up to 1000, -1 could not be read. kind: "samba" (a share
+;; entries: counted up to 1000, -1 could not be read, -2 on another
+;; filesystem than the home folder (a mount), not looked in, since listing
+;; it may fetch it over the network. kind: "samba" (a share
 ;; in smb.conf), "samba-user" (made from the file manager), "gnome" (GNOME
 ;; Sharing, running).
 ;;
@@ -112,7 +114,8 @@
 
 (define (contents f)
   (let ((n (field f 'entries)))
-    (cond ((< n 0) (msg (G_ "could not be looked in")))
+    (cond ((= n -2) (msg (G_ "on another disk or a network folder, not looked in")))
+          ((< n 0) (msg (G_ "could not be looked in")))
           ((= n 0) (msg (G_ "empty")))
           ((>= n 1000) (msg (G_ "1000 items or more")))
           (else (msgn (N_ "{n} item" "{n} items") n (list 'n n))))))

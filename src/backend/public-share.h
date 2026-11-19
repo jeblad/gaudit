@@ -32,7 +32,8 @@ typedef struct {
     char link_target[512]; /* ... and where it leads, as written */
     int case_differs;      /* matched only when case is ignored (ASCII) */
     long entries;          /* what is in it, counted up to 1000 (1000: that many or more);
-                              -1 could not be read; 0 for a link */
+                              -1 could not be read; -2 on another filesystem than the home
+                              folder (a mount), not looked in; 0 for a link */
 } gaudit_public_folder;
 
 typedef struct {

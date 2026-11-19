@@ -328,7 +328,10 @@ AdwNavigationPage *gaudit_shared_folder_fix_page(const char *fix_id, GPtrArray *
         : g_strdup_printf(P_("~/%s looks like the shared folder."), name);
     const char *how;
     gboolean offer = FALSE;
-    if (f.link) {
+    if (f.entries == -2) {
+        how = P_("It is on another disk or a network folder, so it is not looked in here, and "
+                 "nothing is moved into or out of it. Whether to keep it is up to you.");
+    } else if (f.link) {
         how = P_("It is a link, not a folder of its own, so there is nothing to tidy here. "
                  "Whether to keep it is up to you.");
     } else if (sharers->len > 0) {

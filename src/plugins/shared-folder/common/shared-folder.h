@@ -13,7 +13,8 @@
  * state: 0 none set up, 1 set, 2 switched off, 3 could not be read. The
  * standard folder is "~/name" when it is in the home folder, else
  * absolute. A folder's name is straight in the home folder. entries:
- * counted up to 1000, -1 could not be read. kind: "samba", "samba-user",
+ * counted up to 1000, -1 could not be read, -2 on another filesystem (a
+ * mount), not looked in. kind: "samba", "samba-user",
  * "gnome". usershares: 1 when Samba's usershares could not be read.
  *
  * The tidying, on request ("gaudit-orchestrator shared check|merge <from>

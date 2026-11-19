@@ -391,6 +391,8 @@ int gaudit_public_share_find(const gaudit_public_where *where, gaudit_public_sha
     out->names = ns.n;
 
     /* The home folder's own folders (and links) with one of those names. */
+    struct stat home_st;
+    dev_t home_dev = stat(home, &home_st) == 0 ? home_st.st_dev : 0;
     DIR *d = opendir(home);
     if (d == NULL) {
         free(ns.e);
@@ -437,6 +439,10 @@ int gaudit_public_share_find(const gaudit_public_where *where, gaudit_public_sha
             f->symlink = 1;
             ssize_t n = readlink(path, f->link_target, sizeof f->link_target - 1);
             f->link_target[n > 0 ? n : 0] = '\0';
+        } else if (st.st_dev != home_dev) {
+            /* A mount (a network or cloud folder, another disk): never
+             * listed, since listing it may fetch it over the network. */
+            f->entries = -2;
         } else {
             f->entries = count_entries(path);
         }
@@ -486,8 +492,12 @@ static int merge_open(const char *home, const char *from, const char *to, int *f
     *d = list_fd >= 0 ? fdopendir(list_fd) : NULL;
     if (*d == NULL && list_fd >= 0)
         close(list_fd);
+    struct stat h;
+    /* Both on the home folder's own filesystem: a mount is never listed
+     * (that may fetch it over the network) nor moved across. */
     if (*from_fd < 0 || *to_fd < 0 || *d == NULL || fstat(*from_fd, &a) != 0
-        || fstat(*to_fd, &b) != 0 || (a.st_dev == b.st_dev && a.st_ino == b.st_ino)) {
+        || fstat(*to_fd, &b) != 0 || (a.st_dev == b.st_dev && a.st_ino == b.st_ino)
+        || stat(home, &h) != 0 || a.st_dev != h.st_dev || b.st_dev != h.st_dev) {
         if (*d != NULL)
             closedir(*d);
         if (*from_fd >= 0)

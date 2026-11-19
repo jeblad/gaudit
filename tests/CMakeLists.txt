@@ -161,6 +161,8 @@ configure_file(${PROJECT_SOURCE_DIR}/src/plugins/updates/rules/report.scm
                ${TEST_RULES}/core.updates/report.scm COPYONLY)
 configure_file(${PROJECT_SOURCE_DIR}/src/plugins/shared-folder/rules/report.scm
                ${TEST_RULES}/core.shared-folder/report.scm COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/src/plugins/cloud/rules/report.scm
+               ${TEST_RULES}/core.cloud/report.scm COPYONLY)
 add_executable(test-engine ${PROJECT_SOURCE_DIR}/src/engine/main.c ${PROJECT_SOURCE_DIR}/src/engine/confine.c)
 target_compile_definitions(test-engine PRIVATE _GNU_SOURCE ENGINE_RULES_DIR="${TEST_RULES}")
 target_link_libraries(test-engine PRIVATE PkgConfig::GUILE gaudit_sandbox gaudit_config)
@@ -264,3 +266,16 @@ target_include_directories(test_shared_folder PRIVATE
                            ${PROJECT_SOURCE_DIR}/src/backend ${PROJECT_SOURCE_DIR}/src/probe)
 target_link_libraries(test_shared_folder PRIVATE gaudit_probe gaudit_backend)
 add_test(NAME shared-folder COMMAND test_shared_folder)
+
+# Cloud folders: each client's files as documented, on a home of the test's own.
+add_executable(test_cloud_folders test_cloud_folders.c ${PROJECT_SOURCE_DIR}/src/backend/cloud-folders.c)
+target_include_directories(test_cloud_folders PRIVATE ${PROJECT_SOURCE_DIR}/src/backend)
+add_test(NAME cloud-folders COMMAND test_cloud_folders)
+
+# Cloud Services: its line format, and its collection on a home of the test's own.
+add_executable(test_cloud test_cloud.c ${PROJECT_SOURCE_DIR}/src/plugins/cloud/orchestrator/cloud.c)
+target_include_directories(test_cloud PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/cloud/orchestrator
+                           ${PROJECT_SOURCE_DIR}/src/plugins/cloud/common
+                           ${PROJECT_SOURCE_DIR}/src/backend ${PROJECT_SOURCE_DIR}/src/probe)
+target_link_libraries(test_cloud PRIVATE gaudit_probe gaudit_backend)
+add_test(NAME cloud COMMAND test_cloud)

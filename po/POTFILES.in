@@ -9,6 +9,7 @@ src/plugins/firewall/plugin.c
 src/plugins/updates/plugin.c
 src/plugins/private-files/plugin.c
 src/plugins/shared-folder/plugin.c
+src/plugins/cloud/plugin.c
 src/gui/gaudit-category.c
 src/gui/gaudit-environ-page.c
 src/gui/gaudit-self.c

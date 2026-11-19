@@ -1,0 +1,3 @@
+(report (verdict ok) (title (msg "No cloud services found")) (description (msg "What is in a cloud folder leaves the computer and is kept by someone else. Best is when it is encrypted before it leaves, so the provider cannot read it, under a law that protects privacy, with a program whose source code is open and that the system keeps up to date.")))
+(home (verdict ok) (title (msg "No cloud services found")) (subtitle (msg "Nothing needs attention")))
+(note (msg "rclone's settings are encrypted, so its setups were not read."))

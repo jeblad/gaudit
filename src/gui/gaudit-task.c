@@ -15,6 +15,7 @@ static const GauditTaskInfo *const tasks[] = {
     &gaudit_plugin_updates,
     &gaudit_plugin_firewall,
     &gaudit_plugin_shared_folder,
+    &gaudit_plugin_cloud,
 };
 
 /* A command without its helper part ("user x then run y" -> "user x"). */

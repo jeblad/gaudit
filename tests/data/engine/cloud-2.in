@@ -1,0 +1,4 @@
+(input (system (host "h") (distro "Ubuntu 26.10") (backend "debian"))
+ (level "quick")
+ (collection
+  (cloud-end (count 0) (more 0) (gathering "") (gatherings 0) (rclone-unreadable 1))))

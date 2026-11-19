@@ -1,0 +1,197 @@
+# Norwegian Bokmål translation for gaudit-cloud.
+# This file is distributed under the same license as the gaudit package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gaudit-cloud\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 11:03+0100\n"
+"PO-Revision-Date: 2026-11-19 12:00+0100\n"
+"Last-Translator: \n"
+"Language-Team: Norwegian Bokmål\n"
+"Language: nb\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/plugins/cloud/rules/report.scm:97
+msgid "under the law of the USA"
+msgstr "under amerikansk lov"
+
+#: src/plugins/cloud/rules/report.scm:98
+msgid "under Swiss law"
+msgstr "under sveitsisk lov"
+
+#: src/plugins/cloud/rules/report.scm:99
+msgid "under Norwegian law"
+msgstr "under norsk lov"
+
+#: src/plugins/cloud/rules/report.scm:100
+msgid "under the law of New Zealand"
+msgstr "under newzealandsk lov"
+
+#: src/plugins/cloud/rules/report.scm:101
+msgid "under the law where its server is"
+msgstr "under loven der serveren står"
+
+#: src/plugins/cloud/rules/report.scm:104
+#: src/plugins/cloud/rules/report.scm:105
+msgid "encrypted before it leaves the computer"
+msgstr "kryptert før det forlater datamaskinen"
+
+#: src/plugins/cloud/rules/report.scm:106
+msgid "the provider can read it unless a folder is set to be encrypted"
+msgstr "leverandøren kan lese det, med mindre en mappe er satt til å krypteres"
+
+#: src/plugins/cloud/rules/report.scm:107
+msgid "the provider can read it, except in a paid encrypted folder"
+msgstr "leverandøren kan lese det, unntatt i en betalt kryptert mappe"
+
+#: src/plugins/cloud/rules/report.scm:108
+msgid "the provider can read it"
+msgstr "leverandøren kan lese det"
+
+#: src/plugins/cloud/rules/report.scm:109
+msgid "whether the provider can read it is not known"
+msgstr "det er ikke kjent om leverandøren kan lese det"
+
+#: src/plugins/cloud/rules/report.scm:114
+msgid "{path}"
+msgstr "{path}"
+
+#: src/plugins/cloud/rules/report.scm:115
+msgid "probably {path}, its usual folder"
+msgstr "trolig {path}, den vanlige mappa"
+
+#: src/plugins/cloud/rules/report.scm:116
+msgid "mounted at {path}"
+msgstr "montert på {path}"
+
+#: src/plugins/cloud/rules/report.scm:117
+msgid "set up as {name}, without a folder of its own"
+msgstr "satt opp som {name}, uten egen mappe"
+
+#: src/plugins/cloud/rules/report.scm:118
+msgid "installed; where its folder is cannot be seen"
+msgstr "installert; hvor mappa ligger, kan ikke ses"
+
+#: src/plugins/cloud/rules/report.scm:140
+msgid "{service} through {client}"
+msgstr "{service} gjennom {client}"
+
+#: src/plugins/cloud/rules/report.scm:148
+msgid "{where} · where its login is made, and who keeps it, is not documented"
+msgstr "{where} · hvor påloggingen lages, og hvem som tar vare på den, er ikke dokumentert"
+
+#: src/plugins/cloud/rules/report.scm:150
+msgid "{where} · {encryption} · {law}"
+msgstr "{where} · {encryption} · {law}"
+
+#: src/plugins/cloud/rules/report.scm:179
+msgid "Cloud services could not be looked for"
+msgstr "Det kunne ikke letes etter skytjenester"
+
+#: src/plugins/cloud/rules/report.scm:180
+msgid "Nothing is known about the cloud services on this computer."
+msgstr "Ingenting er kjent om skytjenestene på denne datamaskinen."
+
+#: src/plugins/cloud/rules/report.scm:186
+msgid "{n} cloud program logs in in a way that is not documented"
+msgid_plural "{n} cloud programs log in in a way that is not documented"
+msgstr[0] "{n} skyprogram logger inn på en måte som ikke er dokumentert"
+msgstr[1] "{n} skyprogrammer logger inn på en måte som ikke er dokumentert"
+
+#: src/plugins/cloud/rules/report.scm:190
+msgid "{n} cloud service where the provider can read your files"
+msgid_plural "{n} cloud services where the provider can read your files"
+msgstr[0] "{n} skytjeneste der leverandøren kan lese filene dine"
+msgstr[1] "{n} skytjenester der leverandøren kan lese filene dine"
+
+#: src/plugins/cloud/rules/report.scm:193
+#: src/plugins/cloud/rules/report.scm:209
+msgid "No cloud services found"
+msgstr "Ingen skytjenester funnet"
+
+#: src/plugins/cloud/rules/report.scm:194
+#: src/plugins/cloud/rules/report.scm:210
+msgid "{n} cloud service found"
+msgid_plural "{n} cloud services found"
+msgstr[0] "{n} skytjeneste funnet"
+msgstr[1] "{n} skytjenester funnet"
+
+#: src/plugins/cloud/rules/report.scm:197
+msgid ""
+"What is in a cloud folder leaves the computer and is kept by someone else. "
+"Best is when it is encrypted before it leaves, so the provider cannot read "
+"it, under a law that protects privacy, with a program whose source code is "
+"open and that the system keeps up to date."
+msgstr "Det som ligger i en skymappe, forlater datamaskinen og tas vare på av noen andre. Best er det når det krypteres før det forlater maskinen, så leverandøren ikke kan lese det, under en lov som verner personvernet, med et program som har åpen kildekode og som systemet holder oppdatert."
+
+#: src/plugins/cloud/rules/report.scm:204
+msgid "The provider can read what is sent there"
+msgstr "Leverandøren kan lese det som sendes dit"
+
+#: src/plugins/cloud/rules/report.scm:205
+msgid "Where its login is made, and who keeps it, is not documented"
+msgstr "Hvor påloggingen lages, og hvem som tar vare på den, er ikke dokumentert"
+
+#: src/plugins/cloud/rules/report.scm:212
+msgid "Nothing needs attention"
+msgstr "Ingenting trenger oppmerksomhet"
+
+#: src/plugins/cloud/rules/report.scm:214
+msgid "Cloud Services on This Computer"
+msgstr "Skytjenester på denne datamaskinen"
+
+#: src/plugins/cloud/rules/report.scm:215
+msgid ""
+"Programs that keep a copy of your files in a cloud service, and what is "
+"known about each."
+msgstr "Programmer som holder en kopi av filene dine i en skytjeneste, og det som er kjent om hver."
+
+#: src/plugins/cloud/rules/report.scm:220
+msgid "Where the Cloud Folders Are"
+msgstr "Hvor skymappene ligger"
+
+#: src/plugins/cloud/rules/report.scm:221
+#, scheme-format
+msgid ""
+"Cloud folders gathered under one folder, such as ~/Cloud, give one place to "
+"see what leaves the computer."
+msgstr "Skymapper samlet under én mappe, som ~/Cloud, gir ett sted å se hva som forlater datamaskinen."
+
+#: src/plugins/cloud/rules/report.scm:224
+msgid "{n} folder for gathering cloud folders"
+msgid_plural "{n} folders for gathering cloud folders"
+msgstr[0] "{n} mappe for å samle skymapper"
+msgstr[1] "{n} mapper for å samle skymapper"
+
+#: src/plugins/cloud/rules/report.scm:227
+msgid "One is enough; the others make it unclear where they belong"
+msgstr "Én holder; de andre gjør det uklart hvor de hører hjemme"
+
+#: src/plugins/cloud/rules/report.scm:229
+msgid "{n} cloud folder is not gathered with the others"
+msgid_plural "{n} cloud folders are not gathered with the others"
+msgstr[0] "{n} skymappe er ikke samlet med de andre"
+msgstr[1] "{n} skymapper er ikke samlet med de andre"
+
+#: src/plugins/cloud/rules/report.scm:232
+msgid "Move each in its own program's settings, never in the file manager"
+msgstr "Flytt hver av dem i programmets egne innstillinger, aldri i filbehandleren"
+
+#: src/plugins/cloud/rules/report.scm:235
+msgid ""
+"A cloud folder is moved in its own program's settings. Moved in the file "
+"manager, the program may take your files as deleted, and delete them from "
+"the service and every computer that syncs it."
+msgstr "En skymappe flyttes i programmets egne innstillinger. Flyttes den i filbehandleren, kan programmet tro at filene dine er slettet, og slette dem fra tjenesten og fra alle datamaskiner som synkroniserer den."
+
+#: src/plugins/cloud/rules/report.scm:238
+msgid "rclone's settings are encrypted, so its setups were not read."
+msgstr "Innstillingene til rclone er kryptert, så oppsettene ble ikke lest."
+
+#: src/plugins/cloud/rules/report.scm:241
+msgid "There were more than could be listed."
+msgstr "Det var flere enn det var plass til å vise."

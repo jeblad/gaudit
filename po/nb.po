@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 09:06+0100\n"
+"POT-Creation-Date: 2026-11-19 11:02+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -43,9 +43,11 @@ msgstr ""
 msgid "General"
 msgstr "Generelt"
 
-#: src/gui/gaudit-app.c:359
+#: src/gui/gaudit-app.c:359 src/plugins/cloud/plugin.c:34
 msgid "There is nothing to set yet."
-msgstr "Det er ingenting å stille inn ennå. Senere blir du spurt om hvilken mappe du mener å bruke til deling, og om delingen som er funnet, er ment."
+msgstr ""
+"Det er ingenting å stille inn ennå. Senere blir du spurt om hvilken mappe du "
+"mener å bruke til deling, og om delingen som er funnet, er ment."
 
 #: src/gui/gaudit-app.c:369
 msgid "Open Main Menu"
@@ -1378,8 +1380,8 @@ msgstr "Søker gjennom hjemmemappen …"
 msgid "Searching… Large folders can take a long time."
 msgstr "Søker … Store mapper kan ta lang tid."
 
-#: src/plugins/shared-folder/plugin.c:15
 #
+#: src/plugins/shared-folder/plugin.c:15
 msgid "Shared Folder"
 msgstr "Delt mappe"
 
@@ -1387,7 +1389,9 @@ msgstr "Delt mappe"
 msgid ""
 "Finds the folder meant for sharing on the local network, and other folders "
 "that look like it."
-msgstr "Finner mappa som er ment for deling på lokalnettet, og andre mapper som ligner på den."
+msgstr ""
+"Finner mappa som er ment for deling på lokalnettet, og andre mapper som "
+"ligner på den."
 
 #: src/plugins/shared-folder/plugin.c:18
 msgid ""
@@ -1406,7 +1410,21 @@ msgid ""
 "It can tidy a duplicate: move what is in it into the folder in use, never "
 "replacing anything, and remove it once it is empty. It never deletes files, "
 "and changes nothing while something shares one of the folders."
-msgstr "Et skrivebord som følger den vanlige standarden, har én mappe for det du deler med andre på lokalnettet, på engelsk kalt Public. Navnet følger språket du hadde da du logget inn første gang, så etter et bytte av språk kan det bli to, som Offentlig og Public, og da blir det uklart hvilken som deles.\n\nDelt mappe finner mappa som er i bruk, og alle andre mapper i hjemmemappa med et navn den kunne hatt, på alle språk og fra eldre versjoner. Den ser også etter det som deler mapper: Samba, også delingen du gjør fra filbehandleren, og GNOME Deling. Den trenger ikke passord.\n\nDen kan rydde en dublett: flytte det som ligger i den over til mappa som er i bruk, uten å erstatte noe, og fjerne den når den er tom. Den sletter aldri filer, og endrer ingenting så lenge noe deler en av mappene."
+msgstr ""
+"Et skrivebord som følger den vanlige standarden, har én mappe for det du "
+"deler med andre på lokalnettet, på engelsk kalt Public. Navnet følger "
+"språket du hadde da du logget inn første gang, så etter et bytte av språk "
+"kan det bli to, som Offentlig og Public, og da blir det uklart hvilken som "
+"deles.\n"
+"\n"
+"Delt mappe finner mappa som er i bruk, og alle andre mapper i hjemmemappa "
+"med et navn den kunne hatt, på alle språk og fra eldre versjoner. Den ser "
+"også etter det som deler mapper: Samba, også delingen du gjør fra "
+"filbehandleren, og GNOME Deling. Den trenger ikke passord.\n"
+"\n"
+"Den kan rydde en dublett: flytte det som ligger i den over til mappa som er "
+"i bruk, uten å erstatte noe, og fjerne den når den er tom. Den sletter aldri "
+"filer, og endrer ingenting så lenge noe deler en av mappene."
 
 #: src/plugins/shared-folder/plugin.c:31
 msgid ""
@@ -1414,20 +1432,29 @@ msgid ""
 "home or on a café's Wi-Fi. With two folders for the same thing, it is easy "
 "to put a file in the one that is shared when you meant the other, or the "
 "other way round. Sharing is often switched on without people knowing it."
-msgstr "Det som ligger i en delt mappe, kan leses av andre på samme nett, hjemme eller på kaféens trådløse nett. Med to mapper for det samme er det lett å legge en fil i den som deles når du mente den andre, eller omvendt. Deling er ofte slått på uten at folk vet om det."
+msgstr ""
+"Det som ligger i en delt mappe, kan leses av andre på samme nett, hjemme "
+"eller på kaféens trådløse nett. Med to mapper for det samme er det lett å "
+"legge en fil i den som deles når du mente den andre, eller omvendt. Deling "
+"er ofte slått på uten at folk vet om det."
 
 #: src/plugins/shared-folder/plugin.c:35
 msgid ""
 "There is nothing to set yet. Later you will be asked which folder you mean "
 "to use for sharing, and whether the sharing found is meant."
-msgstr "Det er ingenting å stille inn ennå. Senere blir du spurt om hvilken mappe du mener å bruke til deling, og om delingen som er funnet, er ment."
+msgstr ""
+"Det er ingenting å stille inn ennå. Senere blir du spurt om hvilken mappe du "
+"mener å bruke til deling, og om delingen som er funnet, er ment."
 
 #: src/plugins/shared-folder/plugin.c:37
 msgid ""
 "The report shows the folder in use for sharing, the other folders that look "
 "like it, and what shares folders on this computer. A folder that looks like "
 "it leads to a page that can tidy it."
-msgstr "Rapporten viser mappa som er i bruk for deling, de andre mappene som ligner på den, og det som deler mapper på denne datamaskinen. En mappe som ligner på den, leder til en side som kan rydde den."
+msgstr ""
+"Rapporten viser mappa som er i bruk for deling, de andre mappene som ligner "
+"på den, og det som deler mapper på denne datamaskinen. En mappe som ligner "
+"på den, leder til en side som kan rydde den."
 
 #: src/plugins/shared-folder/plugin.c:46
 msgid "The shared folder"
@@ -1437,10 +1464,72 @@ msgstr "Den delte mappa"
 msgid "See the shared folder and what shares folders"
 msgstr "Se den delte mappa og det som deler mapper"
 
-#: src/plugins/shared-folder/plugin.c:51 src/plugins/shared-folder/plugin.c:52
 #
+#: src/plugins/shared-folder/plugin.c:51 src/plugins/shared-folder/plugin.c:52
 msgid "Looking at your folders…"
 msgstr "Ser på mappene dine …"
+
+#: src/plugins/cloud/plugin.c:15
+#
+msgid "Cloud Services"
+msgstr "Skytjenester"
+
+#: src/plugins/cloud/plugin.c:16
+msgid ""
+"Finds the programs that keep a copy of your files in a cloud service, and "
+"says who can read what is sent there."
+msgstr "Finner programmene som holder en kopi av filene dine i en skytjeneste, og sier hvem som kan lese det som sendes dit."
+
+#: src/plugins/cloud/plugin.c:18
+msgid ""
+"Cloud Services looks for programs that synchronise a folder with a cloud "
+"service, such as Dropbox, Nextcloud, OneDrive, Google Drive, MEGA or "
+"Jottacloud, and finds where their folders are. For each service it says what "
+"is known: whether files are encrypted before they leave the computer, so the "
+"provider cannot read them; which country's law the provider is under; "
+"whether the program's source code is open; and whether the system keeps it "
+"up to date.\n"
+"\n"
+"It also says where a program in between logs in to the service for you: if "
+"that login goes through the program maker's own web service, they can reach "
+"your files too.\n"
+"\n"
+"It only finds out. It never moves a cloud folder: that is done in each "
+"program's own settings, since moving it any other way can make the program "
+"think your files were deleted."
+msgstr "Skytjenester ser etter programmer som synkroniserer en mappe med en skytjeneste, som Dropbox, Nextcloud, OneDrive, Google Drive, MEGA eller Jottacloud, og finner hvor mappene deres ligger. For hver tjeneste sier den det som er kjent: om filene krypteres før de forlater datamaskinen, så leverandøren ikke kan lese dem; hvilket lands lov leverandøren er under; om programmets kildekode er åpen; og om systemet holder det oppdatert.\n\nDen sier også hvor et program i mellom logger inn på tjenesten for deg: går påloggingen gjennom nettjenesten til den som lager programmet, kan også de nå filene dine.\n\nDen bare finner ut. Den flytter aldri en skymappe: det gjøres i hvert programs egne innstillinger, siden flytting på annen måte kan få programmet til å tro at filene dine er slettet."
+
+#: src/plugins/cloud/plugin.c:31
+msgid ""
+"What is in a cloud folder leaves the computer and is kept by someone else. "
+"Knowing which services are set up, and who can read what is sent there, is "
+"the first step to deciding whether that is what you want."
+msgstr "Det som ligger i en skymappe, forlater datamaskinen og tas vare på av noen andre. Å vite hvilke tjenester som er satt opp, og hvem som kan lese det som sendes dit, er første steg for å avgjøre om det er det du vil."
+
+#: src/plugins/cloud/plugin.c:35
+msgid ""
+"The report lists the cloud services found, with their folders and what is "
+"known about each. A service where the provider can read your files is a "
+"warning, and so is a login that goes through someone else's web service, or "
+"one whose making is not documented. A program the system does not keep up to "
+"date is a recommendation."
+msgstr "Rapporten viser skytjenestene som ble funnet, med mappene deres og det som er kjent om hver. En tjeneste der leverandøren kan lese filene dine, er en advarsel, og det samme er en pålogging som går gjennom noen andres nettjeneste, eller som det ikke er dokumentert hvordan lages. Et program systemet ikke holder oppdatert, er en anbefaling."
+
+#: src/plugins/cloud/plugin.c:46
+#
+msgid "Cloud services"
+msgstr "Skytjenester"
+
+#: src/plugins/cloud/plugin.c:47
+#
+msgid "See the cloud services on this computer"
+msgstr "Se skytjenestene på denne datamaskinen"
+
+#
+#: src/plugins/cloud/plugin.c:51 src/plugins/cloud/plugin.c:52
+#
+msgid "Looking for cloud services…"
+msgstr "Ser etter skytjenester …"
 
 #: src/gui/gaudit-category.c:10
 msgid "ufw (Uncomplicated Firewall)"

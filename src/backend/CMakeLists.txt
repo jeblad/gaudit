@@ -11,6 +11,7 @@ add_library(gaudit_backend STATIC
   snap-runner.c
   xdg-public-names.c
   public-share.c
+  cloud-folders.c
   debian/pkg-debian.c
   debian/apt-conf.c
   debian/apt-sources.c

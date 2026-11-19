@@ -29,6 +29,7 @@
     <file preprocess="xml-stripblanks" alias="system-software-install-symbolic.svg">icons/scalable/actions/system-software-install-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="folder-symbolic.svg">icons/scalable/actions/folder-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="folder-publicshare-symbolic.svg">icons/scalable/actions/folder-publicshare-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="folder-remote-symbolic.svg">icons/scalable/actions/folder-remote-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="list-add-symbolic.svg">icons/scalable/actions/list-add-symbolic.svg</file>
     <!-- Drawn for gAudit, GPL-3.0-only: a link that opens in the browser.
          Mirrored for right-to-left, under both names GTK has looked for. -->

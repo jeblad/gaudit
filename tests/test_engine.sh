@@ -24,6 +24,13 @@ for n in 1 2 3 4 5 6 7 8 9 10 11 12 13; do
     fi
 done
 for n in 1 2; do
+    if ! "$engine" report core.cloud < "$data/cloud-$n.in" > out.$$ 2>/dev/null; then
+        echo "cloud-$n: no report" >&2; status=1
+    elif ! cmp -s out.$$ "$data/cloud-$n.out"; then
+        echo "cloud-$n: report differs:" >&2; diff "$data/cloud-$n.out" out.$$ >&2; status=1
+    fi
+done
+for n in 1 2; do
     if ! "$engine" report core.shared-folder < "$data/shared-folder-$n.in" > out.$$ 2>/dev/null; then
         echo "shared-folder-$n: no report" >&2; status=1
     elif ! cmp -s out.$$ "$data/shared-folder-$n.out"; then

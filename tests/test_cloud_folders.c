@@ -95,7 +95,8 @@ int main(void)
     snprintf(text, sizeof text,
              "/dev/sda1 / ext4 rw 0 0\n"
              "pCloud.fs %s/pCloudDrive fuse.pCloud.fs rw 0 0\n"
-             "jotta: %s/Cloud/Jotta fuse.rclone rw 0 0\n", home, home);
+             "jotta: %s/Cloud/Jotta fuse.rclone rw 0 0\n"
+             "secret: %s/Cloud/Google fuse.rclone rw 0 0\n", home, home, home);
     put("mounts", text);
     mk("root/usr/bin");
     put("root/usr/bin/jotta-cli", "");
@@ -116,11 +117,14 @@ int main(void)
     CHECK((f = find(&s, "megasync", "mega")) != NULL && f->how == GAUDIT_CLOUD_DEFAULT);
     CHECK((f = find(&s, "tresorit", "tresorit")) != NULL && f->how == GAUDIT_CLOUD_INSTALLED);
     CHECK((f = find(&s, "pcloud", "pcloud")) != NULL && f->how == GAUDIT_CLOUD_MOUNT);
-    /* rclone: drive covered by the crypt, s3 left out, jottacloud mounted. */
-    CHECK((f = find(&s, "rclone", "google-drive")) != NULL && f->how == GAUDIT_CLOUD_SETUP
-          && f->encrypted && strcmp(f->name, "gdrive") == 0);
+    /* rclone: drive covered by the crypt, and mounted through it; s3 left
+     * out; jottacloud mounted itself. */
+    snprintf(want, sizeof want, "%s/Cloud/Google", home);
+    CHECK((f = find(&s, "rclone", "google-drive")) != NULL && f->how == GAUDIT_CLOUD_MOUNT
+          && strcmp(f->path, want) == 0 && f->encrypted && strcmp(f->name, "gdrive") == 0
+          && strcmp(f->via, "secret") == 0);
     CHECK((f = find(&s, "rclone", "jottacloud")) != NULL && f->how == GAUDIT_CLOUD_MOUNT && f->gathered
-          && !f->encrypted);
+          && !f->encrypted && f->via[0] == '\0');
     for (unsigned i = 0; i < s.n; i++)
         CHECK(strstr(s.f[i].name, "SECRET") == NULL && strstr(s.f[i].path, "SECRET") == NULL);
     CHECK(find(&s, "jotta-cli", "jottacloud") != NULL);

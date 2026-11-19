@@ -313,27 +313,33 @@ static void rclone(gaudit_cloud_findings *out, const char *home, const char *mou
     out->rclone_unreadable = unreadable;
     /* Which remotes a crypt remote covers. */
     int covered[32] = { 0 };
+    int by[32];
     for (unsigned i = 0; i < n; i++) {
         if (strcmp(rs[i].type, "crypt") != 0)
             continue;
         size_t bl = strcspn(rs[i].remote, ":");
         for (unsigned j = 0; j < n; j++)
             if (j != i && strlen(rs[j].name) == bl && strncmp(rs[j].name, rs[i].remote, bl) == 0)
-                covered[j] = 1;
+                covered[j] = 1, by[j] = (int)i;
     }
-    /* Mounted remotes: "name:" in /proc/self/mounts, type fuse.rclone. */
+    /* Mounted remotes: "name:" in /proc/self/mounts, type fuse.rclone; a
+     * remote is mounted also when the crypt remote over it is (what is
+     * mounted then is "<crypt>:", the files go to the remote under it). */
     char *mounts = read_text(mounts_path);
     for (unsigned i = 0; i < n; i++) {
         const char *service = rclone_service(rs[i].type);
         if (service == NULL)
             continue;
+        const char *names[2] = { rs[i].name, covered[i] ? rs[by[i]].name : NULL };
         char mount[512] = "";
         const char *line = mounts;
         while (line != NULL && *line != '\0') {
             char src[256], dst[512], fs[64];
-            if (sscanf(line, "%255s %511s %63s", src, dst, fs) == 3 && strcmp(fs, "fuse.rclone") == 0
-                && strncmp(src, rs[i].name, strlen(rs[i].name)) == 0 && src[strlen(rs[i].name)] == ':')
-                snprintf(mount, sizeof mount, "%s", dst);
+            if (sscanf(line, "%255s %511s %63s", src, dst, fs) == 3 && strcmp(fs, "fuse.rclone") == 0)
+                for (int k = 0; k < 2; k++)
+                    if (names[k] != NULL && strncmp(src, names[k], strlen(names[k])) == 0
+                        && src[strlen(names[k])] == ':')
+                        snprintf(mount, sizeof mount, "%s", dst);
             line = strchr(line, '\n');
             if (line != NULL)
                 line++;
@@ -341,8 +347,11 @@ static void rclone(gaudit_cloud_findings *out, const char *home, const char *mou
         unsigned before = out->n;
         add(out, "rclone", service, mount[0] != '\0' ? GAUDIT_CLOUD_MOUNT : GAUDIT_CLOUD_SETUP,
             mount, rs[i].name);
-        if (out->n > before)
+        if (out->n > before) {
             out->f[out->n - 1].encrypted = covered[i];
+            if (covered[i])
+                snprintf(out->f[out->n - 1].via, sizeof out->f[0].via, "%s", rs[by[i]].name);
+        }
     }
     free(mounts);
 }
@@ -371,6 +380,70 @@ static void pcloud(gaudit_cloud_findings *out, const char *home, const char *mou
         add(out, "pcloud", "pcloud", GAUDIT_CLOUD_MOUNT, want, NULL);
     else if (is_dir(cfg))
         add(out, "pcloud", "pcloud", GAUDIT_CLOUD_INSTALLED, NULL, NULL);
+}
+
+/* --- Mounting at login: rclone-*.service ------------------------------------------ */
+
+static int mounted_at(const char *mounts_path, const char *path)
+{
+    char *mounts = read_text(mounts_path);
+    int found = 0;
+    const char *line = mounts;
+    while (!found && line != NULL && *line != '\0') {
+        char src[256], dst[512];
+        if (sscanf(line, "%255s %511s", src, dst) == 2 && strcmp(dst, path) == 0)
+            found = 1;
+        line = strchr(line, '\n');
+        if (line != NULL)
+            line++;
+    }
+    free(mounts);
+    return found;
+}
+
+static void units(gaudit_cloud_findings *out, const char *home, const char *mounts_path)
+{
+    char dir[1024];
+    snprintf(dir, sizeof dir, "%s/.config/systemd/user", home);
+    DIR *d = opendir(dir);
+    if (d == NULL)
+        return;
+    struct dirent *de;
+    while ((de = readdir(d)) != NULL && out->n_units < GAUDIT_CLOUD_MAX_UNITS) {
+        size_t n = strlen(de->d_name);
+        if (strncmp(de->d_name, "rclone-", 7) != 0 || n < 9 || n >= 64
+            || strcmp(de->d_name + n - 8, ".service") != 0)
+            continue;
+        char p[1536];
+        snprintf(p, sizeof p, "%s/%s", dir, de->d_name);
+        char *text = read_text(p);
+        char where[512] = "";
+        for (char *line = text, *next; line != NULL && *line != '\0'; line = next) {
+            next = strchr(line, '\n');
+            if (next != NULL)
+                *next++ = '\0';
+            if (strncmp(line, "ExecStart=", 10) != 0)
+                continue;
+            char *m = strstr(line, " mount ");
+            char rem[256], target[512];
+            if (m != NULL && sscanf(m + 7, "%255s %511s", rem, target) == 2) {
+                if (strncmp(target, "%h/", 3) == 0)
+                    snprintf(where, sizeof where, "%s%.*s", home, (int)(sizeof where - strlen(home) - 1), target + 2);
+                else
+                    snprintf(where, sizeof where, "%s", target);
+            }
+        }
+        free(text);
+        if (!plain_path(where))
+            continue;
+        gaudit_cloud_unit *u = &out->units[out->n_units++];
+        snprintf(u->file, sizeof u->file, "%.63s", de->d_name);
+        snprintf(u->path, sizeof u->path, "%s", where);
+        snprintf(p, sizeof p, "%s/default.target.wants/%s", dir, de->d_name);
+        u->enabled = exists(p);
+        u->mounted = mounted_at(mounts_path, where);
+    }
+    closedir(d);
 }
 
 /* --- The search ------------------------------------------------------------------- */
@@ -451,6 +524,7 @@ int gaudit_cloud_find(const gaudit_cloud_where *where, gaudit_cloud_findings *ou
         add(out, "jotta-cli", "jottacloud", GAUDIT_CLOUD_INSTALLED, NULL, NULL);
 
     rclone(out, home, mounts);
+    units(out, home, mounts);
 
     /* The gathering folder, and what is under it. */
     for (size_t i = 0; i < sizeof gathering_names / sizeof gathering_names[0]; i++) {

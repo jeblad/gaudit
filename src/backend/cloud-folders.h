@@ -31,8 +31,19 @@ typedef struct {
     char path[512];     /* the folder or mount point, absolute; "" for none */
     char name[128];     /* an rclone remote's name, an Insync account; "" for none */
     int encrypted;      /* an rclone crypt remote over it: encrypted before it leaves */
+    char via[128];      /* ... that crypt remote's name, "" for none */
     int gathered;       /* the folder is under the gathering folder */
 } gaudit_cloud_finding;
+
+/* A systemd user unit that mounts an rclone remote (rclone-*.service, as
+ * the cloud plugin makes them, or any of that name that runs rclone mount). */
+#define GAUDIT_CLOUD_MAX_UNITS 16
+typedef struct {
+    char file[64];      /* its file name */
+    char path[512];     /* where it mounts, absolute */
+    int enabled;        /* started at login (default.target wants it) */
+    int mounted;        /* mounted now */
+} gaudit_cloud_unit;
 
 typedef struct {
     gaudit_cloud_finding f[GAUDIT_CLOUD_MAX];
@@ -41,6 +52,8 @@ typedef struct {
     char gathering[512];        /* the gathering folder, "" for none */
     unsigned gathering_count;   /* how many gathering folders there are (a duplicate: > 1) */
     int rclone_unreadable;      /* rclone's settings are encrypted, or could not be read */
+    gaudit_cloud_unit units[GAUDIT_CLOUD_MAX_UNITS];
+    unsigned n_units;
 } gaudit_cloud_findings;
 
 typedef struct {

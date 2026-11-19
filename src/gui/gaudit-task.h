@@ -60,6 +60,12 @@ typedef struct {
      * this package backend; elsewhere they are left out, and the commands
      * run as the user alone. NULL: everywhere. */
     const char *helper_backend;
+    /* A page of its own the user opens from the plugin's folder, after its
+     * report (e.g. setting a cloud service up with rclone), NULL for none:
+     * its entry's title (N_()-marked) and icon, and a function making it. */
+    const char *extra_title;
+    const char *extra_icon;
+    AdwNavigationPage *(*extra_page)(void);
     const char *run_waiting;  /* page 2 while the password is asked for, N_()-marked */
     const char *run_running;  /* page 2 while the check runs, N_()-marked */
 } GauditTaskInfo;

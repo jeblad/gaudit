@@ -924,13 +924,15 @@ static void on_copy_clicked(GtkButton *button, gpointer user_data)
     GtkLabel *label = GTK_LABEL(user_data);
     const char *shown = gtk_label_get_text(label);
     const char *expected = g_object_get_data(G_OBJECT(button), "gaudit-command");
+    gboolean file = g_object_get_data(G_OBJECT(button), "gaudit-file") != NULL;
     if (shown == NULL || g_strcmp0(shown, expected) != 0) {
         g_warning("gaudit: the command field no longer shows its command; not copied");
-        show_toast(GTK_WIDGET(button), _("The command shown has changed, so it was not copied"));
+        show_toast(GTK_WIDGET(button), file ? _("The text shown has changed, so it was not copied")
+                                            : _("The command shown has changed, so it was not copied"));
         return;
     }
     gdk_clipboard_set_text(gtk_widget_get_clipboard(GTK_WIDGET(button)), shown);
-    show_toast(GTK_WIDGET(button), _("Command copied"));
+    show_toast(GTK_WIDGET(button), file ? _("Text copied") : _("Command copied"));
 }
 
 /* --- Running a fix ---------------------------------------------------------
@@ -1074,6 +1076,19 @@ static void on_run_clicked(GtkButton *button, gpointer user_data)
 GtkWidget *gaudit_command_field_new(const char *command_text)
 {
     return gaudit_command_field_new_run(command_text, NULL);
+}
+
+GtkWidget *gaudit_file_field_new(const char *text)
+{
+    GtkWidget *field = gaudit_command_field_new_step(text, NULL, NULL);
+    GtkWidget *copy = gtk_widget_get_last_child(field);
+    gtk_widget_set_valign(copy, GTK_ALIGN_START);
+    gtk_widget_set_margin_top(copy, 6);
+    g_object_set_data(G_OBJECT(copy), "gaudit-file", GINT_TO_POINTER(1));
+    gtk_widget_set_tooltip_text(copy, _("Copy the text"));
+    gtk_accessible_update_property(GTK_ACCESSIBLE(copy),
+                                   GTK_ACCESSIBLE_PROPERTY_LABEL, _("Copy the text"), -1);
+    return field;
 }
 
 GtkWidget *gaudit_command_field_new_run(const char *command_text, const char *const *run_args)

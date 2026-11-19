@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 11:02+0100\n"
+"POT-Creation-Date: 2026-11-19 13:24+0100\n"
 "PO-Revision-Date: 2026-11-09 21:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -341,11 +341,11 @@ msgstr "Sjekket kl. %s"
 msgid "%s · checked at %s"
 msgstr "%s · sjekket kl. %s"
 
-#: src/gui/gaudit-window.c:774 src/gui/gaudit-task-page.c:1209
+#: src/gui/gaudit-window.c:774 src/gui/gaudit-task-page.c:1224
 msgid "Not available on this system"
 msgstr "Ikke tilgjengelig på dette systemet"
 
-#: src/gui/gaudit-window.c:775 src/gui/gaudit-task-page.c:1169
+#: src/gui/gaudit-window.c:775 src/gui/gaudit-task-page.c:1184
 msgid "Software is missing"
 msgstr "Programvare mangler"
 
@@ -422,7 +422,7 @@ msgid "The program's self-check"
 msgstr "Programmets egenkontroll"
 
 #: src/gui/gaudit-window.c:997 src/gui/gaudit-window.c:1070
-#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:817
+#: src/gui/gaudit-window.c:1780 src/gui/gaudit-task-page.c:817
 msgid "Home"
 msgstr "Hjem"
 
@@ -467,41 +467,41 @@ msgstr "Sett parametrene tilbake"
 msgid "Collect again with the same settings"
 msgstr "Samle inn på nytt med de samme innstillingene"
 
-#: src/gui/gaudit-window.c:1268 src/gui/gaudit-window.c:1315
+#: src/gui/gaudit-window.c:1278 src/gui/gaudit-window.c:1325
 msgid "Parameters"
 msgstr "Parametere"
 
-#: src/gui/gaudit-window.c:1291 src/gui/gaudit-run-page.c:496
+#: src/gui/gaudit-window.c:1301 src/gui/gaudit-run-page.c:496
 #: src/gui/gaudit-run-page.c:531
 msgid "Report"
 msgstr "Rapport"
 
-#: src/gui/gaudit-window.c:1291 src/gui/gaudit-run-page.c:497
+#: src/gui/gaudit-window.c:1301 src/gui/gaudit-run-page.c:497
 msgid "Simplified Report"
 msgstr "Forenklet rapport"
 
-#: src/gui/gaudit-window.c:1477
+#: src/gui/gaudit-window.c:1491
 msgid "_Preferences"
 msgstr "_Innstillinger"
 
-#: src/gui/gaudit-window.c:1478
+#: src/gui/gaudit-window.c:1492
 msgid "_Keyboard Shortcuts"
 msgstr "_Tastatursnarveier"
 
-#: src/gui/gaudit-window.c:1489
+#: src/gui/gaudit-window.c:1503
 msgid "Main Menu"
 msgstr "Hovedmeny"
 
-#: src/gui/gaudit-window.c:1566 src/gui/gaudit-window.c:1568
+#: src/gui/gaudit-window.c:1580 src/gui/gaudit-window.c:1582
 msgid "Running as you. Switch to administrator"
 msgstr "Kjører som deg. Bytt til administrator"
 
-#: src/gui/gaudit-window.c:1573 src/gui/gaudit-window.c:1575
+#: src/gui/gaudit-window.c:1587 src/gui/gaudit-window.c:1589
 msgid "Running with administrator rights"
 msgstr "Kjører med administratorrettigheter"
 
 #
-#: src/gui/gaudit-window.c:1583
+#: src/gui/gaudit-window.c:1597
 msgid ""
 "The program holds administrator rights. They end 2 minutes after the last "
 "check that needs them, and at the latest 30 minutes after you gave the "
@@ -510,21 +510,21 @@ msgstr ""
 "Programmet har administratorrettigheter. De slutter 2 minutter etter siste "
 "sjekk som trenger dem, og senest 30 minutter etter at du ga passordet."
 
-#: src/gui/gaudit-window.c:1589
+#: src/gui/gaudit-window.c:1603
 msgid "Drop Administrator Rights"
 msgstr "Slipp administratorrettigheter"
 
 #. Translators: Title of the main window and its sidebar.
-#: src/gui/gaudit-window.c:1636 src/gui/gaudit-window.c:1756
-#: src/gui/gaudit-window.c:1782
+#: src/gui/gaudit-window.c:1650 src/gui/gaudit-window.c:1770
+#: src/gui/gaudit-window.c:1796
 msgid "Audit Center"
 msgstr "Auditsenter"
 
-#: src/gui/gaudit-window.c:1668
+#: src/gui/gaudit-window.c:1682
 msgid "Stop the Check and Close?"
 msgstr "Stoppe sjekken og lukke?"
 
-#: src/gui/gaudit-window.c:1669
+#: src/gui/gaudit-window.c:1683
 msgid ""
 "A check is still running. Closing stops it, and what it has found so far is "
 "lost."
@@ -532,36 +532,36 @@ msgstr ""
 "En sjekk kjører fortsatt. Lukker du, stopper den, og det den har funnet så "
 "langt, går tapt."
 
-#: src/gui/gaudit-window.c:1670 src/gui/gaudit-task-page.c:364
+#: src/gui/gaudit-window.c:1684 src/gui/gaudit-task-page.c:364
 msgid "_Cancel"
 msgstr "_Avbryt"
 
-#: src/gui/gaudit-window.c:1671
+#: src/gui/gaudit-window.c:1685
 msgid "_Stop and Close"
 msgstr "_Stopp og lukk"
 
-#: src/gui/gaudit-window.c:1766 src/gui/gaudit-task-page.c:818
+#: src/gui/gaudit-window.c:1780 src/gui/gaudit-task-page.c:818
 msgid "Overall status"
 msgstr "Samlet status"
 
-#: src/gui/gaudit-window.c:1941 src/gui/gaudit-window.c:1959
+#: src/gui/gaudit-window.c:1955 src/gui/gaudit-window.c:1973
 msgid "Not checked: no password was given, or it was stopped"
 msgstr "Ikke sjekket: det ble ikke oppgitt noe passord, eller den ble stoppet"
 
-#: src/gui/gaudit-window.c:1942 src/gui/gaudit-window.c:1960
+#: src/gui/gaudit-window.c:1956 src/gui/gaudit-window.c:1974
 msgid "Not checked: the password was not accepted"
 msgstr "Ikke sjekket: passordet ble ikke godtatt"
 
-#: src/gui/gaudit-window.c:1943 src/gui/gaudit-window.c:1961
+#: src/gui/gaudit-window.c:1957 src/gui/gaudit-window.c:1975
 msgid "Another check is running. Try again when it has finished"
 msgstr "En annen sjekk kjører. Prøv igjen når den er ferdig"
 
-#: src/gui/gaudit-window.c:1944 src/gui/gaudit-window.c:1962
+#: src/gui/gaudit-window.c:1958 src/gui/gaudit-window.c:1976
 #: src/gui/gaudit-run-page.c:310
 msgid "The check could not be completed"
 msgstr "Sjekken kunne ikke fullføres"
 
-#: src/gui/gaudit-window.c:1958
+#: src/gui/gaudit-window.c:1972
 msgid "Not checked: it was stopped"
 msgstr "Ikke sjekket: den ble stoppet"
 
@@ -646,7 +646,7 @@ msgstr "Avbrutt, så ingenting ble endret."
 msgid "The password was not accepted, so nothing was changed."
 msgstr "Passordet ble ikke godtatt, så ingenting ble endret."
 
-#: src/gui/gaudit-task-page.c:344 src/gui/gaudit-task-page.c:1060
+#: src/gui/gaudit-task-page.c:344 src/gui/gaudit-task-page.c:1062
 msgid ""
 "Under way. It needs administrator rights: use the switch beside the title if "
 "asked."
@@ -654,7 +654,7 @@ msgstr ""
 "I gang. Det trengs administratorrettigheter: bruk bryteren ved siden av "
 "tittelen hvis du blir bedt om det."
 
-#: src/gui/gaudit-task-page.c:348 src/gui/gaudit-task-page.c:1065
+#: src/gui/gaudit-task-page.c:348 src/gui/gaudit-task-page.c:1067
 msgid "It is already under way."
 msgstr "Den er allerede i gang."
 
@@ -831,46 +831,54 @@ msgstr "Start"
 msgid "Applies to the full report only, not to Home"
 msgstr "Gjelder bare den fulle rapporten, ikke Home"
 
-#: src/gui/gaudit-task-page.c:929
+#: src/gui/gaudit-task-page.c:930
+msgid "The text shown has changed, so it was not copied"
+msgstr "Teksten som vises, er endret, så den ble ikke kopiert"
+
+#: src/gui/gaudit-task-page.c:931
 msgid "The command shown has changed, so it was not copied"
 msgstr "Kommandoen som vises er endret, så den ble ikke kopiert"
 
-#: src/gui/gaudit-task-page.c:933
+#: src/gui/gaudit-task-page.c:935
+msgid "Text copied"
+msgstr "Teksten er kopiert"
+
+#: src/gui/gaudit-task-page.c:935
 msgid "Command copied"
 msgstr "Kommandoen er kopiert"
 
 #. Translators: %04o is the new permissions, e.g. 0600.
-#: src/gui/gaudit-task-page.c:983
+#: src/gui/gaudit-task-page.c:985
 #, c-format
 msgid "Done: the permissions are now %04o."
 msgstr "Ferdig: rettighetene er nå %04o."
 
-#: src/gui/gaudit-task-page.c:985
+#: src/gui/gaudit-task-page.c:987
 msgid "It could not be changed. Nothing was done."
 msgstr "Det kunne ikke endres. Ingenting ble gjort."
 
-#: src/gui/gaudit-task-page.c:1004
+#: src/gui/gaudit-task-page.c:1006
 msgid "Done. It is checked again now."
 msgstr "Ferdig. Det sjekkes nå på nytt."
 
-#: src/gui/gaudit-task-page.c:1006
+#: src/gui/gaudit-task-page.c:1008
 msgid "Cancelled, so nothing was run."
 msgstr "Avbrutt, så ingenting ble kjørt."
 
-#: src/gui/gaudit-task-page.c:1008
+#: src/gui/gaudit-task-page.c:1010
 msgid "The password was not accepted, so nothing was run."
 msgstr "Passordet ble ikke godtatt, så ingenting ble kjørt."
 
 #. Translators: %d is a program's exit code, then the step's
 #. * own explanation of what it most likely means.
-#: src/gui/gaudit-task-page.c:1013
+#: src/gui/gaudit-task-page.c:1015
 #, c-format
 msgid "It stopped with an error (exit code %d). %s"
 msgstr "Den stoppet med en feil (avslutningskode %d). %s"
 
 #. Translators: %d is a program's exit code. Unsigned packages,
 #. * for one, stop apt: it never installs them from here.
-#: src/gui/gaudit-task-page.c:1018
+#: src/gui/gaudit-task-page.c:1020
 #, c-format
 msgid ""
 "It stopped with an error (exit code %d). Run the command in a terminal to "
@@ -881,32 +889,36 @@ msgstr ""
 "for å se hva den sier; apt stopper for eksempel heller enn å installere "
 "pakker som ikke er signert."
 
-#: src/gui/gaudit-task-page.c:1022
+#: src/gui/gaudit-task-page.c:1024
 msgid "It could not be run."
 msgstr "Det kunne ikke kjøres."
 
-#: src/gui/gaudit-task-page.c:1040
+#: src/gui/gaudit-task-page.c:1042
 msgid "The command shown has changed, so it was not run"
 msgstr "Kommandoen som vises, er endret, så den ble ikke kjørt"
 
-#: src/gui/gaudit-task-page.c:1111 src/gui/gaudit-task-page.c:1113
+#: src/gui/gaudit-task-page.c:1088 src/gui/gaudit-task-page.c:1090
+msgid "Copy the text"
+msgstr "Kopier teksten"
+
+#: src/gui/gaudit-task-page.c:1126 src/gui/gaudit-task-page.c:1128
 msgid "Copy command"
 msgstr "Kopier kommandoen"
 
-#: src/gui/gaudit-task-page.c:1125 src/gui/gaudit-task-page.c:1127
+#: src/gui/gaudit-task-page.c:1140 src/gui/gaudit-task-page.c:1142
 msgid "Run this command"
 msgstr "Kjør denne kommandoen"
 
-#: src/gui/gaudit-task-page.c:1157
+#: src/gui/gaudit-task-page.c:1172
 msgid "Installing is not implemented yet."
 msgstr "Installering er ikke implementert ennå."
 
-#: src/gui/gaudit-task-page.c:1172
+#: src/gui/gaudit-task-page.c:1187
 #, c-format
 msgid "This check needs software that is not installed: %s."
 msgstr "Denne sjekken trenger programvare som ikke er installert: %s."
 
-#: src/gui/gaudit-task-page.c:1178
+#: src/gui/gaudit-task-page.c:1193
 msgid ""
 "You can install it with the button below, or copy this command and run it in "
 "a terminal yourself:"
@@ -914,17 +926,17 @@ msgstr ""
 "Du kan installere den med knappen nedenfor, eller kopiere denne kommandoen "
 "og kjøre den i en terminal selv:"
 
-#: src/gui/gaudit-task-page.c:1183
+#: src/gui/gaudit-task-page.c:1198
 msgid "Install"
 msgstr "Installer"
 
-#: src/gui/gaudit-task-page.c:1191
+#: src/gui/gaudit-task-page.c:1206
 msgid ""
 "Installing uses the system's software service and asks for your password."
 msgstr ""
 "Installeringen bruker systemets programvaretjeneste og ber om passordet ditt."
 
-#: src/gui/gaudit-task-page.c:1211
+#: src/gui/gaudit-task-page.c:1226
 msgid "This check is not supported on this operating system yet."
 msgstr "Denne sjekken støttes ikke på dette operativsystemet ennå."
 
@@ -1469,8 +1481,8 @@ msgstr "Se den delte mappa og det som deler mapper"
 msgid "Looking at your folders…"
 msgstr "Ser på mappene dine …"
 
-#: src/plugins/cloud/plugin.c:15
 #
+#: src/plugins/cloud/plugin.c:15
 msgid "Cloud Services"
 msgstr "Skytjenester"
 
@@ -1478,7 +1490,9 @@ msgstr "Skytjenester"
 msgid ""
 "Finds the programs that keep a copy of your files in a cloud service, and "
 "says who can read what is sent there."
-msgstr "Finner programmene som holder en kopi av filene dine i en skytjeneste, og sier hvem som kan lese det som sendes dit."
+msgstr ""
+"Finner programmene som holder en kopi av filene dine i en skytjeneste, og "
+"sier hvem som kan lese det som sendes dit."
 
 #: src/plugins/cloud/plugin.c:18
 msgid ""
@@ -1497,14 +1511,31 @@ msgid ""
 "It only finds out. It never moves a cloud folder: that is done in each "
 "program's own settings, since moving it any other way can make the program "
 "think your files were deleted."
-msgstr "Skytjenester ser etter programmer som synkroniserer en mappe med en skytjeneste, som Dropbox, Nextcloud, OneDrive, Google Drive, MEGA eller Jottacloud, og finner hvor mappene deres ligger. For hver tjeneste sier den det som er kjent: om filene krypteres før de forlater datamaskinen, så leverandøren ikke kan lese dem; hvilket lands lov leverandøren er under; om programmets kildekode er åpen; og om systemet holder det oppdatert.\n\nDen sier også hvor et program i mellom logger inn på tjenesten for deg: går påloggingen gjennom nettjenesten til den som lager programmet, kan også de nå filene dine.\n\nDen bare finner ut. Den flytter aldri en skymappe: det gjøres i hvert programs egne innstillinger, siden flytting på annen måte kan få programmet til å tro at filene dine er slettet."
+msgstr ""
+"Skytjenester ser etter programmer som synkroniserer en mappe med en "
+"skytjeneste, som Dropbox, Nextcloud, OneDrive, Google Drive, MEGA eller "
+"Jottacloud, og finner hvor mappene deres ligger. For hver tjeneste sier den "
+"det som er kjent: om filene krypteres før de forlater datamaskinen, så "
+"leverandøren ikke kan lese dem; hvilket lands lov leverandøren er under; om "
+"programmets kildekode er åpen; og om systemet holder det oppdatert.\n"
+"\n"
+"Den sier også hvor et program i mellom logger inn på tjenesten for deg: går "
+"påloggingen gjennom nettjenesten til den som lager programmet, kan også de "
+"nå filene dine.\n"
+"\n"
+"Den bare finner ut. Den flytter aldri en skymappe: det gjøres i hvert "
+"programs egne innstillinger, siden flytting på annen måte kan få programmet "
+"til å tro at filene dine er slettet."
 
 #: src/plugins/cloud/plugin.c:31
 msgid ""
 "What is in a cloud folder leaves the computer and is kept by someone else. "
 "Knowing which services are set up, and who can read what is sent there, is "
 "the first step to deciding whether that is what you want."
-msgstr "Det som ligger i en skymappe, forlater datamaskinen og tas vare på av noen andre. Å vite hvilke tjenester som er satt opp, og hvem som kan lese det som sendes dit, er første steg for å avgjøre om det er det du vil."
+msgstr ""
+"Det som ligger i en skymappe, forlater datamaskinen og tas vare på av noen "
+"andre. Å vite hvilke tjenester som er satt opp, og hvem som kan lese det som "
+"sendes dit, er første steg for å avgjøre om det er det du vil."
 
 #: src/plugins/cloud/plugin.c:35
 msgid ""
@@ -1513,21 +1544,30 @@ msgid ""
 "warning, and so is a login that goes through someone else's web service, or "
 "one whose making is not documented. A program the system does not keep up to "
 "date is a recommendation."
-msgstr "Rapporten viser skytjenestene som ble funnet, med mappene deres og det som er kjent om hver. En tjeneste der leverandøren kan lese filene dine, er en advarsel, og det samme er en pålogging som går gjennom noen andres nettjeneste, eller som det ikke er dokumentert hvordan lages. Et program systemet ikke holder oppdatert, er en anbefaling."
+msgstr ""
+"Rapporten viser skytjenestene som ble funnet, med mappene deres og det som "
+"er kjent om hver. En tjeneste der leverandøren kan lese filene dine, er en "
+"advarsel, og det samme er en pålogging som går gjennom noen andres "
+"nettjeneste, eller som det ikke er dokumentert hvordan lages. Et program "
+"systemet ikke holder oppdatert, er en anbefaling."
 
-#: src/plugins/cloud/plugin.c:46
 #
+#: src/plugins/cloud/plugin.c:46
 msgid "Cloud services"
 msgstr "Skytjenester"
 
-#: src/plugins/cloud/plugin.c:47
 #
+#: src/plugins/cloud/plugin.c:47
 msgid "See the cloud services on this computer"
 msgstr "Se skytjenestene på denne datamaskinen"
 
+#: src/plugins/cloud/plugin.c:51
+msgid "Set Up With rclone"
+msgstr "Sett opp med rclone"
+
 #
-#: src/plugins/cloud/plugin.c:51 src/plugins/cloud/plugin.c:52
 #
+#: src/plugins/cloud/plugin.c:54 src/plugins/cloud/plugin.c:55
 msgid "Looking for cloud services…"
 msgstr "Ser etter skytjenester …"
 

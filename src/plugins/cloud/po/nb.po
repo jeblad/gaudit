@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit-cloud\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 11:03+0100\n"
+"POT-Creation-Date: 2026-11-19 18:36+0100\n"
 "PO-Revision-Date: 2026-11-19 12:00+0100\n"
 "Last-Translator: \n"
 "Language-Team: Norwegian Bokmål\n"
@@ -15,183 +15,708 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: src/plugins/cloud/rules/report.scm:97
+#: src/plugins/cloud/gaudit-cloud.c:185
+msgid "The program could not look just now. Try again in a moment."
+msgstr "Programmet fikk ikke sett etter akkurat nå. Prøv igjen om litt."
+
+#: src/plugins/cloud/gaudit-cloud.c:186
+msgid "Check Again"
+msgstr "Sjekk igjen"
+
+#: src/plugins/cloud/gaudit-cloud.c:190
+msgid "Found: the service is switched on, and the folder is mounted."
+msgstr "Funnet: tjenesten er slått på, og mappa er montert."
+
+#: src/plugins/cloud/gaudit-cloud.c:191
+msgid ""
+"The service is not switched on and mounted yet. Run the commands above, then "
+"open this page again."
+msgstr ""
+"Tjenesten er ikke slått på og montert ennå. Kjør kommandoene over, og åpne "
+"så denne siden igjen."
+
+#. Translators: %s is the name of an rclone remote, e.g. "jotta".
+#: src/plugins/cloud/gaudit-cloud.c:196
+#, c-format
+msgid "Found: rclone has a setup named %s."
+msgstr "Funnet: rclone har et oppsett som heter %s."
+
+#: src/plugins/cloud/gaudit-cloud.c:200
+msgid ""
+"No such setup was found yet. Finish rclone config in the terminal, then open "
+"this page again."
+msgstr ""
+"Noe slikt oppsett er ikke funnet ennå. Gjør ferdig rclone config i "
+"terminalen, og åpne så denne siden igjen."
+
+#
+#: src/plugins/cloud/gaudit-cloud.c:204
+msgid "Found: the files are encrypted before they leave the computer."
+msgstr "Funnet: filene krypteres før de forlater datamaskinen."
+
+#: src/plugins/cloud/gaudit-cloud.c:207
+msgid ""
+"No encrypted setup over it was found yet. Finish rclone config in the "
+"terminal, then open this page again."
+msgstr ""
+"Noe kryptert oppsett over det er ikke funnet ennå. Gjør ferdig rclone config "
+"i terminalen, og åpne så denne siden igjen."
+
+#: src/plugins/cloud/gaudit-cloud.c:244
+msgid ""
+"Last, make a folder for it under ~/Cloud, where the cloud folders are "
+"gathered, and mount it there. Run these in a terminal:"
+msgstr ""
+"Til slutt lager du en mappe for den under ~/Cloud, der skymappene samles, og "
+"monterer den der. Kjør disse i en terminal:"
+
+#
+#
+#: src/plugins/cloud/gaudit-cloud.c:248
+msgid ""
+"--vfs-cache-mode full keeps a copy of what is used on this computer, and --"
+"dir-cache-time remembers the lists of files for an hour: without them, Files "
+"fetches every file to show the folder, which can take minutes. --volname "
+"gives it the name the file manager shows, and --umask 077 shows what is "
+"there as yours alone, as it is: other accounts cannot reach a mount like "
+"this. --daemon lets it run in the background until you log out. To mount it "
+"each time you log in, rclone's own documentation shows how."
+msgstr ""
+"--vfs-cache-mode full holder en kopi av det som brukes, på denne "
+"datamaskinen, og --dir-cache-time husker fillistene i en time: uten dem "
+"henter Filer hver fil for å vise mappa, noe som kan ta minutter. --volname "
+"gir den navnet filbehandleren viser, og --umask 077 viser det som ligger der "
+"som bare ditt, slik det er: andre kontoer kommer ikke inn i en slik "
+"montering. --daemon lar den gå i bakgrunnen til du logger ut. Hvordan den "
+"monteres hver gang du logger inn, viser rclones egen dokumentasjon."
+
+#: src/plugins/cloud/gaudit-cloud.c:256
+msgid ""
+"Use the encrypted setup, as above, for everything you put there: what goes "
+"through the other one is not encrypted."
+msgstr ""
+"Bruk det krypterte oppsettet, som over, til alt du legger der: det som går "
+"gjennom det andre, er ikke kryptert."
+
+#: src/plugins/cloud/gaudit-cloud.c:302
+msgid ""
+"A file of that name is there already, and it is not this one, so it was left "
+"as it is."
+msgstr ""
+"Det finnes allerede en fil med det navnet, og den er ikke denne, så den fikk "
+"være som den er."
+
+#: src/plugins/cloud/gaudit-cloud.c:304
+msgid "The file could not be written."
+msgstr "Fila kunne ikke skrives."
+
+#: src/plugins/cloud/gaudit-cloud.c:306
+msgid "Written."
+msgstr "Skrevet."
+
+#: src/plugins/cloud/gaudit-cloud.c:306
+msgid "It was there already, the same."
+msgstr "Den fantes allerede, lik."
+
+#: src/plugins/cloud/gaudit-cloud.c:310
+msgid ""
+"Now stop the mount started by hand, if it runs, and switch the service on. "
+"Run these in a terminal:"
+msgstr ""
+"Stopp nå monteringen som ble startet for hånd, hvis den går, og slå på "
+"tjenesten. Kjør disse i en terminal:"
+
+#: src/plugins/cloud/gaudit-cloud.c:315
+msgid ""
+"It then mounts the folder at each login, and starts it again if it stops."
+msgstr ""
+"Den monterer da mappa ved hver innlogging, og starter den igjen hvis den "
+"stopper."
+
+#: src/plugins/cloud/gaudit-cloud.c:316 src/plugins/cloud/gaudit-cloud.c:400
+#: src/plugins/cloud/gaudit-cloud.c:456 src/plugins/cloud/gaudit-cloud.c:523
+msgid "Check"
+msgstr "Sjekk"
+
+#: src/plugins/cloud/gaudit-cloud.c:338
+msgid ""
+"Then mount it by hand after each login, with the command above. Until it is "
+"mounted, the folder is an ordinary empty folder on this computer: what is "
+"put there stays here, and is not encrypted."
+msgstr ""
+"Monter den da for hånd etter hver innlogging, med kommandoen over. Til den "
+"er montert, er mappa en vanlig tom mappe på denne datamaskinen: det som "
+"legges der, blir liggende her og er ikke kryptert."
+
+#: src/plugins/cloud/gaudit-cloud.c:350
+msgid ""
+"Optional: mount it at each login. A mount started by hand ends when you log "
+"out, and until it is mounted again, the folder is an ordinary empty folder: "
+"what is put there stays on this computer, and is not encrypted. A small "
+"service file makes it mount by itself. This is the file, and where it goes:"
+msgstr ""
+"Valgfritt: monter den ved hver innlogging. En montering startet for hånd "
+"slutter når du logger ut, og til den er montert igjen, er mappa en vanlig "
+"tom mappe: det som legges der, blir liggende på denne datamaskinen og er "
+"ikke kryptert. En liten tjenestefil gjør at den monteres av seg selv. Dette "
+"er fila, og hvor den legges:"
+
+#: src/plugins/cloud/gaudit-cloud.c:358
+msgid ""
+"The file also makes the folder read-only whenever nothing is mounted there, "
+"so nothing can be saved in it by mistake and stay on this computer "
+"unencrypted. While it is mounted, you can use it as any other folder."
+msgstr "Fila gjør også mappa skrivebeskyttet når ingenting er montert der, så ingenting kan lagres i den ved et uhell og bli liggende ukryptert på denne datamaskinen. Mens den er montert, kan du bruke den som en hvilken som helst annen mappe."
+
+#: src/plugins/cloud/gaudit-cloud.c:361
+msgid ""
+"The program writes this file and nothing else, only when you press the "
+"button. It never writes over another file of that name."
+msgstr ""
+"Programmet skriver denne fila og ingenting annet, bare når du trykker på "
+"knappen. Det skriver aldri over en annen fil med samme navn."
+
+#: src/plugins/cloud/gaudit-cloud.c:363 src/plugins/cloud/gaudit-cloud.c:421
+msgid "Skip"
+msgstr "Hopp over"
+
+#: src/plugins/cloud/gaudit-cloud.c:363
+msgid "Write the File"
+msgstr "Skriv fila"
+
+#. Translators: the rclone remote's name, twice, then the name to give the new one.
+#: src/plugins/cloud/gaudit-cloud.c:380
+#, c-format
+msgid ""
+"Run rclone config again, and answer:\n"
+"· n, a new remote\n"
+"· name: %s-crypt\n"
+"· storage: type crypt\n"
+"· remote: %s:Encrypted\n"
+"· filename_encryption: standard\n"
+"· directory_name_encryption: true\n"
+"· password: g, to let rclone make one; Bits: 128 or more (128 is secure); "
+"then y to use it\n"
+"· password2, the salt: g again, the same number of bits, then y\n"
+"· edit advanced config: n\n"
+"· then y to keep it, and q to quit"
+msgstr ""
+"Kjør rclone config igjen, og svar:\n"
+"· n, et nytt oppsett\n"
+"· navn: %s-crypt\n"
+"· lagring: skriv crypt\n"
+"· remote: %s:Encrypted\n"
+"· filename_encryption: standard\n"
+"· directory_name_encryption: true\n"
+"· password: g, så rclone lager et; Bits: 128 eller mer (128 er trygt); så y "
+"for å bruke det\n"
+"· password2, saltet: g igjen, samme antall bits, så y\n"
+"· edit advanced config: n\n"
+"· så y for å beholde det, og q for å avslutte"
+
+#: src/plugins/cloud/gaudit-cloud.c:395
+msgid ""
+"If something goes wrong half way, remove the half-made setup with rclone "
+"config delete and its name, and start again: rclone saves as it goes."
+msgstr ""
+"Går noe galt halvveis, fjerner du det halvferdige oppsettet med rclone "
+"config delete og navnet, og begynner på nytt: rclone lagrer underveis."
+
+#: src/plugins/cloud/gaudit-cloud.c:397
+msgid ""
+"Write both passwords down and keep them somewhere safe, apart from this "
+"computer, such as a password manager. Without them the encrypted files "
+"cannot be read by anyone, you included, and nobody can recover them."
+msgstr ""
+"Skriv ned begge passordene og ta vare på dem et trygt sted, utenfor denne "
+"datamaskinen, for eksempel i en passordbehandler. Uten dem kan de krypterte "
+"filene ikke leses av noen, heller ikke av deg, og ingen kan hente dem fram "
+"igjen."
+
+#: src/plugins/cloud/gaudit-cloud.c:407
+msgid ""
+"Without encryption the provider can read what you send there. It can be "
+"added later the same way."
+msgstr ""
+"Uten kryptering kan leverandøren lese det du sender dit. Den kan legges til "
+"senere på samme måte."
+
+#: src/plugins/cloud/gaudit-cloud.c:414
+msgid ""
+"Recommended: encrypt the files before they leave the computer, so the "
+"provider cannot read them. rclone does it with a second setup over the "
+"first, and you keep the passwords. It is optional; you choose."
+msgstr ""
+"Anbefalt: krypter filene før de forlater datamaskinen, så leverandøren ikke "
+"kan lese dem. rclone gjør det med et nytt oppsett over det første, og du har "
+"passordene. Det er valgfritt; du bestemmer."
+
+#: src/plugins/cloud/gaudit-cloud.c:417
+msgid ""
+"It encrypts what is in the files and what they are called. The service still "
+"sees how large each file is, when it was changed and uploaded, and how many "
+"files and folders there are, and that they are encrypted. So it keeps the "
+"files private, but does not hide that they are there."
+msgstr ""
+"Den krypterer det som står i filene, og hva de heter. Tjenesten ser fortsatt "
+"hvor stor hver fil er, når den ble endret og lastet opp, hvor mange filer og "
+"mapper det er, og at de er kryptert. Krypteringen holder altså filene "
+"private, men skjuler ikke at de finnes."
+
+#: src/plugins/cloud/gaudit-cloud.c:421
+msgid "Set Up Encryption"
+msgstr "Sett opp kryptering"
+
+#. Translators: the name suggested for the remote, then rclone's storage type.
+#: src/plugins/cloud/gaudit-cloud.c:436
+#, c-format
+msgid ""
+"Run rclone config in a terminal, and answer:\n"
+"· n, a new remote\n"
+"· name: %s (or another, if that one is taken)\n"
+"· storage: type %s (the name, since the numbers in the list change between "
+"versions of rclone)\n"
+"· client_id and client_secret: press Enter, to leave them empty\n"
+"· edit advanced config: n\n"
+"· authentication: 1, standard (the default)\n"
+"· the login token: paste the one you made\n"
+"· a non-standard device or mountpoint: n, for the Archive section (y only to "
+"reach the Sync or Backup section of the service's own app)\n"
+"· then y to keep it, and q to quit"
+msgstr ""
+"Kjør rclone config i en terminal, og svar:\n"
+"· n, et nytt oppsett\n"
+"· navn: %s (eller et annet, hvis det er tatt)\n"
+"· lagring: skriv %s (navnet, siden tallene i lista endrer seg mellom "
+"versjoner av rclone)\n"
+"· client_id og client_secret: trykk Enter, så de står tomme\n"
+"· edit advanced config: n\n"
+"· autentisering: 1, standard (forvalgt)\n"
+"· påloggingstokenet: lim inn det du laget\n"
+"· en egen enhet eller et eget monteringspunkt: n, for delen Arkiv (y bare "
+"for å nå delen Synk eller Backup i tjenestens egen app)\n"
+"· så y for å beholde det, og q for å avslutte"
+
+#: src/plugins/cloud/gaudit-cloud.c:451
+msgid ""
+"rclone trades the login token for a lasting one and keeps it in its own "
+"settings, ~/.config/rclone/rclone.conf. The program never sees either."
+msgstr ""
+"rclone bytter påloggingstokenet mot et varig et og tar vare på det i sine "
+"egne innstillinger, ~/.config/rclone/rclone.conf. Programmet ser aldri noen "
+"av dem."
+
+#: src/plugins/cloud/gaudit-cloud.c:453
+msgid ""
+"rclone saves as it goes, also when stopped half way. If something went "
+"wrong, remove the half-made setup with rclone config delete and its name, "
+"and start again."
+msgstr ""
+"rclone lagrer underveis, også når det stoppes halvveis. Gikk noe galt, "
+"fjerner du det halvferdige oppsettet med rclone config delete og navnet, og "
+"begynner på nytt."
+
+#. Translators: %s is a cloud service, e.g. "Jottacloud".
+#: src/plugins/cloud/gaudit-cloud.c:480
+#, c-format
+msgid ""
+"Make a login token at %s: log in on its web site, open Settings, then "
+"Security, find \"Personal login token\" and press Generate. Copy what it "
+"shows. It can be used only once, and it shows up as a new device among your "
+"logged in devices there."
+msgstr ""
+"Lag et påloggingstoken hos %s: logg inn på nettstedet, åpne Innstillinger og "
+"så Sikkerhet, finn «Personlig påloggingstoken» og trykk Generer. Kopier det "
+"som vises. Det kan brukes bare én gang, og det dukker opp som en ny enhet "
+"blant de innloggede enhetene dine der."
+
+#: src/plugins/cloud/gaudit-cloud.c:487
+msgid "Open the Security Page"
+msgstr "Åpne sikkerhetssiden"
+
+#: src/plugins/cloud/gaudit-cloud.c:495
+msgid "I Have the Token"
+msgstr "Jeg har tokenet"
+
+#: src/plugins/cloud/gaudit-cloud.c:505
+msgid "rclone is installed."
+msgstr "rclone er installert."
+
+#: src/plugins/cloud/gaudit-cloud.c:508
+msgid "rclone is still not installed. Install it, then open this page again."
+msgstr ""
+"rclone er fortsatt ikke installert. Installer den, og åpne så denne siden "
+"igjen."
+
+#: src/plugins/cloud/gaudit-cloud.c:515
+msgid ""
+"rclone is installed, from the system's packages, so it gets updates with "
+"everything else."
+msgstr ""
+"rclone er installert fra systemets pakker, så den får oppdateringer sammen "
+"med alt annet."
+
+#: src/plugins/cloud/gaudit-cloud.c:520
+msgid ""
+"rclone is not installed. Install it from the system's packages, so it gets "
+"updates with everything else:"
+msgstr ""
+"rclone er ikke installert. Installer den fra systemets pakker, så den får "
+"oppdateringer sammen med alt annet:"
+
+#: src/plugins/cloud/gaudit-cloud.c:545
+#, c-format
+msgid ""
+"rclone reaches it already, as %s, encrypted. What is left is mounting it."
+msgstr ""
+"rclone når den allerede, som %s, kryptert. Det som gjenstår, er å montere "
+"den."
+
+#: src/plugins/cloud/gaudit-cloud.c:547
+#, c-format
+msgid "rclone reaches it already, as %s. What is left is mounting it."
+msgstr "rclone når den allerede, som %s. Det som gjenstår, er å montere den."
+
+#: src/plugins/cloud/gaudit-cloud.c:562
+msgid "Set Up a Cloud Service With rclone"
+msgstr "Sett opp en skytjeneste med rclone"
+
+#: src/plugins/cloud/gaudit-cloud.c:563
+msgid ""
+"rclone is a program that keeps a folder in step with a cloud service. Its "
+"source code is open, the system keeps it up to date, it logs in on this "
+"computer only, and it can encrypt your files before they leave."
+msgstr ""
+"rclone er et program som holder en mappe i takt med en skytjeneste. "
+"Kildekoden er åpen, systemet holder det oppdatert, det logger inn bare på "
+"denne datamaskinen, og det kan kryptere filene dine før de forlater den."
+
+#: src/plugins/cloud/gaudit-cloud.c:566
+msgid ""
+"This page goes through it step by step. You run the commands yourself, in a "
+"terminal: rclone asks its own questions and writes its own settings. The "
+"program writes nothing and never sees your login."
+msgstr ""
+"Denne siden går gjennom det steg for steg. Du kjører kommandoene selv, i en "
+"terminal: rclone stiller sine egne spørsmål og skriver sine egne "
+"innstillinger. Programmet skriver ingenting og ser aldri påloggingen din."
+
+#. Translators: %s is a cloud service, e.g. "Jottacloud".
+#: src/plugins/cloud/gaudit-cloud.c:617
+#, c-format
+msgid "%s: mount at each login"
+msgstr "%s: monter ved hver innlogging"
+
+#: src/plugins/cloud/gaudit-cloud.c:623
+msgid ""
+"Every service this page knows how to set up is reached through rclone "
+"already, and mounted at each login. They are in the report."
+msgstr ""
+"Alle tjenestene denne siden kan sette opp, nås allerede gjennom rclone og "
+"monteres ved hver innlogging. De står i rapporten."
+
+#
+#: src/plugins/cloud/gaudit-cloud.c:627
+msgid "Which cloud service?"
+msgstr "Hvilken skytjeneste?"
+
+#: src/plugins/cloud/gaudit-cloud.c:635
+msgid "Next"
+msgstr "Neste"
+
+#: src/plugins/cloud/rules/report.scm:103
 msgid "under the law of the USA"
 msgstr "under amerikansk lov"
 
-#: src/plugins/cloud/rules/report.scm:98
+#: src/plugins/cloud/rules/report.scm:104
 msgid "under Swiss law"
 msgstr "under sveitsisk lov"
 
-#: src/plugins/cloud/rules/report.scm:99
+#: src/plugins/cloud/rules/report.scm:105
 msgid "under Norwegian law"
 msgstr "under norsk lov"
 
-#: src/plugins/cloud/rules/report.scm:100
+#: src/plugins/cloud/rules/report.scm:106
 msgid "under the law of New Zealand"
 msgstr "under newzealandsk lov"
 
-#: src/plugins/cloud/rules/report.scm:101
+#: src/plugins/cloud/rules/report.scm:107
 msgid "under the law where its server is"
 msgstr "under loven der serveren står"
 
-#: src/plugins/cloud/rules/report.scm:104
-#: src/plugins/cloud/rules/report.scm:105
+#
+#: src/plugins/cloud/rules/report.scm:110
+msgid "contents and names encrypted before they leave the computer"
+msgstr "innhold og navn krypteres før de forlater datamaskinen"
+
+#: src/plugins/cloud/rules/report.scm:111
 msgid "encrypted before it leaves the computer"
 msgstr "kryptert før det forlater datamaskinen"
 
-#: src/plugins/cloud/rules/report.scm:106
+#: src/plugins/cloud/rules/report.scm:112
 msgid "the provider can read it unless a folder is set to be encrypted"
 msgstr "leverandøren kan lese det, med mindre en mappe er satt til å krypteres"
 
-#: src/plugins/cloud/rules/report.scm:107
+#: src/plugins/cloud/rules/report.scm:113
 msgid "the provider can read it, except in a paid encrypted folder"
 msgstr "leverandøren kan lese det, unntatt i en betalt kryptert mappe"
 
-#: src/plugins/cloud/rules/report.scm:108
+#: src/plugins/cloud/rules/report.scm:114
 msgid "the provider can read it"
 msgstr "leverandøren kan lese det"
 
-#: src/plugins/cloud/rules/report.scm:109
+#: src/plugins/cloud/rules/report.scm:115
 msgid "whether the provider can read it is not known"
 msgstr "det er ikke kjent om leverandøren kan lese det"
 
-#: src/plugins/cloud/rules/report.scm:114
+#: src/plugins/cloud/rules/report.scm:120
 msgid "{path}"
 msgstr "{path}"
 
-#: src/plugins/cloud/rules/report.scm:115
+#: src/plugins/cloud/rules/report.scm:121
 msgid "probably {path}, its usual folder"
 msgstr "trolig {path}, den vanlige mappa"
 
-#: src/plugins/cloud/rules/report.scm:116
+#: src/plugins/cloud/rules/report.scm:122
 msgid "mounted at {path}"
 msgstr "montert på {path}"
 
-#: src/plugins/cloud/rules/report.scm:117
+#: src/plugins/cloud/rules/report.scm:123
 msgid "set up as {name}, without a folder of its own"
 msgstr "satt opp som {name}, uten egen mappe"
 
-#: src/plugins/cloud/rules/report.scm:118
+#: src/plugins/cloud/rules/report.scm:124
 msgid "installed; where its folder is cannot be seen"
 msgstr "installert; hvor mappa ligger, kan ikke ses"
 
-#: src/plugins/cloud/rules/report.scm:140
+#: src/plugins/cloud/rules/report.scm:146
 msgid "{service} through {client}"
 msgstr "{service} gjennom {client}"
 
-#: src/plugins/cloud/rules/report.scm:148
+#: src/plugins/cloud/rules/report.scm:154
 msgid "{where} · where its login is made, and who keeps it, is not documented"
-msgstr "{where} · hvor påloggingen lages, og hvem som tar vare på den, er ikke dokumentert"
+msgstr ""
+"{where} · hvor påloggingen lages, og hvem som tar vare på den, er ikke "
+"dokumentert"
 
-#: src/plugins/cloud/rules/report.scm:150
+#: src/plugins/cloud/rules/report.scm:156
 msgid "{where} · {encryption} · {law}"
 msgstr "{where} · {encryption} · {law}"
 
-#: src/plugins/cloud/rules/report.scm:179
+#: src/plugins/cloud/rules/report.scm:226
 msgid "Cloud services could not be looked for"
 msgstr "Det kunne ikke letes etter skytjenester"
 
-#: src/plugins/cloud/rules/report.scm:180
+#: src/plugins/cloud/rules/report.scm:227
 msgid "Nothing is known about the cloud services on this computer."
 msgstr "Ingenting er kjent om skytjenestene på denne datamaskinen."
 
-#: src/plugins/cloud/rules/report.scm:186
+#: src/plugins/cloud/rules/report.scm:233
 msgid "{n} cloud program logs in in a way that is not documented"
 msgid_plural "{n} cloud programs log in in a way that is not documented"
 msgstr[0] "{n} skyprogram logger inn på en måte som ikke er dokumentert"
 msgstr[1] "{n} skyprogrammer logger inn på en måte som ikke er dokumentert"
 
-#: src/plugins/cloud/rules/report.scm:190
+#: src/plugins/cloud/rules/report.scm:237
 msgid "{n} cloud service where the provider can read your files"
 msgid_plural "{n} cloud services where the provider can read your files"
 msgstr[0] "{n} skytjeneste der leverandøren kan lese filene dine"
 msgstr[1] "{n} skytjenester der leverandøren kan lese filene dine"
 
-#: src/plugins/cloud/rules/report.scm:193
-#: src/plugins/cloud/rules/report.scm:209
+#: src/plugins/cloud/rules/report.scm:240
+#: src/plugins/cloud/rules/report.scm:263
 msgid "No cloud services found"
 msgstr "Ingen skytjenester funnet"
 
-#: src/plugins/cloud/rules/report.scm:194
-#: src/plugins/cloud/rules/report.scm:210
+#: src/plugins/cloud/rules/report.scm:241
+#: src/plugins/cloud/rules/report.scm:264
 msgid "{n} cloud service found"
 msgid_plural "{n} cloud services found"
 msgstr[0] "{n} skytjeneste funnet"
 msgstr[1] "{n} skytjenester funnet"
 
-#: src/plugins/cloud/rules/report.scm:197
+#: src/plugins/cloud/rules/report.scm:244
 msgid ""
 "What is in a cloud folder leaves the computer and is kept by someone else. "
 "Best is when it is encrypted before it leaves, so the provider cannot read "
 "it, under a law that protects privacy, with a program whose source code is "
 "open and that the system keeps up to date."
-msgstr "Det som ligger i en skymappe, forlater datamaskinen og tas vare på av noen andre. Best er det når det krypteres før det forlater maskinen, så leverandøren ikke kan lese det, under en lov som verner personvernet, med et program som har åpen kildekode og som systemet holder oppdatert."
+msgstr ""
+"Det som ligger i en skymappe, forlater datamaskinen og tas vare på av noen "
+"andre. Best er det når det krypteres før det forlater maskinen, så "
+"leverandøren ikke kan lese det, under en lov som verner personvernet, med et "
+"program som har åpen kildekode og som systemet holder oppdatert."
 
-#: src/plugins/cloud/rules/report.scm:204
+#: src/plugins/cloud/rules/report.scm:249
+#: src/plugins/cloud/rules/report.scm:282
+msgid "{path} is not mounted"
+msgstr "{path} er ikke montert"
+
+#: src/plugins/cloud/rules/report.scm:250
+msgid "What is put there now stays on this computer, unencrypted"
+msgstr "Det som legges der nå, blir liggende på denne datamaskinen, ukryptert"
+
+#: src/plugins/cloud/rules/report.scm:256
 msgid "The provider can read what is sent there"
 msgstr "Leverandøren kan lese det som sendes dit"
 
-#: src/plugins/cloud/rules/report.scm:205
+#: src/plugins/cloud/rules/report.scm:257
 msgid "Where its login is made, and who keeps it, is not documented"
-msgstr "Hvor påloggingen lages, og hvem som tar vare på den, er ikke dokumentert"
+msgstr ""
+"Hvor påloggingen lages, og hvem som tar vare på den, er ikke dokumentert"
 
-#: src/plugins/cloud/rules/report.scm:212
+#: src/plugins/cloud/rules/report.scm:266
 msgid "Nothing needs attention"
 msgstr "Ingenting trenger oppmerksomhet"
 
-#: src/plugins/cloud/rules/report.scm:214
+#: src/plugins/cloud/rules/report.scm:268
 msgid "Cloud Services on This Computer"
 msgstr "Skytjenester på denne datamaskinen"
 
-#: src/plugins/cloud/rules/report.scm:215
+#: src/plugins/cloud/rules/report.scm:269
 msgid ""
 "Programs that keep a copy of your files in a cloud service, and what is "
 "known about each."
-msgstr "Programmer som holder en kopi av filene dine i en skytjeneste, og det som er kjent om hver."
+msgstr ""
+"Programmer som holder en kopi av filene dine i en skytjeneste, og det som er "
+"kjent om hver."
 
-#: src/plugins/cloud/rules/report.scm:220
+#
+#: src/plugins/cloud/rules/report.scm:275
+msgid "Mounted at Login"
+msgstr "Montert ved innlogging"
+
+#: src/plugins/cloud/rules/report.scm:276
+msgid "Services that mount a cloud folder each time you log in."
+msgstr "Tjenester som monterer en skymappe hver gang du logger inn."
+
+#: src/plugins/cloud/rules/report.scm:283
+msgid ""
+"Until it is, what is put there stays on this computer, unencrypted. Its "
+"service is {file}."
+msgstr ""
+"Til den er det, blir det som legges der, liggende på denne datamaskinen, "
+"ukryptert. Tjenesten er {file}."
+
+#: src/plugins/cloud/rules/report.scm:286
+msgid "{path} is mounted, but not at the next login"
+msgstr "{path} er montert, men ikke ved neste innlogging"
+
+#: src/plugins/cloud/rules/report.scm:287
+msgid "Its service {file} is not switched on"
+msgstr "Tjenesten {file} er ikke slått på"
+
+#: src/plugins/cloud/rules/report.scm:290
+msgid "{path} is mounted at each login"
+msgstr "{path} monteres ved hver innlogging"
+
+#: src/plugins/cloud/rules/report.scm:291
+msgid "By {file}"
+msgstr "Av {file}"
+
+#: src/plugins/cloud/rules/report.scm:295
+msgid "Nothing mounts {service} at login"
+msgstr "Ingenting monterer {service} ved innlogging"
+
+#: src/plugins/cloud/rules/report.scm:299
+msgid ""
+"rclone reaches it as {name}. Mounted by hand, the folder is empty after each "
+"login until it is mounted again, and what is put there meanwhile stays on "
+"this computer. Set Up With rclone can make a service that mounts it at each "
+"login."
+msgstr ""
+"rclone når den som {name}. Montert for hånd er mappa tom etter hver "
+"innlogging til den monteres igjen, og det som legges der i mellomtiden, blir "
+"liggende på denne datamaskinen. Sett opp med rclone kan lage en tjeneste som "
+"monterer den ved hver innlogging."
+
+#: src/plugins/cloud/rules/report.scm:301
+msgid ""
+"rclone reaches it as {name}. Mounted by hand, the folder is empty after each "
+"login until it is mounted again, and what is put there meanwhile stays on "
+"this computer."
+msgstr ""
+"rclone når den som {name}. Montert for hånd er mappa tom etter hver "
+"innlogging til den monteres igjen, og det som legges der i mellomtiden, blir "
+"liggende på denne datamaskinen."
+
+#: src/plugins/cloud/rules/report.scm:307
 msgid "Where the Cloud Folders Are"
 msgstr "Hvor skymappene ligger"
 
-#: src/plugins/cloud/rules/report.scm:221
+#: src/plugins/cloud/rules/report.scm:308
 #, scheme-format
 msgid ""
 "Cloud folders gathered under one folder, such as ~/Cloud, give one place to "
 "see what leaves the computer."
-msgstr "Skymapper samlet under én mappe, som ~/Cloud, gir ett sted å se hva som forlater datamaskinen."
+msgstr ""
+"Skymapper samlet under én mappe, som ~/Cloud, gir ett sted å se hva som "
+"forlater datamaskinen."
 
-#: src/plugins/cloud/rules/report.scm:224
+#: src/plugins/cloud/rules/report.scm:311
 msgid "{n} folder for gathering cloud folders"
 msgid_plural "{n} folders for gathering cloud folders"
 msgstr[0] "{n} mappe for å samle skymapper"
 msgstr[1] "{n} mapper for å samle skymapper"
 
-#: src/plugins/cloud/rules/report.scm:227
+#: src/plugins/cloud/rules/report.scm:314
 msgid "One is enough; the others make it unclear where they belong"
 msgstr "Én holder; de andre gjør det uklart hvor de hører hjemme"
 
-#: src/plugins/cloud/rules/report.scm:229
+#: src/plugins/cloud/rules/report.scm:316
 msgid "{n} cloud folder is not gathered with the others"
 msgid_plural "{n} cloud folders are not gathered with the others"
 msgstr[0] "{n} skymappe er ikke samlet med de andre"
 msgstr[1] "{n} skymapper er ikke samlet med de andre"
 
-#: src/plugins/cloud/rules/report.scm:232
+#: src/plugins/cloud/rules/report.scm:319
 msgid "Move each in its own program's settings, never in the file manager"
-msgstr "Flytt hver av dem i programmets egne innstillinger, aldri i filbehandleren"
+msgstr ""
+"Flytt hver av dem i programmets egne innstillinger, aldri i filbehandleren"
 
-#: src/plugins/cloud/rules/report.scm:235
+#: src/plugins/cloud/rules/report.scm:322
 msgid ""
 "A cloud folder is moved in its own program's settings. Moved in the file "
 "manager, the program may take your files as deleted, and delete them from "
 "the service and every computer that syncs it."
-msgstr "En skymappe flyttes i programmets egne innstillinger. Flyttes den i filbehandleren, kan programmet tro at filene dine er slettet, og slette dem fra tjenesten og fra alle datamaskiner som synkroniserer den."
+msgstr ""
+"En skymappe flyttes i programmets egne innstillinger. Flyttes den i "
+"filbehandleren, kan programmet tro at filene dine er slettet, og slette dem "
+"fra tjenesten og fra alle datamaskiner som synkroniserer den."
 
-#: src/plugins/cloud/rules/report.scm:238
+#: src/plugins/cloud/rules/report.scm:326
+msgid ""
+"Encryption with rclone keeps what is in the files, and what they are called, "
+"private. The service still sees how large each file is, when it was changed "
+"and uploaded, and how many files and folders there are. It also sees that "
+"they are encrypted: it keeps them private, but does not hide that they are "
+"there."
+msgstr ""
+"Kryptering med rclone holder det som står i filene, og hva de heter, privat. "
+"Tjenesten ser fortsatt hvor stor hver fil er, når den ble endret og lastet "
+"opp, og hvor mange filer og mapper det er. Den ser også at de er kryptert: "
+"krypteringen holder filene private, men skjuler ikke at de finnes."
+
+#: src/plugins/cloud/rules/report.scm:329
 msgid "rclone's settings are encrypted, so its setups were not read."
 msgstr "Innstillingene til rclone er kryptert, så oppsettene ble ikke lest."
 
-#: src/plugins/cloud/rules/report.scm:241
+#: src/plugins/cloud/rules/report.scm:332
 msgid "There were more than could be listed."
 msgstr "Det var flere enn det var plass til å vise."
+
+#~ msgid "Setting One Up"
+#~ msgstr "Sette opp en"
+
+#~ msgid "A way that meets the good practice, if you want one."
+#~ msgstr "En måte som følger god praksis, hvis du vil ha en."
+
+#~ msgid "Set up a cloud service with rclone"
+#~ msgstr "Sett opp en skytjeneste med rclone"
+
+#~ msgid ""
+#~ "Open source, kept up to date by the system, and able to encrypt before "
+#~ "anything leaves"
+#~ msgstr ""
+#~ "Åpen kildekode, holdt oppdatert av systemet, og kan kryptere før noe "
+#~ "forlater maskinen"

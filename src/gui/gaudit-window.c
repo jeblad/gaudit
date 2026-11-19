@@ -1249,6 +1249,16 @@ static void open_entry(GauditWindow *self, int entry)
         return;
     const GauditTaskInfo *task = &tasks[self->folder];
     AdwNavigationPage *page = NULL;
+    if (entry == 2 && task->extra_page != NULL) {
+        /* The plugin's own page: an entry of its own, so no back button. */
+        page = task->extra_page();
+        if (page != NULL) {
+            adw_navigation_page_set_title(page, _(task->extra_title));
+            adw_navigation_page_set_tag(page, "extra");
+        } else {
+            entry = 0;
+        }
+    }
     if (entry == 1) {
         page = gaudit_cached_report_page_new(task);
         /* Nothing cached yet, but its run is under way (e.g. Home's at
@@ -1314,6 +1324,8 @@ static AdwNavigationPage *folder_page(GauditWindow *self, const GauditTaskInfo *
     gtk_widget_add_css_class(GTK_WIDGET(list), "navigation-sidebar");
     gtk_list_box_append(list, sidebar_row("preferences-system-symbolic", _("Parameters"), NULL));
     gtk_list_box_append(list, sidebar_row("gaudit-documents-symbolic", report_label(task), NULL));
+    if (task->extra_page != NULL)
+        gtk_list_box_append(list, sidebar_row(task->extra_icon, _(task->extra_title), NULL));
     g_signal_connect(list, "row-activated", G_CALLBACK(on_folder_row_activated), self);
     set_weak(&self->folder_list, list);
 
@@ -1414,6 +1426,8 @@ static void on_content_popped(AdwNavigationView *nav, AdwNavigationPage *page, g
     }
     if (g_strcmp0(tag, "report") == 0 || g_strcmp0(tag, "run") == 0)
         select_folder_row(self, 1);
+    else if (g_strcmp0(tag, "extra") == 0)
+        select_folder_row(self, 2);
     else if (g_strcmp0(tag, "about") != 0 && g_strcmp0(tag, "fix") != 0)
         select_folder_row(self, 0);
 }

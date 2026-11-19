@@ -79,10 +79,63 @@ int main(void)
             bad++;
     }
     CHECK(folders == 1 && ends == 1 && bad == 0);
+    /* The unit: written once, the same again is fine, another file of that
+     * name is left alone, a remote name that may not go into a file is refused. */
+    char result[16];
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "jotta-crypt", result, sizeof result) == 0
+          && strcmp(result, "written") == 0);
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "jotta-crypt", result, sizeof result) == 0
+          && strcmp(result, "unchanged") == 0);
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "jotta", result, sizeof result) == 1
+          && strcmp(result, "foreign") == 0);
+    CHECK(gaudit_cloud_write_unit(home, "jottacloud", "a b; rm", result, sizeof result) == 2
+          && strcmp(result, "refused") == 0);
+    CHECK(gaudit_cloud_write_unit(home, "nowhere", "jotta", result, sizeof result) == 2);
+    /* The collection then reports it, not mounted. */
+    out = NULL;
+    len = 0;
+    mem = open_memstream(&out, &len);
+    CHECK(gaudit_cloud_collect(home, mounts, root, mem) == 0);
+    fclose(mem);
+    gaudit_cloud_unit_line ul;
+    int units = 0;
+    for (char *line = strtok(out, "\n"); line != NULL; line = strtok(NULL, "\n"))
+        if (gaudit_cloud_parse_unit(line, &ul) == 3)
+            units += strcmp(ul.file, "rclone-jottacloud.service") == 0 && !ul.mounted
+                     && strcmp(ul.path, "~/Cloud/Jottacloud") == 0;
+    free(out);
+    CHECK(units == 1);
+
     snprintf(p, sizeof p, "rm -rf -- '%s'", dir);
     if (system(p) != 0)
         failures++;
     if (failures == 0)
         puts("cloud: all checks passed");
+    /* The rule's list of services Set Up With rclone knows is the table's,
+     * written as (define setup-services '("a" "b")). */
+    {
+        FILE *r = fopen(CLOUD_RULE, "r");
+        static char rule[65536];
+        size_t got = r != NULL ? fread(rule, 1, sizeof rule - 1, r) : 0;
+        if (r != NULL)
+            fclose(r);
+        rule[got] = '\0';
+        const char *at = strstr(rule, "(define setup-services '(");
+        CHECK(at != NULL);
+        char list[512] = "";
+        if (at != NULL) {
+            at += strlen("(define setup-services '(");
+            const char *end = strchr(at, ')');
+            if (end != NULL && (size_t)(end - at) < sizeof list)
+                memcpy(list, at, (size_t)(end - at)), list[end - at] = '\0';
+        }
+        char want[512] = "";
+        for (unsigned i = 0; i < gaudit_cloud_setup_services_count; i++) {
+            size_t n = strlen(want);
+            snprintf(want + n, sizeof want - n, "%s\"%s\"", i > 0 ? " " : "",
+                     gaudit_cloud_setup_services[i].id);
+        }
+        CHECK(strcmp(list, want) == 0);
+    }
     return failures == 0 ? 0 : 1;
 }

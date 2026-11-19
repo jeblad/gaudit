@@ -1,0 +1,5 @@
+(input (system (host "h") (distro "Ubuntu 26.10") (backend "debian"))
+ (level "quick")
+ (collection
+  (cloud-folder (client "rclone") (service "jottacloud") (how 3) (path "~/Cloud/Jottacloud") (name "jotta") (encrypted 1) (via "jotta-crypt") (gathered 1))
+  (cloud-end (count 1) (more 0) (gathering "~/Cloud") (gatherings 1) (rclone-unreadable 0))))

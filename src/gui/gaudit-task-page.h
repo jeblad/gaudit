@@ -22,6 +22,10 @@ AdwNavigationPage *gaudit_missing_software_page_new(const gaudit_pkg_backend *pk
  * copy button. The text is copied. */
 GtkWidget *gaudit_command_field_new(const char *command);
 
+/* The same for a file's text, several lines: the copy button at the top,
+ * named for copying the text. What is copied is checked the same way. */
+GtkWidget *gaudit_file_field_new(const char *text);
+
 /* The same, with a button beside the copy button that runs the fix the
  * command shows: run_args are the orchestrator's (a plugin's fixed
  * operation, built from cached data, never from the shown text), run only

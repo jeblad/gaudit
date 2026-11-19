@@ -48,6 +48,9 @@ const GauditTaskInfo gaudit_plugin_cloud = {
     .collection_line = gaudit_cloud_line_ok,
     .text_domain = GAUDIT_CLOUD_DOMAIN,
     .fix_page = NULL,
+    .extra_title = N_("Set Up With rclone"),
+    .extra_icon = "list-add-symbolic",
+    .extra_page = gaudit_cloud_setup_page,
     .run_waiting = N_("Looking for cloud services…"),
     .run_running = N_("Looking for cloud services…"),
 };

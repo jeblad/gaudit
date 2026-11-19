@@ -151,6 +151,63 @@ int gaudit_cloud_format_plain(const gaudit_cloud_plain_line *p, char *buf, size_
 /* 0, or -1 for anything else. */
 int gaudit_cloud_parse_plain(const char *line, gaudit_cloud_plain_line *p);
 
+/* --- Secrets in cloud folders (John, 2026-11-19) ----------------------------------
+ *
+ * Files that look like secrets (keys, password databases, stored logins)
+ * where a cloud service gets them. Folders kept in step on this computer
+ * are searched as the private files are, in the full collection only,
+ * never on another filesystem. A shareable rclone disk is looked at on a
+ * click only, by names alone ("gaudit-orchestrator cloud names <remote>"),
+ * since its content is fetched over the network. Never content.
+ *
+ *   (cloud-secret (service "...") (remote "...") (path "...") (reason "...") (by-name 0|1))
+ *
+ * remote "" for a local folder, path then "~/..." or absolute; else the
+ * rclone remote's name, path relative to it. by-name: known by its name
+ * alone, a guess (cloud names).
+ *
+ *   (cloud-secret-scan (folders N) (found N) (more 0|1) (truncated 0|1))
+ *
+ * the local search: folders searched, secrets found (at most
+ * GAUDIT_CLOUD_SECRETS_MAX sent), more: not all sent, truncated: a search
+ * stopped at its limit.
+ *
+ *   (cloud-names (remote "...") (status 0|1) (looked N) (found N) (more 0|1) (truncated 0|1))
+ *
+ * the names of one remote: status 1 could not be found out; looked: names
+ * looked at; truncated: stopped at GAUDIT_CLOUD_NAMES_MAX names or the time
+ * limit. */
+#define GAUDIT_CLOUD_SECRETS_MAX 100
+#define GAUDIT_CLOUD_NAMES_MAX 200000
+
+typedef struct {
+    char service[16];
+    char remote[128];
+    char path[256];      /* the line parser's limit; a longer one is left out */
+    char reason[32];
+    int by_name;
+} gaudit_cloud_secret_line;
+
+typedef struct {
+    unsigned folders, found;
+    int more, truncated;
+} gaudit_cloud_secret_scan_line;
+
+typedef struct {
+    char remote[128];
+    int status;
+    unsigned looked, found;
+    int more, truncated;
+} gaudit_cloud_names_line;
+
+int gaudit_cloud_format_secret(const gaudit_cloud_secret_line *l, char *buf, size_t len);
+int gaudit_cloud_format_secret_scan(const gaudit_cloud_secret_scan_line *l, char *buf, size_t len);
+int gaudit_cloud_format_names(const gaudit_cloud_names_line *l, char *buf, size_t len);
+/* 0, or -1 for anything else; l may be NULL. */
+int gaudit_cloud_parse_secret(const char *line, gaudit_cloud_secret_line *l);
+int gaudit_cloud_parse_secret_scan(const char *line, gaudit_cloud_secret_scan_line *l);
+int gaudit_cloud_parse_names(const char *line, gaudit_cloud_names_line *l);
+
 #ifdef __cplusplus
 }
 #endif

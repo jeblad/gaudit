@@ -10,6 +10,11 @@
 ;;                                    (name "...") (encrypted 0|1) (gathered 0|1)) ...
 ;;                      (cloud-unit (file "...") (path "...") (enabled 0|1) (mounted 0|1)) ...
 ;;                      (cloud-plain (remote "...") (status 0|1|2) (count N) (more 0|1)) ...
+;;                      (cloud-secret (service "...") (remote "...") (path "...") (reason "...")
+;;                                    (by-name 0|1)) ...
+;;                      (cloud-secret-scan (folders N) (found N) (more 0|1) (truncated 0|1))
+;;                      (cloud-names (remote "...") (status 0|1) (looked N) (found N) (more 0|1)
+;;                                   (truncated 0|1)) ...
 ;;                      (cloud-end (count N) (more 0|1) (gathering "...") (gatherings N)
 ;;                                 (rclone-unreadable 0|1))))
 ;;
@@ -295,6 +300,143 @@
                                 out))))
               (loop (cdr ns) out))))))
 
+;; --- Secrets in cloud folders (John, 2026-11-19) -------------------------------
+;;
+;; A file that looks like a secret where a cloud service gets it: in a
+;; folder kept on this computer (the full collection), or by its name at an
+;; rclone remote outside the encrypted folder (a click). Where the provider
+;; can read it, a warning; where that is unclear, a warning that says so; a
+;; file encrypted with its own password (KeePass, pass, the keyrings) a
+;; recommendation to move it to the private disk, since it holds only as
+;; well as its password and whoever has it can try passwords against it.
+
+(define own-password '("keepass" "pass" "gnome-keyring" "kwallet"))
+
+(define secret-kinds
+  (list (cons "openssh-private-key" (G_ "SSH private key"))
+        (cons "ssh-key-name"        (G_ "probably an SSH private key, by its name"))
+        (cons "pem-private-key"     (G_ "Private key"))
+        (cons "key-file-name"       (G_ "probably a key, by its name"))
+        (cons "pgp-private-key"     (G_ "PGP private key"))
+        (cons "putty-private-key"   (G_ "PuTTY private key"))
+        (cons "gnupg-private-key"   (G_ "GnuPG private key"))
+        (cons "gnupg1-secret"       (G_ "Old GnuPG secret keyring"))
+        (cons "pkcs12"              (G_ "Certificate with private key"))
+        (cons "java-keystore"       (G_ "Java keystore"))
+        (cons "keepass"             (G_ "KeePass password database"))
+        (cons "pass"                (G_ "Password store entry"))
+        (cons "gnome-keyring"       (G_ "GNOME keyring"))
+        (cons "kwallet"             (G_ "KDE wallet"))
+        (cons "browser-passwords"   (G_ "Saved browser passwords"))
+        (cons "crypto-wallet"       (G_ "Cryptocurrency wallet"))
+        (cons "netrc"               (G_ "Stored logins (.netrc)"))
+        (cons "pgpass"              (G_ "PostgreSQL passwords"))
+        (cons "mysql-client"        (G_ "MySQL login"))
+        (cons "git-credentials"     (G_ "Git passwords"))
+        (cons "aws-credentials"     (G_ "AWS keys"))
+        (cons "kube-config"         (G_ "Kubernetes credentials"))
+        (cons "docker-auth"         (G_ "Docker logins"))
+        (cons "github-cli"          (G_ "GitHub login"))
+        (cons "rclone"              (G_ "Cloud storage logins (rclone)"))))
+
+(define (secret-kind id)
+  (let ((entry (assoc id secret-kinds)))
+    (if entry (msg (cdr entry)) (msg (G_ "Looks like a secret")))))
+
+;; readable, unclear or encrypted, from what is known of the service.
+(define (secret-reach f)
+  (let ((kind (list-ref (service-of (field f 'service)) 2)))
+    (cond ((eq? kind 'yes) 'encrypted)
+          ((eq? kind 'no) 'readable)
+          (else 'unclear))))
+
+(define (own-password? f) (member (field f 'reason) own-password))
+
+(define (secret-verdict f)
+  (cond ((eq? (secret-reach f) 'encrypted) #f)
+        ((own-password? f) 'advice)
+        (else 'warning)))
+
+(define (secret-title f)
+  (if (equal? (field f 'remote) "")
+      (list 'text (field f 'path))
+      (msg (G_ "{service}: {path}") (list 'service (service-name f))
+           (list 'path (list 'text (field f 'path))))))
+
+(define (secret-subtitle f)
+  (msg (G_ "{kind} · {why}")
+       (list 'kind (secret-kind (field f 'reason)))
+       (list 'why (cond ((own-password? f)
+                         (msg (G_ "encrypted with its own password; move it to the private disk")))
+                        ((eq? (secret-reach f) 'readable) (msg (G_ "the provider can read it")))
+                        (else (msg (G_ "whether the provider can read it is not clear")))))))
+
+(define (secret-fix f)
+  (cond ((own-password? f) 'secret-own)
+        ((eq? (secret-reach f) 'readable) 'secret-readable)
+        (else 'secret-unclear)))
+
+(define (secret-rows items)
+  (let loop ((ns (numbered items)) (out '()))
+    (if (null? ns)
+        (reverse out)
+        (let* ((n (car (car ns))) (f (cdr (car ns))))
+          (if (and (eq? (car f) 'cloud-secret) (secret-verdict f))
+              (loop (cdr ns)
+                    (cons (list 'row (list 'verdict (secret-verdict f))
+                                (list 'title (secret-title f))
+                                (list 'subtitle (secret-subtitle f))
+                                (list 'fix (secret-fix f) (list 'item n)))
+                          out))
+              (loop (cdr ns) out))))))
+
+(define (names-for items remote)
+  (cond ((null? items) #f)
+        ((and (eq? (car (car items)) 'cloud-names) (equal? (field (car items) 'remote) remote))
+         (car items))
+        (else (names-for (cdr items) remote))))
+
+;; Each rclone remote: whether its names were looked at, on a click.
+(define (names-rows items)
+  (let loop ((ns (numbered items)) (out '()))
+    (if (null? ns)
+        (reverse out)
+        (let* ((n (car (car ns))) (f (cdr (car ns))))
+          (if (and (eq? (car f) 'cloud-folder) (equal? (field f 'client) "rclone"))
+              (let* ((l (names-for items (field f 'name)))
+                     (sv (list 'service (service-name f)))
+                     (row (lambda (verdict title subtitle)
+                            (list 'row (list 'verdict verdict) (list 'title title)
+                                  (list 'subtitle subtitle) (list 'fix 'names (list 'item n))))))
+                (loop (cdr ns)
+                      (cons (cond ((not l)
+                                   (row 'advice (msg (G_ "Names at {service} are not looked at for secrets") sv)
+                                        (msg (G_ "Looking asks the service, so it is done only when you ask"))))
+                                  ((= (field l 'status) 1)
+                                   (row 'unknown (msg (G_ "Whether names at {service} look like secrets could not be found out") sv)
+                                        (msg (G_ "The service did not answer, or rclone could not reach it"))))
+                                  ((= (field l 'truncated) 1)
+                                   (row (if (> (field l 'found) 0) 'warning 'unknown)
+                                        (msgn (N_ "{n} name at {service} looks like a secret"
+                                                  "{n} names at {service} look like secrets")
+                                              (field l 'found) (list 'n (field l 'found)) sv)
+                                        (msg (G_ "The look stopped after {n} names, so not all were seen") (list 'n (field l 'looked)))))
+                                  ((> (field l 'found) 0)
+                                   (row 'warning
+                                        (msgn (N_ "{n} name at {service} looks like a secret"
+                                                  "{n} names at {service} look like secrets")
+                                              (field l 'found) (list 'n (field l 'found)) sv)
+                                        (msgn (N_ "Of {n} name looked at, outside the encrypted folder"
+                                                  "Of {n} names looked at, outside the encrypted folder")
+                                              (field l 'looked) (list 'n (field l 'looked)))))
+                                  (else
+                                   (row 'ok (msg (G_ "No names at {service} look like secrets") sv)
+                                        (msgn (N_ "{n} name looked at, outside the encrypted folder"
+                                                  "{n} names looked at, outside the encrypted folder")
+                                              (field l 'looked) (list 'n (field l 'looked))))))
+                            out)))
+              (loop (cdr ns) out))))))
+
 ;; --- The report -----------------------------------------------------------------
 
 (define (report input)
@@ -307,6 +449,19 @@
          (no-login (not-at-login found units))
          (plain (plain-rows items units))
          (plain-warned (keep (lambda (r) (eq? (cadr (assq 'verdict (cdr r))) 'warning)) plain))
+         (secrets (keep (lambda (i) (and (eq? (car i) 'cloud-secret) (secret-verdict i))) items))
+         (readable (keep (lambda (f) (and (eq? (secret-verdict f) 'warning)
+                                          (eq? (secret-reach f) 'readable)))
+                         secrets))
+         (unclear (keep (lambda (f) (and (eq? (secret-verdict f) 'warning)
+                                         (eq? (secret-reach f) 'unclear)))
+                        secrets))
+         (scan (first-with 'cloud-secret-scan items))
+         (names (names-rows items))
+         (local-folders (keep (lambda (f) (and (memv (field f 'how) '(0 1))
+                                               (not (equal? (field f 'path) ""))))
+                              found))
+         (ns (+ (length readable) (length unclear)))
          (login-warned (keep (lambda (f) (not (eq? (list-ref (client-of (field f 'client)) 5) 'local)))
                              found))
          (with-folder (keep (lambda (f) (and (not (equal? (field f 'path) ""))
@@ -321,7 +476,7 @@
                     (list 'description (msg (G_ "Nothing is known about the cloud services on this computer.")))))
         (append
          (list (list 'report
-                     (list 'verdict (if (> (+ nw (length unmounted) (length plain-warned)) 0) 'warning 'ok))
+                     (list 'verdict (if (> (+ nw (length unmounted) (length plain-warned) ns) 0) 'warning 'ok))
                      (list 'title
                            (cond ((> (length login-warned) 0)
                                   (msgn (N_ "{n} cloud program logs in in a way that is not documented"
@@ -347,6 +502,20 @@
                 (home 'warning (cadr (assq 'title (cdr r)))
                       (msg (G_ "The provider can read them"))))
               plain-warned)
+         (if (> (length readable) 0)
+             (list (home 'warning
+                         (msgn (N_ "{n} secret in a cloud folder the provider can read"
+                                   "{n} secrets in cloud folders the provider can read")
+                               (length readable) (list 'n (length readable)))
+                         (msg (G_ "Move them out, or to the private disk"))))
+             '())
+         (if (> (length unclear) 0)
+             (list (home 'warning
+                         (msgn (N_ "{n} secret in a cloud folder where it is unclear who can read it"
+                                   "{n} secrets in cloud folders where it is unclear who can read them")
+                               (length unclear) (list 'n (length unclear)))
+                         (msg (G_ "Find out whether the folder is encrypted before it leaves"))))
+             '())
          (if (> nw 0)
              (map (lambda (f)
                     (home 'warning (title-of f)
@@ -354,7 +523,7 @@
                               (msg (G_ "The provider can read what is sent there"))
                               (msg (G_ "Where its login is made, and who keeps it, is not documented")))))
                   warned)
-             (if (> (+ (length unmounted) (length plain-warned)) 0)
+             (if (> (+ (length unmounted) (length plain-warned) ns) 0)
                  '()
                  (list (home 'ok
                          (if (= n 0)
@@ -405,6 +574,31 @@
              (cons (list 'section (list 'title (msg (G_ "Files Not Encrypted")))
                          (list 'description (msg (G_ "Files at a service outside its encrypted folder, which the provider can read. Looking for them asks the service, so it is done only when you ask, on its page."))))
                    plain)
+             '())
+         ;; Secrets where a cloud service gets them.
+         (let ((rows (append (secret-rows items) names)))
+           (if (or (> (length rows) 0) scan)
+               (cons (list 'section (list 'title (msg (G_ "Secrets in Cloud Folders")))
+                           (list 'description (msg (G_ "Files that look like secrets, such as keys and stored logins, where a cloud service gets them. The folders kept on this computer are searched; at a service reached through rclone, only the names are looked at, when you ask."))))
+                     (if (and scan (= (length (secret-rows items)) 0))
+                         (cons (list 'row (list 'verdict 'ok)
+                                     (list 'title (msg (G_ "No secrets found in the cloud folders on this computer")))
+                                     (list 'subtitle (msgn (N_ "{n} folder searched" "{n} folders searched")
+                                                           (field scan 'folders) (list 'n (field scan 'folders)))))
+                               rows)
+                         rows))
+               '()))
+         (if (and (not scan) (> (length local-folders) 0))
+             (list (list 'note (msg (G_ "The cloud folders on this computer are searched for secrets in the full report, and on Home at the Thorough level."))))
+             '())
+         (if (and scan (= (field scan 'truncated) 1))
+             (list (list 'note (msg (G_ "The search for secrets stopped at its limit in a large cloud folder, so not every file was looked at."))))
+             '())
+         (if (and scan (= (field scan 'more) 1))
+             (list (list 'note (msg (G_ "Only the first secrets found are listed; there are more."))))
+             '())
+         (if (> (length (keep (lambda (f) (= (field f 'by-name) 1)) secrets)) 0)
+             (list (list 'note (msg (G_ "A file known by its name alone may not be what its name says: an id_ed25519 may be empty, and a .pem may hold only a certificate. Only its content can tell."))))
              '())
          ;; Gathering them: one place to see what leaves the computer.
          (if (or (> (length scattered) 0) (> (field end 'gatherings) 1))

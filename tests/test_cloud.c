@@ -62,7 +62,7 @@ int main(void)
     char *out = NULL;
     size_t len = 0;
     FILE *mem = open_memstream(&out, &len);
-    CHECK(gaudit_cloud_collect(home, mounts, root, mem) == 0);
+    CHECK(gaudit_cloud_collect(home, mounts, root, 0, mem) == 0);
     fclose(mem);
     snprintf(text, sizeof text, "%s", out != NULL ? out : "");
     free(out);
@@ -136,7 +136,7 @@ int main(void)
     out = NULL;
     len = 0;
     mem = open_memstream(&out, &len);
-    CHECK(gaudit_cloud_collect(home, mounts, root, mem) == 0);
+    CHECK(gaudit_cloud_collect(home, mounts, root, 0, mem) == 0);
     fclose(mem);
     gaudit_cloud_unit_line ul;
     int units = 0;
@@ -201,6 +201,83 @@ int main(void)
                                        NULL) == -1);
         CHECK(gaudit_cloud_parse_plain("(cloud-plain (remote \"box\") (status 3) (count 1) (more 0))",
                                        NULL) == -1);
+    }
+
+    /* Secrets in a cloud folder kept on this computer: only in the full
+     * collection, the path shown from home, no content. */
+    snprintf(p, sizeof p, "mkdir -p -- '%s/home/Dropbox/keys'", dir);
+    CHECK(system(p) == 0);
+    snprintf(p, sizeof p, "%s/home/Dropbox/keys/vault.kdbx", dir);
+    if ((fp = fopen(p, "w")) != NULL) {
+        fputs("not a real database", fp);
+        fclose(fp);
+    }
+    snprintf(p, sizeof p, "%s/home/Dropbox/keys/deploy", dir);
+    if ((fp = fopen(p, "w")) != NULL) {
+        fputs("-----BEGIN OPENSSH PRIVATE KEY-----\n"
+              "b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\n"
+              "-----END OPENSSH PRIVATE KEY-----\n", fp);
+        fclose(fp);
+    }
+    for (int full = 0; full < 2; full++) {
+        char *sout = NULL;
+        size_t slen = 0;
+        FILE *sm = open_memstream(&sout, &slen);
+        CHECK(gaudit_cloud_collect(home, mounts, root, full, sm) == 0);
+        fclose(sm);
+        int hits = 0, sums = 0, kdbx = 0;
+        for (char *line = strtok(sout, "\n"); line != NULL; line = strtok(NULL, "\n")) {
+            gaudit_cloud_secret_line sl;
+            gaudit_cloud_secret_scan_line ss;
+            if (gaudit_cloud_parse_secret(line, &sl) == 0) {
+                hits++;
+                kdbx += strcmp(sl.path, "~/Dropbox/keys/vault.kdbx") == 0
+                        && strcmp(sl.reason, "keepass") == 0 && strcmp(sl.service, "dropbox") == 0;
+            } else if (gaudit_cloud_parse_secret_scan(line, &ss) == 0) {
+                sums += ss.folders == 1 && ss.found == 2 && !ss.more;
+            }
+        }
+        CHECK(full ? hits == 2 && sums == 1 && kdbx == 1 : hits == 0 && sums == 0);
+        CHECK(sout == NULL || strstr(sout, "b3BlbnNzaC1") == NULL);
+        free(sout);
+    }
+
+    /* Names at a remote that look like secrets, on a click: outside the
+     * encrypted folder only, by name; a name known only as a key file's
+     * usual name is marked a guess. */
+    snprintf(fake, sizeof fake, "%s/rclone-names", dir);
+    if ((fp = fopen(fake, "w")) != NULL) {
+        fputs("#!/bin/sh\n"
+              "[ \"$1 $2 $3 $4 $5 $6\" = 'lsf -R --files-only --exclude /Encrypted/** box:' ] || exit 3\n"
+              "printf 'notes.txt\\nold/vault.kdbx\\nssh/id_ed25519\\nssh/id_ed25519.pub\\n'\n", fp);
+        fclose(fp);
+    }
+    snprintf(p, sizeof p, "chmod 0755 -- '%s'", fake);
+    CHECK(system(p) == 0);
+    {
+        char *nout = NULL;
+        size_t nlen = 0;
+        FILE *nm = open_memstream(&nout, &nlen);
+        CHECK(gaudit_cloud_names(home, mounts, "box", fake, nm) == 0);
+        CHECK(gaudit_cloud_names(home, mounts, "nowhere", fake, nm) == 1);
+        fclose(nm);
+        int kdbx = 0, ssh = 0, sums = 0, other = 0;
+        for (char *line = strtok(nout, "\n"); line != NULL; line = strtok(NULL, "\n")) {
+            gaudit_cloud_secret_line sl;
+            gaudit_cloud_names_line nl;
+            if (gaudit_cloud_parse_secret(line, &sl) == 0) {
+                kdbx += strcmp(sl.path, "old/vault.kdbx") == 0 && !sl.by_name
+                        && strcmp(sl.remote, "box") == 0;
+                ssh += strcmp(sl.path, "ssh/id_ed25519") == 0 && sl.by_name;
+            } else if (gaudit_cloud_parse_names(line, &nl) == 0) {
+                sums += nl.status == 0 && nl.looked == 4 && nl.found == 2 && !nl.more;
+            } else {
+                other++;
+            }
+        }
+        CHECK(kdbx == 1 && ssh == 1 && sums == 1 && other == 0);
+        CHECK(nout == NULL || strstr(nout, "notes.txt") == NULL);
+        free(nout);
     }
 
     snprintf(p, sizeof p, "rm -rf -- '%s'", dir);

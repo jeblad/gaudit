@@ -22,7 +22,10 @@ gboolean gaudit_cloud_line_ok(const char *line, gboolean *last)
     int kind = gaudit_cloud_parse_line(line, NULL, NULL);
     *last = kind == 2;
     return kind > 0 || gaudit_cloud_parse_unit(line, NULL) == 3
-           || gaudit_cloud_parse_plain(line, NULL) == 0;
+           || gaudit_cloud_parse_plain(line, NULL) == 0
+           || gaudit_cloud_parse_secret(line, NULL) == 0
+           || gaudit_cloud_parse_secret_scan(line, NULL) == 0
+           || gaudit_cloud_parse_names(line, NULL) == 0;
 }
 
 /* --- Setting up a cloud service with rclone -----------------------------------
@@ -692,10 +695,11 @@ static void crypt_setup(Setup *s)
         { "Option filename_encryption.", TRUE, "standard", TRUE, NULL },
         { "Option directory_name_encryption.", TRUE, "true", TRUE, NULL },
         { "Option password.", TRUE, "g", TRUE, P_("The password: let rclone make one.") },
-        { "Password strength in bits.", TRUE, "128", TRUE, P_("128 is secure; more is fine too.") },
+        { "Password strength in bits.", TRUE, "256", TRUE,
+          P_("256 bits: far beyond what anyone can guess, as a key for encryption should be.") },
         { "Use this password?", TRUE, "y", TRUE, P_("Use the password rclone made.") },
         { "Option password2.", TRUE, "g", TRUE, P_("The second password, the salt: let rclone make it too.") },
-        { "Password strength in bits.", TRUE, "128", TRUE, NULL },
+        { "Password strength in bits.", TRUE, "256", TRUE, NULL },
         { "Use this password?", TRUE, "y", TRUE, NULL },
         { "Edit advanced config?", TRUE, "n", TRUE, NULL },
         ANSWER_KEEP_QUIT(keep),
@@ -1218,17 +1222,29 @@ static void on_plain_look(GtkButton *b, gpointer data)
     gaudit_orchestrator_start(args, 90, FALSE, on_plain_line, on_plain_done, pl);
 }
 
-AdwNavigationPage *gaudit_cloud_fix_page(const char *fix_id, GPtrArray *lines, guint item)
+/* What a service is called; never translated. */
+static const char *service_name(const char *id)
+{
+    static const struct { const char *id, *name; } names[] = {
+        { "dropbox", "Dropbox" }, { "nextcloud", "Nextcloud" }, { "owncloud", "ownCloud" },
+        { "mega", "MEGA" }, { "pcloud", "pCloud" }, { "tresorit", "Tresorit" },
+        { "onedrive", "OneDrive" }, { "google-drive", "Google Drive" },
+        { "jottacloud", "Jottacloud" }, { "proton-drive", "Proton Drive" }, { "webdav", "WebDAV" },
+    };
+    for (size_t i = 0; i < G_N_ELEMENTS(names); i++)
+        if (strcmp(names[i].id, id) == 0)
+            return names[i].name;
+    return id;
+}
+
+static AdwNavigationPage *plain_page(GPtrArray *lines, guint item)
 {
     gaudit_cloud_line f;
-    if (fix_id == NULL || strcmp(fix_id, "plain") != 0 || lines == NULL || item >= lines->len
+    if (lines == NULL || item >= lines->len
         || gaudit_cloud_parse_line(g_ptr_array_index(lines, item), &f, NULL) != 1
         || strcmp(f.client, "rclone") != 0 || !f.encrypted || !gaudit_cloud_plain_remote(f.name))
         return NULL;
-    const char *name = f.service;
-    for (guint i = 0; i < N_SERVICES; i++)
-        if (strcmp(services[i].id, f.service) == 0)
-            name = services[i].name;
+    const char *name = service_name(f.service);
     Plain *pl = g_new0(Plain, 1);
     pl->refs = 1;
     g_strlcpy(pl->remote, f.name, sizeof pl->remote);
@@ -1273,4 +1289,257 @@ AdwNavigationPage *gaudit_cloud_fix_page(const char *fix_id, GPtrArray *lines, g
     pl->last = b;
     g_object_add_weak_pointer(G_OBJECT(b), (gpointer *)&pl->last);
     return page;
+}
+
+/* --- A secret in a cloud folder ------------------------------------------------
+ *
+ * One page per file: what it is, who can read it, and what the user can do.
+ * The rule decides which (readable, unclear, encrypted with its own
+ * password); the page says it. Nothing is moved: a cloud folder's files are
+ * moved by the user, in the file manager. */
+
+static AdwNavigationPage *secret_page(const char *fix_id, GPtrArray *lines, guint item)
+{
+    gaudit_cloud_secret_line l;
+    if (lines == NULL || item >= lines->len
+        || gaudit_cloud_parse_secret(g_ptr_array_index(lines, item), &l) != 0)
+        return NULL;
+    const char *name = service_name(l.service);
+    gboolean own = strcmp(fix_id, "secret-own") == 0;
+    gboolean unclear = strcmp(fix_id, "secret-unclear") == 0;
+    g_autofree char *where = l.remote[0] == '\0' ? g_strdup(l.path)
+                                                 : g_strdup_printf("%s: %s", name, l.path);
+    /* Translators: the first %s is a file, e.g. "~/Dropbox/vault.kdbx", the second a cloud
+     * service, e.g. "Dropbox". */
+    g_autofree char *what = g_strdup_printf(
+        own ? P_("%s looks like a file encrypted with its own password, such as a password "
+                 "database. It is where %s gets it. It holds as well as its password does: whoever "
+                 "has the file, the provider included, can try passwords against it as many "
+                 "times as they like, without anyone noticing.")
+        : unclear ? P_("%s looks like a key, a password or a stored login, and it is where %s "
+                       "gets it. Whether the provider can read it depends on whether it is "
+                       "encrypted before it leaves this computer, which cannot be seen from here.")
+                  : P_("%s looks like a key, a password or a stored login, and it is where %s "
+                       "gets it. The provider can read what is sent there."),
+        where, name);
+    const char *how =
+        own ? P_("Move it to the private disk, in the file manager: the disk's encryption then "
+                 "comes on top of its own, so the provider has nothing to try passwords against. "
+                 "A private disk is set up with Set Up With rclone. The program moves nothing "
+                 "itself.")
+        : unclear ? P_("Find out first, in the service's own settings, whether this folder is "
+                       "encrypted before it leaves. If it is not, move the file out of the cloud "
+                       "folder, or to the private disk, in the file manager. The program moves "
+                       "nothing itself.")
+                  : P_("Move it out of the cloud folder, or to the private disk, in the file "
+                       "manager. The program moves nothing itself.");
+    const char *note =
+        own ? NULL
+            : P_("The provider often keeps earlier versions and deleted files for a while, so it "
+                 "may have this one already. Where the file holds a key or a password, replacing "
+                 "it, with a new key or a changed password, is the way to be sure.");
+    /* Translators: the page's title. */
+    return gaudit_fix_page_new(own ? P_("An Encrypted File in a Cloud Folder")
+                                   : P_("A Secret in a Cloud Folder"),
+                               what, how, NULL, note, NULL, NULL, NULL, NULL);
+}
+
+/* --- Names at a remote that look like secrets, on a click ---------------------- */
+
+typedef struct {
+    int refs;
+    char remote[128];
+    char service[16];
+    GtkWidget *box;   /* weak */
+    GtkWidget *last;  /* weak */
+    GPtrArray *got;   /* the lines that came */
+    gboolean ended;   /* the cloud-names line came */
+} Names;
+
+static void names_unref(gpointer p)
+{
+    Names *n = p;
+    if (--n->refs > 0)
+        return;
+    if (n->box != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(n->box), (gpointer *)&n->box);
+    if (n->last != NULL)
+        g_object_remove_weak_pointer(G_OBJECT(n->last), (gpointer *)&n->last);
+    g_ptr_array_unref(n->got);
+    g_free(n);
+}
+
+static void names_say(Names *n, const char *text)
+{
+    if (n->box == NULL || n->last == NULL)
+        return;
+    GtkWidget *l = gtk_label_new(text);
+    gtk_label_set_wrap(GTK_LABEL(l), TRUE);
+    gtk_label_set_xalign(GTK_LABEL(l), 0.0f);
+    gtk_box_insert_child_after(GTK_BOX(n->box), l, n->last);
+    g_object_remove_weak_pointer(G_OBJECT(n->last), (gpointer *)&n->last);
+    n->last = l;
+    g_object_add_weak_pointer(G_OBJECT(l), (gpointer *)&n->last);
+}
+
+static gboolean on_names_line(const char *line, gpointer data)
+{
+    Names *n = data;
+    gaudit_cloud_secret_line sl;
+    gaudit_cloud_names_line nl;
+    if (n->ended || n->got->len > GAUDIT_CLOUD_SECRETS_MAX)
+        return FALSE;
+    if (gaudit_cloud_parse_secret(line, &sl) == 0 && strcmp(sl.remote, n->remote) == 0) {
+        g_ptr_array_add(n->got, g_strndup(line, strcspn(line, "\n")));
+        return TRUE;
+    }
+    if (gaudit_cloud_parse_names(line, &nl) == 0 && strcmp(nl.remote, n->remote) == 0) {
+        g_ptr_array_add(n->got, g_strndup(line, strcspn(line, "\n")));
+        n->ended = TRUE;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+/* The cached collection without the remote's earlier names, with the new
+ * ones just before the closing line; NULL without one. */
+static GPtrArray *with_names(GPtrArray *lines, GPtrArray *got, const char *remote)
+{
+    GPtrArray *out = g_ptr_array_new_with_free_func(g_free);
+    gboolean placed = FALSE;
+    for (guint i = 0; i < lines->len; i++) {
+        const char *l = g_ptr_array_index(lines, i);
+        gaudit_cloud_secret_line sl;
+        gaudit_cloud_names_line nl;
+        if ((gaudit_cloud_parse_secret(l, &sl) == 0 && strcmp(sl.remote, remote) == 0)
+            || (gaudit_cloud_parse_names(l, &nl) == 0 && strcmp(nl.remote, remote) == 0))
+            continue;
+        if (!placed && gaudit_cloud_parse_line(l, NULL, NULL) == 2) {
+            for (guint k = 0; k < got->len; k++)
+                g_ptr_array_add(out, g_strdup(g_ptr_array_index(got, k)));
+            placed = TRUE;
+        }
+        g_ptr_array_add(out, g_strdup(l));
+    }
+    if (!placed) {
+        g_ptr_array_unref(out);
+        return NULL;
+    }
+    return out;
+}
+
+static void on_names_done(gboolean broken, gpointer data)
+{
+    Names *n = data;
+    gaudit_cloud_names_line nl = { .status = 1 };
+    if (!broken && n->ended && n->got->len > 0)
+        gaudit_cloud_parse_names(g_ptr_array_index(n->got, n->got->len - 1), &nl);
+    if (broken || !n->ended || nl.status == 1) {
+        names_say(n, P_("It could not be found out. The service may not answer, this computer "
+                        "may have no connection, or rclone's login may need to be renewed: "
+                        "rclone config reconnect and the setup's name does that."));
+    } else if (nl.found == 0) {
+        g_autofree char *text = g_strdup_printf(
+            PN_("None of the %u name looked at looks like a secret.",
+                "None of the %u names looked at look like secrets.", nl.looked), nl.looked);
+        names_say(n, text);
+    } else {
+        g_autofree char *text = g_strdup_printf(
+            PN_("%u name looks like a secret. They are listed in the report, each with what to do.",
+                "%u names look like secrets. They are listed in the report, each with what to do.",
+                nl.found), nl.found);
+        names_say(n, text);
+    }
+    if (!broken && n->ended && nl.truncated)
+        names_say(n, P_("It stopped before every name was looked at, since there are very many "
+                        "or the service answered slowly."));
+    /* Into the cached collection, so the report and Home follow. */
+    const GauditTaskInfo *task = gaudit_task_by_id("core.cloud");
+    GPtrArray *lines = task != NULL ? gaudit_cache_lines(task, NULL) : NULL;
+    if (!broken && n->ended && lines != NULL) {
+        g_autoptr(GPtrArray) next = with_names(lines, n->got, n->remote);
+        if (next != NULL) {
+            g_autofree char *command = g_strdup(gaudit_cache_command(task));
+            g_auto(GStrv) args = gaudit_cache_args(task) != NULL
+                ? g_strdupv((char **)gaudit_cache_args(task)) : NULL;
+            gaudit_cache_store(task, command, next, gaudit_cache_full(task),
+                               (const char *const *)args);
+            gaudit_cache_changed(task);
+        }
+    }
+    names_unref(n);
+}
+
+static void on_names_look(GtkButton *b, gpointer data)
+{
+    Names *n = data;
+    gtk_widget_set_sensitive(GTK_WIDGET(b), FALSE);
+    names_say(n, P_("Asking the service… With many files, this can take a few minutes."));
+    n->refs++;
+    const char *args[] = { "cloud", "names", n->remote, NULL };
+    gaudit_orchestrator_start(args, 330, FALSE, on_names_line, on_names_done, n);
+}
+
+static AdwNavigationPage *names_page(GPtrArray *lines, guint item)
+{
+    gaudit_cloud_line f;
+    if (lines == NULL || item >= lines->len
+        || gaudit_cloud_parse_line(g_ptr_array_index(lines, item), &f, NULL) != 1
+        || strcmp(f.client, "rclone") != 0 || !gaudit_cloud_plain_remote(f.name))
+        return NULL;
+    const char *name = service_name(f.service);
+    /* Translators: %s is a cloud service, e.g. "Dropbox". */
+    g_autofree char *title = g_strdup_printf(P_("Secrets at %s"), name);
+    g_autofree char *what = g_strdup_printf(
+        f.encrypted
+            ? P_("What is in the encrypted folder at %s is encrypted before it leaves. Anything "
+                 "outside it, the provider can read, and a key or a stored login there would be "
+                 "in its reach.")
+            : P_("The provider can read what is at %s, and a key or a stored login there would "
+                 "be in its reach."),
+        name);
+    g_autofree char *how = g_strdup_printf(
+        P_("The program can ask %s for the names of its files, outside the encrypted folder, "
+           "and see whether any look like secrets. Only the names are looked at, never the "
+           "content, since reading it would fetch every file. It asks over the network, with "
+           "rclone and rclone's own login, and only when you press the button. No name is kept "
+           "but those that look like secrets."),
+        name);
+    AdwNavigationPage *page = gaudit_fix_page_new(title, what, how, NULL, NULL, NULL, NULL, NULL,
+                                                  NULL);
+    GtkWidget *box = g_object_get_data(G_OBJECT(page), "gaudit-fix-box");
+    GtkWidget *anchor = g_object_get_data(G_OBJECT(page), "gaudit-fix-how");
+    if (box == NULL || anchor == NULL)
+        return page;
+    Names *n = g_new0(Names, 1);
+    n->refs = 1;
+    n->got = g_ptr_array_new_with_free_func(g_free);
+    g_strlcpy(n->remote, f.name, sizeof n->remote);
+    g_strlcpy(n->service, f.service, sizeof n->service);
+    n->box = box;
+    g_object_add_weak_pointer(G_OBJECT(box), (gpointer *)&n->box);
+    g_object_set_data_full(G_OBJECT(page), "gaudit-cloud-names", n, names_unref);
+    /* Translators: %s is a cloud service, e.g. "Dropbox". */
+    g_autofree char *label = g_strdup_printf(P_("Look at %s"), name);
+    GtkWidget *b = gaudit_action_button_new(label, FALSE, TRUE);
+    gtk_widget_set_halign(b, GTK_ALIGN_END);
+    g_signal_connect(b, "clicked", G_CALLBACK(on_names_look), n);
+    gtk_box_insert_child_after(GTK_BOX(box), b, anchor);
+    n->last = b;
+    g_object_add_weak_pointer(G_OBJECT(b), (gpointer *)&n->last);
+    return page;
+}
+
+AdwNavigationPage *gaudit_cloud_fix_page(const char *fix_id, GPtrArray *lines, guint item)
+{
+    if (fix_id == NULL)
+        return NULL;
+    if (strcmp(fix_id, "plain") == 0)
+        return plain_page(lines, item);
+    if (strcmp(fix_id, "names") == 0)
+        return names_page(lines, item);
+    if (strcmp(fix_id, "secret-readable") == 0 || strcmp(fix_id, "secret-unclear") == 0
+        || strcmp(fix_id, "secret-own") == 0)
+        return secret_page(fix_id, lines, item);
+    return NULL;
 }

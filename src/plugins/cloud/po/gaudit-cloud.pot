@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 23:27+0100\n"
+"POT-Creation-Date: 2026-11-19 23:44+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,89 +18,89 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: src/plugins/cloud/gaudit-cloud.c:162
+#: src/plugins/cloud/gaudit-cloud.c:165
 msgid "rclone asks"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:163
+#: src/plugins/cloud/gaudit-cloud.c:166
 msgid "You type"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:209
+#: src/plugins/cloud/gaudit-cloud.c:212
 msgid ""
 "New remote. With no remotes set up yet, rclone asks in other words; the "
 "answer is the same."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:213
+#: src/plugins/cloud/gaudit-cloud.c:216
 msgid "Quit config."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:329
+#: src/plugins/cloud/gaudit-cloud.c:332
 msgid "The program could not look just now. Try again in a moment."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:330
+#: src/plugins/cloud/gaudit-cloud.c:333
 msgid "Check Again"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:334
+#: src/plugins/cloud/gaudit-cloud.c:337
 msgid "Found: the service is switched on, and the folder is mounted."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:335
+#: src/plugins/cloud/gaudit-cloud.c:338
 msgid "Found: the services are switched on, and both folders are mounted."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:337
+#: src/plugins/cloud/gaudit-cloud.c:340
 msgid ""
 "The service is not switched on and mounted yet. Run the commands above, then "
 "open this page again."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:339
+#: src/plugins/cloud/gaudit-cloud.c:342
 msgid ""
 "The services are not both switched on and mounted yet. Run the commands "
 "above, then open this page again."
 msgstr ""
 
 #. Translators: %s is the name of an rclone remote, e.g. "jotta".
-#: src/plugins/cloud/gaudit-cloud.c:344
+#: src/plugins/cloud/gaudit-cloud.c:347
 #, c-format
 msgid "Found: rclone has a setup named %s."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:348
+#: src/plugins/cloud/gaudit-cloud.c:351
 msgid ""
 "No such setup was found yet. Finish rclone config in the terminal, then open "
 "this page again."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:352
+#: src/plugins/cloud/gaudit-cloud.c:355
 msgid "Found: the files are encrypted before they leave the computer."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:355
+#: src/plugins/cloud/gaudit-cloud.c:358
 msgid ""
 "No encrypted setup over it was found yet. Finish rclone config in the "
 "terminal, then open this page again."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:444
+#: src/plugins/cloud/gaudit-cloud.c:447
 #, c-format
 msgid ""
 "Last, make a folder for it under ~/%s, where the cloud folders are gathered, "
 "and mount it there. Run these in a terminal:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:446
+#: src/plugins/cloud/gaudit-cloud.c:449
 #, c-format
 msgid ""
 "Last, make two folders for it under ~/%s, where the cloud folders are "
 "gathered, and mount one disk in each. Run these in a terminal:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:465
+#: src/plugins/cloud/gaudit-cloud.c:468
 msgid ""
 "--vfs-cache-mode full keeps a copy of what is used on this computer, and --"
 "dir-cache-time remembers the lists of files for an hour: without them, Files "
@@ -110,7 +110,7 @@ msgid ""
 "To mount it each time you log in, rclone's own documentation shows how."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:479
+#: src/plugins/cloud/gaudit-cloud.c:482
 #, c-format
 msgid ""
 "The account is then two disks. %s is private: what you put there is "
@@ -120,7 +120,7 @@ msgid ""
 "with you shows there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:489
+#: src/plugins/cloud/gaudit-cloud.c:492
 #, c-format
 msgid ""
 "%s is shareable: the account as it is, without the encrypted folder. The "
@@ -128,14 +128,14 @@ msgid ""
 "others share with you shows there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:495
+#: src/plugins/cloud/gaudit-cloud.c:498
 msgid ""
 "Only the private disk is mounted. Files at the service from before, outside "
 "the encrypted folder, are not shown here, and the provider can read them. "
 "The report can look for them, when you ask."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:500
+#: src/plugins/cloud/gaudit-cloud.c:503
 msgid ""
 "To make a file private, move it from the shareable disk to the private one "
 "in the file manager. It is then encrypted, and deleted from the shareable "
@@ -144,76 +144,76 @@ msgid ""
 "use, stays where it is until you move it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:506
+#: src/plugins/cloud/gaudit-cloud.c:509
 msgid ""
 "--exclude leaves the encrypted folder out of the shareable disk, so what is "
 "there is not shown twice, once as unreadable names."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:559
+#: src/plugins/cloud/gaudit-cloud.c:562
 #, c-format
 msgid ""
 "A file named %s is there already, and it is not this one, so it was left as "
 "it is."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:561
+#: src/plugins/cloud/gaudit-cloud.c:564
 #, c-format
 msgid "%s could not be written."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:574
+#: src/plugins/cloud/gaudit-cloud.c:577
 msgid "Written."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:574
+#: src/plugins/cloud/gaudit-cloud.c:577
 msgid "Both written."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:575
+#: src/plugins/cloud/gaudit-cloud.c:578
 msgid "It was there already, the same."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:576
+#: src/plugins/cloud/gaudit-cloud.c:579
 msgid "They were there already, the same."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:577
+#: src/plugins/cloud/gaudit-cloud.c:580
 msgid ""
 "Now stop the mount started by hand, if it runs, and switch the service on. "
 "Run these in a terminal:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:579
+#: src/plugins/cloud/gaudit-cloud.c:582
 msgid ""
 "Now stop the mounts started by hand, if they run, and switch the services "
 "on. Run these in a terminal:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:592
+#: src/plugins/cloud/gaudit-cloud.c:595
 msgid ""
 "It then mounts the folder at each login, and starts it again if it stops."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:593
+#: src/plugins/cloud/gaudit-cloud.c:596
 msgid ""
 "They then mount the folders at each login, and start them again if they stop."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:595 src/plugins/cloud/gaudit-cloud.c:709
-#: src/plugins/cloud/gaudit-cloud.c:806 src/plugins/cloud/gaudit-cloud.c:836
-#: src/plugins/cloud/gaudit-cloud.c:913
+#: src/plugins/cloud/gaudit-cloud.c:598 src/plugins/cloud/gaudit-cloud.c:713
+#: src/plugins/cloud/gaudit-cloud.c:810 src/plugins/cloud/gaudit-cloud.c:840
+#: src/plugins/cloud/gaudit-cloud.c:917
 msgid "Check"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:626
+#: src/plugins/cloud/gaudit-cloud.c:629
 msgid ""
 "Then mount it by hand after each login, with the command above. Until it is "
 "mounted, the folder is an ordinary empty folder on this computer: what is "
 "put there stays here, and is not encrypted."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:645
+#: src/plugins/cloud/gaudit-cloud.c:648
 msgid ""
 "Optional: mount it at each login. A mount started by hand ends when you log "
 "out, and until it is mounted again, the folder is an ordinary empty folder: "
@@ -221,7 +221,7 @@ msgid ""
 "service file makes it mount by itself. This is the file, and where it goes:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:650
+#: src/plugins/cloud/gaudit-cloud.c:653
 msgid ""
 "Optional: mount them at each login. A mount started by hand ends when you "
 "log out, and until it is mounted again, the folder is an ordinary empty "
@@ -230,86 +230,88 @@ msgid ""
 "the files, and where they go:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:660
+#: src/plugins/cloud/gaudit-cloud.c:663
 msgid ""
 "The file also makes the folder read-only whenever nothing is mounted there, "
 "so nothing can be saved in it by mistake and stay on this computer "
 "unencrypted. While it is mounted, you can use it as any other folder."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:663
+#: src/plugins/cloud/gaudit-cloud.c:666
 msgid ""
 "The program writes this file and nothing else, only when you press the "
 "button. It never writes over another file of that name."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:665
+#: src/plugins/cloud/gaudit-cloud.c:668
 msgid ""
 "The program writes these files and nothing else, only when you press the "
 "button. It never writes over another file of the same name."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:667
+#: src/plugins/cloud/gaudit-cloud.c:670
 msgid "Skip"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:668
+#: src/plugins/cloud/gaudit-cloud.c:671
 msgid "Write the File"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:668
+#: src/plugins/cloud/gaudit-cloud.c:671
 msgid "Write the Files"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:684
+#: src/plugins/cloud/gaudit-cloud.c:687
 msgid "Run rclone config again, and answer like this:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:691
+#: src/plugins/cloud/gaudit-cloud.c:694
 msgid "The folder Encrypted on the remote you just made; rclone makes it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:694
+#: src/plugins/cloud/gaudit-cloud.c:697
 msgid "The password: let rclone make one."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:695
-msgid "128 is secure; more is fine too."
+#: src/plugins/cloud/gaudit-cloud.c:699
+msgid ""
+"256 bits: far beyond what anyone can guess, as a key for encryption should "
+"be."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:696
+#: src/plugins/cloud/gaudit-cloud.c:700
 msgid "Use the password rclone made."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:697
+#: src/plugins/cloud/gaudit-cloud.c:701
 msgid "The second password, the salt: let rclone make it too."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:704
+#: src/plugins/cloud/gaudit-cloud.c:708
 msgid ""
 "If something goes wrong half way, remove the half-made setup with rclone "
 "config delete and its name, and start again: rclone saves as it goes."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:706
+#: src/plugins/cloud/gaudit-cloud.c:710
 msgid ""
 "Write both passwords down and keep them somewhere safe, apart from this "
 "computer, such as a password manager. Without them the encrypted files "
 "cannot be read by anyone, you included, and nobody can recover them."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:745
+#: src/plugins/cloud/gaudit-cloud.c:749
 msgid "How will you use it? It is your choice:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:746
+#: src/plugins/cloud/gaudit-cloud.c:750
 msgid ""
 "Private: what you put there is encrypted before it leaves the computer, so "
 "the provider cannot read it. rclone does it with a second setup over the "
 "first, and you keep the passwords. Recommended."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:749
+#: src/plugins/cloud/gaudit-cloud.c:753
 msgid ""
 "It encrypts what is in the files and what they are called. The service still "
 "sees how large each file is, when it was changed and uploaded, and how many "
@@ -317,59 +319,59 @@ msgid ""
 "files private, but does not hide that they are there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:753
+#: src/plugins/cloud/gaudit-cloud.c:757
 msgid ""
 "Shareable: the account as it is. The provider can read what is there, it can "
 "be shared with others, and what others share with you shows there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:755
+#: src/plugins/cloud/gaudit-cloud.c:759
 msgid ""
 "Both: two folders side by side, one of each. Choose it when the account has "
 "files already, or you share with others: you then move what is to be private "
 "yourself."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:758
+#: src/plugins/cloud/gaudit-cloud.c:762
 msgid "Shareable"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:758
+#: src/plugins/cloud/gaudit-cloud.c:762
 msgid "Both"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:759
+#: src/plugins/cloud/gaudit-cloud.c:763
 msgid "Private"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:773 src/plugins/cloud/gaudit-cloud.c:809
+#: src/plugins/cloud/gaudit-cloud.c:777 src/plugins/cloud/gaudit-cloud.c:813
 msgid ""
 "Run rclone config in a terminal. It asks one thing at a time; answer like "
 "this:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:780 src/plugins/cloud/gaudit-cloud.c:815
+#: src/plugins/cloud/gaudit-cloud.c:784 src/plugins/cloud/gaudit-cloud.c:819
 msgid "Or another name, if that one is taken."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:782 src/plugins/cloud/gaudit-cloud.c:817
+#: src/plugins/cloud/gaudit-cloud.c:786 src/plugins/cloud/gaudit-cloud.c:821
 msgid ""
 "Type the name, not the number: the numbers in the list change between "
 "versions of rclone."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:784 src/plugins/cloud/gaudit-cloud.c:819
+#: src/plugins/cloud/gaudit-cloud.c:788 src/plugins/cloud/gaudit-cloud.c:823
 msgid "Press Enter, to leave it empty."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:789
+#: src/plugins/cloud/gaudit-cloud.c:793
 msgid ""
 "The browser opens at the service: log in there and allow rclone. rclone "
 "waits until it is done."
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Dropbox".
-#: src/plugins/cloud/gaudit-cloud.c:796
+#: src/plugins/cloud/gaudit-cloud.c:800
 #, c-format
 msgid ""
 "The login is made between %s and rclone on this computer: the browser hands "
@@ -379,47 +381,47 @@ msgid ""
 "it down at busy times."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:803 src/plugins/cloud/gaudit-cloud.c:833
+#: src/plugins/cloud/gaudit-cloud.c:807 src/plugins/cloud/gaudit-cloud.c:837
 msgid ""
 "rclone saves as it goes, also when stopped half way. If something went "
 "wrong, remove the half-made setup with rclone config delete and its name, "
 "and start again."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:822
+#: src/plugins/cloud/gaudit-cloud.c:826
 msgid "The kind of authentication"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:823
+#: src/plugins/cloud/gaudit-cloud.c:827
 msgid "Standard, the default."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:824
+#: src/plugins/cloud/gaudit-cloud.c:828
 msgid "The login token"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:824
+#: src/plugins/cloud/gaudit-cloud.c:828
 msgid "Paste the one you made"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:825
+#: src/plugins/cloud/gaudit-cloud.c:829
 msgid "Whether to use a non-standard device or mountpoint"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:826
+#: src/plugins/cloud/gaudit-cloud.c:830
 msgid ""
 "The Archive section. y only to reach the Sync or Backup section of the "
 "service's own app."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:831
+#: src/plugins/cloud/gaudit-cloud.c:835
 msgid ""
 "rclone trades the login token for a lasting one and keeps it in its own "
 "settings, ~/.config/rclone/rclone.conf. The program never sees either."
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Jottacloud".
-#: src/plugins/cloud/gaudit-cloud.c:860
+#: src/plugins/cloud/gaudit-cloud.c:864
 #, c-format
 msgid ""
 "Make a login token at %s: log in on its web site, open Settings, then "
@@ -428,55 +430,55 @@ msgid ""
 "logged in devices there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:867
+#: src/plugins/cloud/gaudit-cloud.c:871
 msgid "Open the Security Page"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:875
+#: src/plugins/cloud/gaudit-cloud.c:879
 msgid "I Have the Token"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:895
+#: src/plugins/cloud/gaudit-cloud.c:899
 msgid "rclone is installed."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:898
+#: src/plugins/cloud/gaudit-cloud.c:902
 msgid "rclone is still not installed. Install it, then open this page again."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:905
+#: src/plugins/cloud/gaudit-cloud.c:909
 msgid ""
 "rclone is installed, from the system's packages, so it gets updates with "
 "everything else."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:910
+#: src/plugins/cloud/gaudit-cloud.c:914
 msgid ""
 "rclone is not installed. Install it from the system's packages, so it gets "
 "updates with everything else:"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:935
+#: src/plugins/cloud/gaudit-cloud.c:939
 msgid ""
 "The private disk is mounted at each login already. What is left is the "
 "shareable disk beside it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:947
+#: src/plugins/cloud/gaudit-cloud.c:951
 #, c-format
 msgid ""
 "rclone reaches it already, as %s, encrypted. What is left is choosing how to "
 "use it, and mounting it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:949
+#: src/plugins/cloud/gaudit-cloud.c:953
 #, c-format
 msgid ""
 "rclone reaches it already, as %s. What is left is choosing how to use it, "
 "and mounting it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:965
+#: src/plugins/cloud/gaudit-cloud.c:969
 #, c-format
 msgid ""
 "%s is set up on this computer already, with another program. Two programs "
@@ -485,18 +487,18 @@ msgid ""
 "under ~/%s, rclone cannot mount there."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:979
+#: src/plugins/cloud/gaudit-cloud.c:983
 msgid "Set Up a Cloud Service With rclone"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:980
+#: src/plugins/cloud/gaudit-cloud.c:984
 msgid ""
 "rclone is a program that keeps a folder in step with a cloud service. Its "
 "source code is open, the system keeps it up to date, it logs in on this "
 "computer only, and it can encrypt your files before they leave."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:983
+#: src/plugins/cloud/gaudit-cloud.c:987
 msgid ""
 "This page goes through it step by step. You run the commands yourself, in a "
 "terminal: rclone asks its own questions and writes its own settings. The "
@@ -504,58 +506,58 @@ msgid ""
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Jottacloud".
-#: src/plugins/cloud/gaudit-cloud.c:1052
+#: src/plugins/cloud/gaudit-cloud.c:1056
 #, c-format
 msgid "%s: add the shareable disk"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1053
+#: src/plugins/cloud/gaudit-cloud.c:1057
 #, c-format
 msgid "%s: mount at each login"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1060
+#: src/plugins/cloud/gaudit-cloud.c:1064
 msgid ""
 "Every service this page knows how to set up is reached through rclone "
 "already, and mounted at each login. They are in the report."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1064
+#: src/plugins/cloud/gaudit-cloud.c:1068
 msgid "Which cloud service?"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1072
+#: src/plugins/cloud/gaudit-cloud.c:1076
 msgid "Next"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1161
+#: src/plugins/cloud/gaudit-cloud.c:1165 src/plugins/cloud/gaudit-cloud.c:1438
 msgid ""
 "It could not be found out. The service may not answer, this computer may "
 "have no connection, or rclone's login may need to be renewed: rclone config "
 "reconnect and the setup's name does that."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1165
+#: src/plugins/cloud/gaudit-cloud.c:1169
 msgid ""
 "The encryption covers all of the service, so files that are not encrypted "
 "cannot be told apart from here."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1168
+#: src/plugins/cloud/gaudit-cloud.c:1172
 msgid ""
 "Everything there is in the encrypted folder. The provider sees only that "
 "encrypted files are there."
 msgstr ""
 
 #. Translators: %u is a number, at most 1000.
-#: src/plugins/cloud/gaudit-cloud.c:1173
+#: src/plugins/cloud/gaudit-cloud.c:1177
 #, c-format
 msgid ""
 "More than %u files and folders there are not encrypted, so the provider can "
 "read them."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1175
+#: src/plugins/cloud/gaudit-cloud.c:1179
 #, c-format
 msgid "%u file or folder there is not encrypted, so the provider can read it."
 msgid_plural ""
@@ -563,7 +565,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1181
+#: src/plugins/cloud/gaudit-cloud.c:1185
 msgid ""
 "Move what is to be private from the shareable disk to the private one, in "
 "the file manager. It is then encrypted, and deleted from the shareable disk, "
@@ -571,7 +573,7 @@ msgid ""
 "shared stays where it is."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1185
+#: src/plugins/cloud/gaudit-cloud.c:1189
 msgid ""
 "To share them, or to make them private, set up the shareable disk: Set Up "
 "With rclone offers it. Then move what is to be private to the private disk, "
@@ -579,23 +581,23 @@ msgid ""
 "disk, though the provider may keep the deleted version for a while."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1190
+#: src/plugins/cloud/gaudit-cloud.c:1194
 msgid ""
 "The program moves nothing itself: what was shared with you, or what others "
 "use, stays where it is until you move it."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1215
+#: src/plugins/cloud/gaudit-cloud.c:1219
 msgid "Asking the service…"
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Dropbox".
-#: src/plugins/cloud/gaudit-cloud.c:1244
+#: src/plugins/cloud/gaudit-cloud.c:1260
 #, c-format
 msgid "Unencrypted Files at %s"
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1246
+#: src/plugins/cloud/gaudit-cloud.c:1262
 #, c-format
 msgid ""
 "rclone encrypts what goes through the private disk, and keeps it in one "
@@ -603,7 +605,7 @@ msgid ""
 "provider can read."
 msgstr ""
 
-#: src/plugins/cloud/gaudit-cloud.c:1250
+#: src/plugins/cloud/gaudit-cloud.c:1266
 #, c-format
 msgid ""
 "The program can ask %s how many files and folders lie outside the encrypted "
@@ -613,175 +615,457 @@ msgid ""
 msgstr ""
 
 #. Translators: %s is a cloud service, e.g. "Dropbox".
-#: src/plugins/cloud/gaudit-cloud.c:1267
+#: src/plugins/cloud/gaudit-cloud.c:1283 src/plugins/cloud/gaudit-cloud.c:1523
 #, c-format
 msgid "Look at %s"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:111
+#: src/plugins/cloud/gaudit-cloud.c:1315
+#, c-format
+msgid ""
+"%s looks like a file encrypted with its own password, such as a password "
+"database. It is where %s gets it. It holds as well as its password does: "
+"whoever has the file, the provider included, can try passwords against it as "
+"many times as they like, without anyone noticing."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1319
+#, c-format
+msgid ""
+"%s looks like a key, a password or a stored login, and it is where %s gets "
+"it. Whether the provider can read it depends on whether it is encrypted "
+"before it leaves this computer, which cannot be seen from here."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1322
+#, c-format
+msgid ""
+"%s looks like a key, a password or a stored login, and it is where %s gets "
+"it. The provider can read what is sent there."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1326
+msgid ""
+"Move it to the private disk, in the file manager: the disk's encryption then "
+"comes on top of its own, so the provider has nothing to try passwords "
+"against. A private disk is set up with Set Up With rclone. The program moves "
+"nothing itself."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1330
+msgid ""
+"Find out first, in the service's own settings, whether this folder is "
+"encrypted before it leaves. If it is not, move the file out of the cloud "
+"folder, or to the private disk, in the file manager. The program moves "
+"nothing itself."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1334
+msgid ""
+"Move it out of the cloud folder, or to the private disk, in the file "
+"manager. The program moves nothing itself."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1338
+msgid ""
+"The provider often keeps earlier versions and deleted files for a while, so "
+"it may have this one already. Where the file holds a key or a password, "
+"replacing it, with a new key or a changed password, is the way to be sure."
+msgstr ""
+
+#. Translators: the page's title.
+#: src/plugins/cloud/gaudit-cloud.c:1342
+msgid "An Encrypted File in a Cloud Folder"
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1343
+msgid "A Secret in a Cloud Folder"
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1443
+#, c-format
+msgid "None of the %u name looked at looks like a secret."
+msgid_plural "None of the %u names looked at look like secrets."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1448
+#, c-format
+msgid ""
+"%u name looks like a secret. They are listed in the report, each with what "
+"to do."
+msgid_plural ""
+"%u names look like secrets. They are listed in the report, each with what to "
+"do."
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1454
+msgid ""
+"It stopped before every name was looked at, since there are very many or the "
+"service answered slowly."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1477
+msgid "Asking the service… With many files, this can take a few minutes."
+msgstr ""
+
+#. Translators: %s is a cloud service, e.g. "Dropbox".
+#: src/plugins/cloud/gaudit-cloud.c:1492
+#, c-format
+msgid "Secrets at %s"
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1495
+#, c-format
+msgid ""
+"What is in the encrypted folder at %s is encrypted before it leaves. "
+"Anything outside it, the provider can read, and a key or a stored login "
+"there would be in its reach."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1498
+#, c-format
+msgid ""
+"The provider can read what is at %s, and a key or a stored login there would "
+"be in its reach."
+msgstr ""
+
+#: src/plugins/cloud/gaudit-cloud.c:1502
+#, c-format
+msgid ""
+"The program can ask %s for the names of its files, outside the encrypted "
+"folder, and see whether any look like secrets. Only the names are looked at, "
+"never the content, since reading it would fetch every file. It asks over the "
+"network, with rclone and rclone's own login, and only when you press the "
+"button. No name is kept but those that look like secrets."
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:116
 msgid "under the law of the USA"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:112
+#: src/plugins/cloud/rules/report.scm:117
 msgid "under Swiss law"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:113
+#: src/plugins/cloud/rules/report.scm:118
 msgid "under Norwegian law"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:114
+#: src/plugins/cloud/rules/report.scm:119
 msgid "under the law of New Zealand"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:115
+#: src/plugins/cloud/rules/report.scm:120
 msgid "under the law where its server is"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:118
+#: src/plugins/cloud/rules/report.scm:123
 msgid "contents and names encrypted before they leave the computer"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:119
+#: src/plugins/cloud/rules/report.scm:124
 msgid "encrypted before it leaves the computer"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:120
+#: src/plugins/cloud/rules/report.scm:125
 msgid "the provider can read it unless a folder is set to be encrypted"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:121
+#: src/plugins/cloud/rules/report.scm:126
 msgid "the provider can read it, except in a paid encrypted folder"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:122
+#: src/plugins/cloud/rules/report.scm:127
+#: src/plugins/cloud/rules/report.scm:371
 msgid "the provider can read it"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:123
+#: src/plugins/cloud/rules/report.scm:128
 msgid "whether the provider can read it is not known"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:128
+#: src/plugins/cloud/rules/report.scm:133
 msgid "{path}"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:129
+#: src/plugins/cloud/rules/report.scm:134
 msgid "probably {path}, its usual folder"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:130
+#: src/plugins/cloud/rules/report.scm:135
 msgid "mounted at {path}"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:131
+#: src/plugins/cloud/rules/report.scm:136
 msgid "set up as {name}, without a folder of its own"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:132
+#: src/plugins/cloud/rules/report.scm:137
 msgid "installed; where its folder is cannot be seen"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:154
+#: src/plugins/cloud/rules/report.scm:159
 msgid "{service} through {client}"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:162
+#: src/plugins/cloud/rules/report.scm:167
 msgid "{where} · where its login is made, and who keeps it, is not documented"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:164
+#: src/plugins/cloud/rules/report.scm:169
 msgid "{where} · {encryption} · {law}"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:245
+#: src/plugins/cloud/rules/report.scm:250
 msgid "Unencrypted files at {service} are not looked for"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:246
+#: src/plugins/cloud/rules/report.scm:251
 msgid "Everything at {service} is under the encryption"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:248
+#: src/plugins/cloud/rules/report.scm:253
 msgid "Whether {service} has unencrypted files could not be found out"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:250
+#: src/plugins/cloud/rules/report.scm:255
 msgid "More than {n} files and folders at {service} are not encrypted"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:253
+#: src/plugins/cloud/rules/report.scm:258
 msgid "{n} file or folder at {service} is not encrypted"
 msgid_plural "{n} files and folders at {service} are not encrypted"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/cloud/rules/report.scm:256
+#: src/plugins/cloud/rules/report.scm:261
 msgid "Everything at {service} is in the encrypted folder"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:266
+#: src/plugins/cloud/rules/report.scm:271
 msgid ""
 "Only the private disk is set up here · looking asks the service, so it is "
 "done only when you ask"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:268
+#: src/plugins/cloud/rules/report.scm:273
 msgid "Files that are not encrypted cannot be told apart from here"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:270
+#: src/plugins/cloud/rules/report.scm:275
+#: src/plugins/cloud/rules/report.scm:417
 msgid "The service did not answer, or rclone could not reach it"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:271
+#: src/plugins/cloud/rules/report.scm:276
 msgid "The provider sees only that encrypted files are there"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:273
+#: src/plugins/cloud/rules/report.scm:278
 msgid ""
 "The provider can read them · move what is to be private to the private disk"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:275
+#: src/plugins/cloud/rules/report.scm:280
 msgid ""
 "The provider can read them · set up the shareable disk, to share them or to "
 "move them to the private one"
 msgstr ""
 
+#: src/plugins/cloud/rules/report.scm:316
+msgid "SSH private key"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:317
+msgid "probably an SSH private key, by its name"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:318
+msgid "Private key"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:319
+msgid "probably a key, by its name"
+msgstr ""
+
 #: src/plugins/cloud/rules/report.scm:320
-msgid "Cloud services could not be looked for"
+msgid "PGP private key"
 msgstr ""
 
 #: src/plugins/cloud/rules/report.scm:321
-msgid "Nothing is known about the cloud services on this computer."
+msgid "PuTTY private key"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:322
+msgid "GnuPG private key"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:323
+msgid "Old GnuPG secret keyring"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:324
+msgid "Certificate with private key"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:325
+msgid "Java keystore"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:326
+msgid "KeePass password database"
 msgstr ""
 
 #: src/plugins/cloud/rules/report.scm:327
+msgid "Password store entry"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:328
+msgid "GNOME keyring"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:329
+msgid "KDE wallet"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:330
+msgid "Saved browser passwords"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:331
+msgid "Cryptocurrency wallet"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:332
+msgid "Stored logins (.netrc)"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:333
+msgid "PostgreSQL passwords"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:334
+msgid "MySQL login"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:335
+msgid "Git passwords"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:336
+msgid "AWS keys"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:337
+msgid "Kubernetes credentials"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:338
+msgid "Docker logins"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:339
+msgid "GitHub login"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:340
+msgid "Cloud storage logins (rclone)"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:344
+msgid "Looks like a secret"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:363
+msgid "{service}: {path}"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:367
+msgid "{kind} · {why}"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:370
+msgid "encrypted with its own password; move it to the private disk"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:372
+msgid "whether the provider can read it is not clear"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:413
+msgid "Names at {service} are not looked at for secrets"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:414
+msgid "Looking asks the service, so it is done only when you ask"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:416
+msgid "Whether names at {service} look like secrets could not be found out"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:420
+#: src/plugins/cloud/rules/report.scm:426
+msgid "{n} name at {service} looks like a secret"
+msgid_plural "{n} names at {service} look like secrets"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/cloud/rules/report.scm:423
+msgid "The look stopped after {n} names, so not all were seen"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:429
+msgid "Of {n} name looked at, outside the encrypted folder"
+msgid_plural "Of {n} names looked at, outside the encrypted folder"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/cloud/rules/report.scm:433
+msgid "No names at {service} look like secrets"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:434
+msgid "{n} name looked at, outside the encrypted folder"
+msgid_plural "{n} names looked at, outside the encrypted folder"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/cloud/rules/report.scm:475
+msgid "Cloud services could not be looked for"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:476
+msgid "Nothing is known about the cloud services on this computer."
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:482
 msgid "{n} cloud program logs in in a way that is not documented"
 msgid_plural "{n} cloud programs log in in a way that is not documented"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/cloud/rules/report.scm:331
+#: src/plugins/cloud/rules/report.scm:486
 msgid "{n} cloud service where the provider can read your files"
 msgid_plural "{n} cloud services where the provider can read your files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/cloud/rules/report.scm:334
-#: src/plugins/cloud/rules/report.scm:361
+#: src/plugins/cloud/rules/report.scm:489
+#: src/plugins/cloud/rules/report.scm:530
 msgid "No cloud services found"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:335
-#: src/plugins/cloud/rules/report.scm:362
+#: src/plugins/cloud/rules/report.scm:490
+#: src/plugins/cloud/rules/report.scm:531
 msgid "{n} cloud service found"
 msgid_plural "{n} cloud services found"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/cloud/rules/report.scm:338
+#: src/plugins/cloud/rules/report.scm:493
 msgid ""
 "What is in a cloud folder leaves the computer and is kept by someone else. "
 "Best is when it is encrypted before it leaves, so the provider cannot read "
@@ -789,76 +1073,97 @@ msgid ""
 "open and that the system keeps up to date."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:343
-#: src/plugins/cloud/rules/report.scm:380
+#: src/plugins/cloud/rules/report.scm:498
+#: src/plugins/cloud/rules/report.scm:549
 msgid "{path} is not mounted"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:344
+#: src/plugins/cloud/rules/report.scm:499
 msgid "What is put there now stays on this computer, unencrypted"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:348
+#: src/plugins/cloud/rules/report.scm:503
 msgid "The provider can read them"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:354
+#: src/plugins/cloud/rules/report.scm:507
+msgid "{n} secret in a cloud folder the provider can read"
+msgid_plural "{n} secrets in cloud folders the provider can read"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/cloud/rules/report.scm:510
+msgid "Move them out, or to the private disk"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:514
+msgid "{n} secret in a cloud folder where it is unclear who can read it"
+msgid_plural ""
+"{n} secrets in cloud folders where it is unclear who can read them"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/cloud/rules/report.scm:517
+msgid "Find out whether the folder is encrypted before it leaves"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:523
 msgid "The provider can read what is sent there"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:355
+#: src/plugins/cloud/rules/report.scm:524
 msgid "Where its login is made, and who keeps it, is not documented"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:364
+#: src/plugins/cloud/rules/report.scm:533
 msgid "Nothing needs attention"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:366
+#: src/plugins/cloud/rules/report.scm:535
 msgid "Cloud Services on This Computer"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:367
+#: src/plugins/cloud/rules/report.scm:536
 msgid ""
 "Programs that keep a copy of your files in a cloud service, and what is "
 "known about each."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:373
+#: src/plugins/cloud/rules/report.scm:542
 msgid "Mounted at Login"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:374
+#: src/plugins/cloud/rules/report.scm:543
 msgid "Services that mount a cloud folder each time you log in."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:381
+#: src/plugins/cloud/rules/report.scm:550
 msgid ""
 "Until it is, what is put there stays on this computer, unencrypted. Its "
 "service is {file}."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:384
+#: src/plugins/cloud/rules/report.scm:553
 msgid "{path} is mounted, but not at the next login"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:385
+#: src/plugins/cloud/rules/report.scm:554
 msgid "Its service {file} is not switched on"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:388
+#: src/plugins/cloud/rules/report.scm:557
 msgid "{path} is mounted at each login"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:389
+#: src/plugins/cloud/rules/report.scm:558
 msgid "By {file}"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:393
+#: src/plugins/cloud/rules/report.scm:562
 msgid "Nothing mounts {service} at login"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:397
+#: src/plugins/cloud/rules/report.scm:566
 msgid ""
 "rclone reaches it as {name}. Mounted by hand, the folder is empty after each "
 "login until it is mounted again, and what is put there meanwhile stays on "
@@ -866,63 +1171,107 @@ msgid ""
 "login."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:399
+#: src/plugins/cloud/rules/report.scm:568
 msgid ""
 "rclone reaches it as {name}. Mounted by hand, the folder is empty after each "
 "login until it is mounted again, and what is put there meanwhile stays on "
 "this computer."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:405
+#: src/plugins/cloud/rules/report.scm:574
 msgid "Files Not Encrypted"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:406
+#: src/plugins/cloud/rules/report.scm:575
 msgid ""
 "Files at a service outside its encrypted folder, which the provider can "
 "read. Looking for them asks the service, so it is done only when you ask, on "
 "its page."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:411
+#: src/plugins/cloud/rules/report.scm:581
+msgid "Secrets in Cloud Folders"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:582
+msgid ""
+"Files that look like secrets, such as keys and stored logins, where a cloud "
+"service gets them. The folders kept on this computer are searched; at a "
+"service reached through rclone, only the names are looked at, when you ask."
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:585
+msgid "No secrets found in the cloud folders on this computer"
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:586
+msgid "{n} folder searched"
+msgid_plural "{n} folders searched"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/plugins/cloud/rules/report.scm:592
+msgid ""
+"The cloud folders on this computer are searched for secrets in the full "
+"report, and on Home at the Thorough level."
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:595
+msgid ""
+"The search for secrets stopped at its limit in a large cloud folder, so not "
+"every file was looked at."
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:598
+msgid "Only the first secrets found are listed; there are more."
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:601
+msgid ""
+"A file known by its name alone may not be what its name says: an id_ed25519 "
+"may be empty, and a .pem may hold only a certificate. Only its content can "
+"tell."
+msgstr ""
+
+#: src/plugins/cloud/rules/report.scm:605
 msgid "Where the Cloud Folders Are"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:412
+#: src/plugins/cloud/rules/report.scm:606
 #, scheme-format
 msgid ""
 "Cloud folders gathered under one folder, such as ~/Cloud, give one place to "
 "see what leaves the computer."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:415
+#: src/plugins/cloud/rules/report.scm:609
 msgid "{n} folder for gathering cloud folders"
 msgid_plural "{n} folders for gathering cloud folders"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/cloud/rules/report.scm:418
+#: src/plugins/cloud/rules/report.scm:612
 msgid "One is enough; the others make it unclear where they belong"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:420
+#: src/plugins/cloud/rules/report.scm:614
 msgid "{n} cloud folder is not gathered with the others"
 msgid_plural "{n} cloud folders are not gathered with the others"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/plugins/cloud/rules/report.scm:423
+#: src/plugins/cloud/rules/report.scm:617
 msgid "Move each in its own program's settings, never in the file manager"
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:426
+#: src/plugins/cloud/rules/report.scm:620
 msgid ""
 "A cloud folder is moved in its own program's settings. Moved in the file "
 "manager, the program may take your files as deleted, and delete them from "
 "the service and every computer that syncs it."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:430
+#: src/plugins/cloud/rules/report.scm:624
 msgid ""
 "Encryption with rclone keeps what is in the files, and what they are called, "
 "private. The service still sees how large each file is, when it was changed "
@@ -931,10 +1280,10 @@ msgid ""
 "there."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:433
+#: src/plugins/cloud/rules/report.scm:627
 msgid "rclone's settings are encrypted, so its setups were not read."
 msgstr ""
 
-#: src/plugins/cloud/rules/report.scm:436
+#: src/plugins/cloud/rules/report.scm:630
 msgid "There were more than could be listed."
 msgstr ""

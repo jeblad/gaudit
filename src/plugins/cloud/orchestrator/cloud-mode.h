@@ -1,7 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-only */
 /* The orchestrator's "cloud" mode (see cloud.c), as the user:
  *
- *   cloud quick|full              the collection (the same at both levels for now)
+ *   cloud quick|full              the collection; full also searches the cloud
+ *                                 folders kept on this computer for secrets
+ *   cloud names <remote>          on a click only: the names at the remote,
+ *                                 outside its encrypted folder, that look like
+ *                                 secrets (network)
  *   cloud plain <remote>          on a click only: how many files and folders
  *                                 the remote has outside its encrypted folder,
  *                                 asked of the service with rclone (network)
@@ -20,8 +24,11 @@
 int gaudit_cloud_mode(int argc, char *argv[]);
 
 /* The collection for home, written to out; for tests, the mount list and
- * a prefix for /usr/bin may be given (NULL for the usual ones). 0 on success. */
-int gaudit_cloud_collect(const char *home, const char *mounts, const char *root, FILE *out);
+ * a prefix for /usr/bin may be given (NULL for the usual ones). full: also
+ * the search for secrets in the cloud folders kept on this computer. 0 on
+ * success. */
+int gaudit_cloud_collect(const char *home, const char *mounts, const char *root, int full,
+                         FILE *out);
 
 /* The unit for service, disk and remote under home; result: written,
  * unchanged, foreign (another file of that name), refused, error. 0 when
@@ -35,4 +42,11 @@ int gaudit_cloud_write_unit(const char *home, const char *service, const char *d
  * (cloud-plain ...) line. Only a remote the collection finds, with an
  * encryption over it. 0 when the line was written. */
 int gaudit_cloud_plain(const char *home, const char *mounts, const char *remote,
+                       const char *rclone, FILE *out);
+
+/* The names at remote, outside its encrypted folder, that look like
+ * secrets, with the rclone program at rclone (NULL: /usr/bin/rclone): a
+ * (cloud-secret ...) line each, at most GAUDIT_CLOUD_SECRETS_MAX, then one
+ * (cloud-names ...). Only a remote the collection finds. 0 when written. */
+int gaudit_cloud_names(const char *home, const char *mounts, const char *remote,
                        const char *rclone, FILE *out);

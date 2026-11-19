@@ -187,6 +187,36 @@ static const char *name_reason(const char *rel, const char *name)
     return NULL;
 }
 
+/* Names of key files the scan knows by their content; used only where the
+ * content cannot be read. .pem and .key may hold a certificate or a public
+ * key instead, so they are "probably". */
+static const struct { const char *pattern; const char *reason; } by_name_only[] = {
+    { "id_rsa",          "ssh-key-name" },
+    { "id_dsa",          "ssh-key-name" },
+    { "id_ecdsa",        "ssh-key-name" },
+    { "id_ecdsa_sk",     "ssh-key-name" },
+    { "id_ed25519",      "ssh-key-name" },
+    { "id_ed25519_sk",   "ssh-key-name" },
+    { "*.ppk",           "putty-private-key" },
+    { "*.pem",           "key-file-name" },
+    { "*.key",           "key-file-name" },
+};
+
+const char *gaudit_secret_reason_by_name(const char *rel, int name_only)
+{
+    if (rel == NULL || rel[0] == '\0')
+        return NULL;
+    const char *name = strrchr(rel, '/');
+    name = name != NULL ? name + 1 : rel;
+    if (name[0] == '\0')
+        return NULL;
+    const char *r = name_reason(rel, name);
+    for (size_t i = 0; r == NULL && name_only && i < sizeof by_name_only / sizeof by_name_only[0]; i++)
+        if (fnmatch(by_name_only[i].pattern, name, 0) == 0)
+            r = by_name_only[i].reason;
+    return r;
+}
+
 static const char *memfind(const char *hay, size_t n, const char *needle)
 {
     size_t m = strlen(needle);

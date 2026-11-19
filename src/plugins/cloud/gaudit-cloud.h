@@ -17,8 +17,10 @@ gboolean gaudit_cloud_line_ok(const char *line, gboolean *last);
  * folder, after the report. */
 AdwNavigationPage *gaudit_cloud_setup_page(void);
 
-/* A report row's page: "plain", files outside the encrypted folder, with
- * the button that asks the service; built from collection line item. */
+/* A report row's page, built from collection line item: "plain", files
+ * outside the encrypted folder, and "names", names that look like secrets,
+ * each with the button that asks the service; "secret-readable",
+ * "secret-unclear" and "secret-own", one secret in a cloud folder. */
 AdwNavigationPage *gaudit_cloud_fix_page(const char *fix_id, GPtrArray *lines, guint item);
 
 G_END_DECLS

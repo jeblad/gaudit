@@ -77,5 +77,12 @@ void gaudit_secret_scan_set_caches(int search);
 typedef void (*gaudit_secret_progress_fn)(unsigned long entries, const char *rel, void *ctx);
 void gaudit_secret_scan_set_progress(gaudit_secret_progress_fn fn, void *ctx);
 
+/* Why a path looks secret by its name alone, relative to the folder
+ * searched ("keys/id_ed25519"); NULL when it does not. With name_only,
+ * where the content cannot be read (a cloud service's listing), also the
+ * usual names of key files the scan otherwise knows by their content
+ * (id_rsa, id_ed25519, *.ppk, *.pem, *.key): a guess, said as one. */
+const char *gaudit_secret_reason_by_name(const char *rel, int name_only);
+
 int gaudit_secret_scan_area(const char *root, uid_t uid, gaudit_secret_fn fn, void *ctx,
                             gaudit_secret_stats *stats);

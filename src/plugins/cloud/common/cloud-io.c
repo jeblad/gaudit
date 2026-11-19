@@ -310,3 +310,140 @@ int gaudit_cloud_unit_text(const gaudit_cloud_setup_service *s, gaudit_cloud_dis
                      at, at);
     return n > 0 && (size_t)n < len ? 0 : -1;
 }
+
+/* --- Secrets in cloud folders --------------------------------------------------- */
+
+/* A reason id: [a-z0-9-], not empty. */
+static int plain_reason(const char *s)
+{
+    if (*s == '\0')
+        return 0;
+    for (const char *c = s; *c != '\0'; c++)
+        if (!((*c >= 'a' && *c <= 'z') || (*c >= '0' && *c <= '9') || *c == '-'))
+            return 0;
+    return 1;
+}
+
+/* One line, copied without its newline; -1 when it is not one. */
+static int one_line(const char *line, char copy[MAX_LINE])
+{
+    if (line == NULL)
+        return -1;
+    size_t len = strlen(line);
+    if (len > 0 && line[len - 1] == '\n')
+        len--;
+    if (len == 0 || len >= MAX_LINE || memchr(line, '\n', len) != NULL)
+        return -1;
+    memcpy(copy, line, len);
+    copy[len] = '\0';
+    return 0;
+}
+
+int gaudit_cloud_format_secret(const gaudit_cloud_secret_line *l, char *buf, size_t len)
+{
+    char service[sizeof l->service * 2 + 3], remote[sizeof l->remote * 2 + 3],
+        path[sizeof l->path * 2 + 3], reason[sizeof l->reason * 2 + 3];
+    int local = l->remote[0] == '\0';
+    if (!plain_id(l->service) || !plain_reason(l->reason) || l->path[0] == '\0'
+        || (local ? !plain_where(l->path) : !gaudit_cloud_plain_remote(l->remote))
+        || gaudit_probe_quote(service, sizeof service, l->service) != 0
+        || gaudit_probe_quote(remote, sizeof remote, l->remote) != 0
+        || gaudit_probe_quote(path, sizeof path, l->path) != 0
+        || gaudit_probe_quote(reason, sizeof reason, l->reason) != 0)
+        return -1;
+    int n = snprintf(buf, len,
+                     "(cloud-secret (service %s) (remote %s) (path %s) (reason %s) (by-name %d))\n",
+                     service, remote, path, reason, l->by_name ? 1 : 0);
+    return n > 0 && (size_t)n < len ? 0 : -1;
+}
+
+int gaudit_cloud_parse_secret(const char *line, gaudit_cloud_secret_line *l)
+{
+    char copy[MAX_LINE];
+    if (one_line(line, copy) != 0)
+        return -1;
+    long long bn;
+    gaudit_cloud_secret_line ll = { 0 };
+    const gaudit_sexpr_field f[] = {
+        { .key = "service", .text = ll.service, .text_len = sizeof ll.service },
+        { .key = "remote", .text = ll.remote, .text_len = sizeof ll.remote },
+        { .key = "path", .text = ll.path, .text_len = sizeof ll.path },
+        { .key = "reason", .text = ll.reason, .text_len = sizeof ll.reason },
+        { .key = "by-name", .value = &bn, .max = 1 },
+    };
+    if (gaudit_sexpr_parse(copy, "cloud-secret", f, 5) != 0 || !plain_id(ll.service)
+        || !plain_reason(ll.reason) || ll.path[0] == '\0'
+        || (ll.remote[0] == '\0' ? !plain_where(ll.path) : !gaudit_cloud_plain_remote(ll.remote)))
+        return -1;
+    ll.by_name = (int)bn;
+    if (l != NULL)
+        *l = ll;
+    return 0;
+}
+
+int gaudit_cloud_format_secret_scan(const gaudit_cloud_secret_scan_line *l, char *buf, size_t len)
+{
+    int n = snprintf(buf, len, "(cloud-secret-scan (folders %u) (found %u) (more %d) (truncated %d))\n",
+                     l->folders, l->found, l->more ? 1 : 0, l->truncated ? 1 : 0);
+    return n > 0 && (size_t)n < len && l->folders <= 100 && l->found <= 1000000 ? 0 : -1;
+}
+
+int gaudit_cloud_parse_secret_scan(const char *line, gaudit_cloud_secret_scan_line *l)
+{
+    char copy[MAX_LINE];
+    if (one_line(line, copy) != 0)
+        return -1;
+    long long fo, fd, mo, tr;
+    const gaudit_sexpr_field f[] = {
+        { .key = "folders", .value = &fo, .max = 100 },
+        { .key = "found", .value = &fd, .max = 1000000 },
+        { .key = "more", .value = &mo, .max = 1 },
+        { .key = "truncated", .value = &tr, .max = 1 },
+    };
+    if (gaudit_sexpr_parse(copy, "cloud-secret-scan", f, 4) != 0)
+        return -1;
+    if (l != NULL)
+        *l = (gaudit_cloud_secret_scan_line){ (unsigned)fo, (unsigned)fd, (int)mo, (int)tr };
+    return 0;
+}
+
+int gaudit_cloud_format_names(const gaudit_cloud_names_line *l, char *buf, size_t len)
+{
+    char remote[sizeof l->remote * 2 + 3];
+    if (!gaudit_cloud_plain_remote(l->remote) || l->status < 0 || l->status > 1
+        || l->looked > GAUDIT_CLOUD_NAMES_MAX || l->found > GAUDIT_CLOUD_NAMES_MAX
+        || gaudit_probe_quote(remote, sizeof remote, l->remote) != 0)
+        return -1;
+    int n = snprintf(buf, len,
+                     "(cloud-names (remote %s) (status %d) (looked %u) (found %u) (more %d) "
+                     "(truncated %d))\n",
+                     remote, l->status, l->looked, l->found, l->more ? 1 : 0, l->truncated ? 1 : 0);
+    return n > 0 && (size_t)n < len ? 0 : -1;
+}
+
+int gaudit_cloud_parse_names(const char *line, gaudit_cloud_names_line *l)
+{
+    char copy[MAX_LINE];
+    if (one_line(line, copy) != 0)
+        return -1;
+    long long st, lo, fd, mo, tr;
+    gaudit_cloud_names_line ll = { 0 };
+    const gaudit_sexpr_field f[] = {
+        { .key = "remote", .text = ll.remote, .text_len = sizeof ll.remote },
+        { .key = "status", .value = &st, .max = 1 },
+        { .key = "looked", .value = &lo, .max = GAUDIT_CLOUD_NAMES_MAX },
+        { .key = "found", .value = &fd, .max = GAUDIT_CLOUD_NAMES_MAX },
+        { .key = "more", .value = &mo, .max = 1 },
+        { .key = "truncated", .value = &tr, .max = 1 },
+    };
+    if (gaudit_sexpr_parse(copy, "cloud-names", f, 6) != 0 || !gaudit_cloud_plain_remote(ll.remote))
+        return -1;
+    ll.status = (int)st;
+    ll.looked = (unsigned)lo;
+    ll.found = (unsigned)fd;
+    ll.more = (int)mo;
+    ll.truncated = (int)tr;
+    if (l != NULL)
+        *l = ll;
+    return 0;
+}

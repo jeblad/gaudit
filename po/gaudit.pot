@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gaudit 0.1.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 23:22+0100\n"
+"POT-Creation-Date: 2026-11-19 23:41+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1334,22 +1334,29 @@ msgid ""
 "known about each. A service where the provider can read your files is a "
 "warning, and so is a login that goes through someone else's web service, or "
 "one whose making is not documented. A program the system does not keep up to "
-"date is a recommendation."
+"date is a recommendation.\n"
+"\n"
+"The full report, and Home at the Thorough level, also look in the cloud "
+"folders kept on this computer for files that look like secrets, such as keys "
+"and stored logins: one where the provider can read it is a warning, and so "
+"is one where that is unclear. A file that is encrypted with its own "
+"password, such as a KeePass database, is a recommendation to move it to the "
+"private disk."
 msgstr ""
 
-#: src/plugins/cloud/plugin.c:46
+#: src/plugins/cloud/plugin.c:55
 msgid "Cloud services"
 msgstr ""
 
-#: src/plugins/cloud/plugin.c:47
+#: src/plugins/cloud/plugin.c:56
 msgid "See the cloud services on this computer"
 msgstr ""
 
-#: src/plugins/cloud/plugin.c:51
+#: src/plugins/cloud/plugin.c:60
 msgid "Set Up With rclone"
 msgstr ""
 
-#: src/plugins/cloud/plugin.c:54 src/plugins/cloud/plugin.c:55
+#: src/plugins/cloud/plugin.c:63 src/plugins/cloud/plugin.c:64
 msgid "Looking for cloud services…"
 msgstr ""
 

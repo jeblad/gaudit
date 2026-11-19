@@ -889,7 +889,8 @@ int main(int argc, char *argv[])
     int network = argc >= 3
                   && ((strcmp(argv[1], "updates") == 0
                        && (strcmp(argv[2], "latest") == 0 || strcmp(argv[2], "download") == 0))
-                      || (strcmp(argv[1], "cloud") == 0 && strcmp(argv[2], "plain") == 0));
+                      || (strcmp(argv[1], "cloud") == 0
+                          && (strcmp(argv[2], "plain") == 0 || strcmp(argv[2], "names") == 0)));
     if (gaudit_sandbox_restrict_net(network) != 0)
         return 1;
     if (argc == 1)

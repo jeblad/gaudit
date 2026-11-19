@@ -276,7 +276,8 @@ add_test(NAME cloud-folders COMMAND test_cloud_folders)
 add_executable(test_cloud test_cloud.c ${PROJECT_SOURCE_DIR}/src/plugins/cloud/orchestrator/cloud.c)
 target_include_directories(test_cloud PRIVATE ${PROJECT_SOURCE_DIR}/src/plugins/cloud/orchestrator
                            ${PROJECT_SOURCE_DIR}/src/plugins/cloud/common
-                           ${PROJECT_SOURCE_DIR}/src/backend ${PROJECT_SOURCE_DIR}/src/probe)
+                           ${PROJECT_SOURCE_DIR}/src/backend ${PROJECT_SOURCE_DIR}/src/probe
+                           ${PROJECT_SOURCE_DIR}/src/plugins/private-files/backend)
 target_link_libraries(test_cloud PRIVATE gaudit_probe gaudit_backend)
 target_compile_definitions(test_cloud PRIVATE
   CLOUD_RULE="${PROJECT_SOURCE_DIR}/src/plugins/cloud/rules/report.scm")

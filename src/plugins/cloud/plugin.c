@@ -36,13 +36,22 @@ const GauditTaskInfo gaudit_plugin_cloud = {
                        "is known about each. A service where the provider can read your files is a "
                        "warning, and so is a login that goes through someone else's web service, "
                        "or one whose making is not documented. A program the system does not keep "
-                       "up to date is a recommendation."),
+                       "up to date is a recommendation.\n\n"
+                       "The full report, and Home at the Thorough level, also look in the cloud "
+                       "folders kept on this computer for files that look like secrets, such as "
+                       "keys and stored logins: one where the provider can read it is a warning, "
+                       "and so is one where that is unclear. A file that is encrypted with its own "
+                       "password, such as a KeePass database, is a recommendation to move it to "
+                       "the private disk."),
     .icon = "folder-remote-symbolic",
     .capabilities = NULL,
     .params = NULL,
     .n_params = 0,
     .run_command = "user cloud full",
-    .home_commands = { [GAUDIT_LEVEL_QUICK] = "user cloud quick" },
+    /* Thorough also searches the cloud folders kept on this computer for
+     * secrets, which takes time on a large folder. */
+    .home_commands = { [GAUDIT_LEVEL_QUICK] = "user cloud quick",
+                       [GAUDIT_LEVEL_THOROUGH] = "user cloud full" },
     .home_title = N_("Cloud services"),
     .home_tooltip = N_("See the cloud services on this computer"),
     .collection_line = gaudit_cloud_line_ok,
